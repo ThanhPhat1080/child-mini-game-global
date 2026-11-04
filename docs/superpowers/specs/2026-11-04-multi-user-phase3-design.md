@@ -31,7 +31,7 @@ One Supabase project, RLS by owner. All schema changes are new files in `supabas
 - **U3 ownership**: `quiz_sets`, `memory_cards`, `spot_levels`, `card_groups`, `find_levels` gain `owner_id uuid not null` (FK `profiles`). Existing seed rows are assigned to the first Super Admin. `questions` and `answers` inherit access through their parent set.
 - **U4 `child_settings`** replaces the singleton `settings` (`id = 1`): one row per child (`child_id` PK, `child_name`, `avatar_path`, `hooray_path`, `ohoh_path`, `complete_path`, music volume, feedback sounds, and the other current columns). The roughly eight pages that read `settings id=1` read the signed-in child's row instead. A parent edits only their own children's rows.
 - **U5 bans**: `profiles.banned` is the only switch. RLS treats content owned by a banned user as invisible; no content rows are rewritten. Unbanning restores the exact previous state.
-- **U6 first Super Admin**: created once by a documented SQL step (insert into `profiles` for a user created in the Supabase dashboard). Later Super Admins are created in the app.
+- **U6 first Super Admin**: created once by a documented step: create the user through the normal sign-up path (the sign-up trigger rejects users without a policy version, so the dashboard "Add user" button does not work), then run a SQL update that sets `role = 'super_admin'` on its profile. Later Super Admins are created in the app by the server (see U8).
 
 ## 4. Visibility and review (V1..V7)
 
@@ -50,7 +50,7 @@ Access rule summary per content row (read): Super Admin always; otherwise the ow
 ## 5. Auth and accounts (U7..U14)
 
 - **U7** Parent self sign-up with email and password and email confirmation, then a short first-run flow to create the first child (a parent needs at least 1 child before the child app is usable, at most 5).
-- **U8** Child accounts are created server-side: a Next.js route handler checks the caller is a parent (or Super Admin), then uses the Supabase service-role key to create the auth user (`email_confirm: true`) and the `profiles` and `child_settings` rows in one step. The service-role key lives only in a server-only Vercel env var (no `NEXT_PUBLIC_`).
+- **U8** Child accounts are created server-side: a Next.js route handler checks the caller is a parent (or Super Admin), then uses the Supabase service-role key to create the auth user (`email_confirm: true`, `user_metadata.policy_version = 'server-provisioned'` so the sign-up trigger creates a `parent` profile), then updates that profile to its final role (`child` with `parent_id`, or `super_admin`); `child_settings` is created for the child. If any step fails the auth user is deleted. The service-role key lives only in a server-only Vercel env var (no `NEXT_PUBLIC_`).
 - **U9** Child signs in with the email and password the parent chose, typed by the parent on the child's device. The session is persistent (Supabase SSR cookie) so the child is not asked again.
 - **U10** Logout button in a corner of the child UI. It opens a small adult check (a simple addition question, answered with the keyboard or mouse) and signs out only on a correct answer. A child who cannot read cannot pass it.
 - **U11** `middleware.ts` reads the role from `profiles` instead of `is_admin()`. `/admin` is allowed for `super_admin` and non-banned `parent`. A child gets an explicit "You don't have permission" page; a banned parent gets "Account suspended". Unauthenticated users go to sign-in.
