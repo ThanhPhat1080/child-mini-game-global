@@ -10,11 +10,11 @@ import styles from '../admin/admin.module.css';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function friendlyError(err: { message?: string; code?: string }): string {
-  const text = `${err.code ?? ''} ${err.message ?? ''}`.toLowerCase();
-  if (text.includes('already') && (text.includes('registered') || text.includes('exists'))) {
+  const message = err.message ?? '';
+  if (err.code === 'user_already_exists' || /already registered/i.test(message)) {
     return 'This email already has an account. Try signing in instead.';
   }
-  if (text.includes('weak_password') || text.includes('password')) {
+  if (err.code === 'weak_password' || /should be at least|weak/i.test(message)) {
     return 'That password is too weak. Try a longer one with letters and numbers.';
   }
   return 'Something went wrong. Please try again.';
@@ -46,20 +46,25 @@ export default function SignUpPage() {
     setBusy(true);
     setError(null);
     const supabase = createSupabaseBrowserClient();
-    const { error: signUpError } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-      options: {
-        data: { policy_version: POLICY_VERSION },
-        emailRedirectTo: `${location.origin}/admin/sign-in`,
-      },
-    });
-    setBusy(false);
-    if (signUpError) {
-      setError(friendlyError(signUpError));
-      return;
+    try {
+      const { error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: { policy_version: POLICY_VERSION },
+          emailRedirectTo: `${location.origin}/admin/sign-in`,
+        },
+      });
+      if (signUpError) {
+        setError(friendlyError(signUpError));
+        return;
+      }
+      setDone(true);
+    } catch {
+      setError(friendlyError({}));
+    } finally {
+      setBusy(false);
     }
-    setDone(true);
   }
 
   return (

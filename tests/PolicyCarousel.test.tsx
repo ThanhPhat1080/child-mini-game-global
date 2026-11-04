@@ -93,6 +93,44 @@ describe('PolicyCarousel (U16)', () => {
   });
 });
 
+describe('PolicyCarousel focus and keys', () => {
+  it('Tab from the last focusable wraps to the first and Shift+Tab the reverse', () => {
+    setup();
+    for (let i = 0; i < 5; i++) fireEvent.click(next());
+    const close = screen.getByRole('button', { name: /close/i });
+    register().focus();
+    fireEvent.keyDown(document.activeElement as Element, { key: 'Tab' });
+    expect(document.activeElement).toBe(close);
+    fireEvent.keyDown(document.activeElement as Element, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(register());
+  });
+
+  it('Escape pressed with focus outside the dialog closes it without accepting', () => {
+    const outside = document.createElement('button');
+    document.body.appendChild(outside);
+    const { onClose, onAccept } = setup();
+    outside.focus();
+    fireEvent.keyDown(outside, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onAccept).not.toHaveBeenCalled();
+    outside.remove();
+  });
+
+  it('focus returns to the opener after close', () => {
+    const opener = document.createElement('button');
+    document.body.appendChild(opener);
+    opener.focus();
+    const props = { onClose: vi.fn(), onAccept: vi.fn() };
+    const { rerender } = render(<PolicyCarousel open {...props} />);
+    expect(document.activeElement).not.toBe(opener);
+    expect(document.body.style.overflow).toBe('hidden');
+    rerender(<PolicyCarousel open={false} {...props} />);
+    expect(document.activeElement).toBe(opener);
+    expect(document.body.style.overflow).toBe('');
+    opener.remove();
+  });
+});
+
 describe('policy content', () => {
   it('has 6 slides with image, vi and en, and the version constant', () => {
     expect(POLICY_VERSION).toBe('2026-11-04');

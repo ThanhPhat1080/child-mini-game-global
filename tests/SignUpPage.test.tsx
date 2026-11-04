@@ -87,4 +87,31 @@ describe('Sign-up page (U7, U16)', () => {
     expect(await screen.findByText(/something went wrong/i)).toBeTruthy();
     expect(screen.queryByText(/exploded/)).toBeNull();
   });
+
+  it('shows the generic message for a "Password sign-ups are disabled" error', async () => {
+    h.signUp.mockResolvedValue({ data: {}, error: { message: 'Password sign-ups are disabled', code: 'signup_disabled' } });
+    render(<SignUpPage />);
+    fill();
+    await acceptPolicy();
+    expect(await screen.findByText(/something went wrong/i)).toBeTruthy();
+    expect(screen.queryByText(/too weak/i)).toBeNull();
+  });
+
+  it('shows the generic message and re-enables the button when signUp throws', async () => {
+    h.signUp.mockRejectedValue(new Error('network down'));
+    render(<SignUpPage />);
+    fill();
+    await acceptPolicy();
+    expect(await screen.findByText(/something went wrong/i)).toBeTruthy();
+    const btn = screen.getByRole('button', { name: /create account/i });
+    expect(btn.hasAttribute('disabled')).toBe(false);
+  });
+
+  it('maps weak_password to the weak-password message', async () => {
+    h.signUp.mockResolvedValue({ data: {}, error: { message: 'x', code: 'weak_password' } });
+    render(<SignUpPage />);
+    fill();
+    await acceptPolicy();
+    expect(await screen.findByText(/too weak/i)).toBeTruthy();
+  });
 });

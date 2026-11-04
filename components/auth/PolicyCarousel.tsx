@@ -26,15 +26,59 @@ function CarouselDialog({ onClose, onAccept }: Omit<Props, 'open'>) {
     setFurthest((f) => Math.max(f, to));
   }
 
+  // Remember the opener (read during the first render, before focus moves) and restore it on unmount.
+  const openerRef = useRef<Element | null>(typeof document === 'undefined' ? null : document.activeElement);
+
   useEffect(() => {
+    const opener = openerRef.current;
     dialogRef.current?.focus();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    };
   }, []);
 
+  // Escape and Tab handling live on the document so they work even when focus is outside the dialog.
+  useEffect(() => {
+    function onDocKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const root = dialogRef.current;
+      if (!root) return;
+      const items = Array.from(
+        root.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
+      );
+      if (items.length === 0) {
+        event.preventDefault();
+        root.focus();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      if (!root.contains(active) || active === root) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
+    document.addEventListener('keydown', onDocKeyDown);
+    return () => document.removeEventListener('keydown', onDocKeyDown);
+  }, [onClose]);
+
   function onKeyDown(event: React.KeyboardEvent) {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      onClose();
-    } else if (event.key === 'ArrowRight') {
+    if (event.key === 'ArrowRight') {
       event.preventDefault();
       go(index + 1);
     } else if (event.key === 'ArrowLeft') {
