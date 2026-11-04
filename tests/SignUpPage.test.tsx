@@ -97,6 +97,20 @@ describe('Sign-up page (U7, U16)', () => {
     expect(screen.queryByText(/too weak/i)).toBeNull();
   });
 
+  it.each([
+    ['email_address_invalid', 'Email address "a@b.co" is invalid', /not valid/i],
+    ['email_exists', 'Email already exists', /already has an account/i],
+    ['email_address_not_authorized', 'Email address not authorized', /cannot send mail/i],
+  ])('shows the %s error under the email field', async (code, message, expected) => {
+    h.signUp.mockResolvedValue({ data: {}, error: { message, code } });
+    const { container } = render(<SignUpPage />);
+    fill();
+    await acceptPolicy();
+    const alert = await screen.findByText(expected);
+    expect(alert.closest('div')?.querySelector('#su-email')).toBeTruthy();
+    expect(container.textContent).not.toContain(message);
+  });
+
   it('shows the generic message and re-enables the button when signUp throws', async () => {
     h.signUp.mockRejectedValue(new Error('network down'));
     render(<SignUpPage />);
