@@ -44,7 +44,7 @@ Then Settings -> General -> Default branch -> `develop`, so new PRs default to i
 ## Vercel
 - Project: a NEW Vercel project (not the original `hamy`), linked to `ThanhPhat1080/child-mini-game-global`. Fill in the project/team IDs here once created.
 - Production branch is `main`; every other branch gets a Preview deployment.
-- Env vars (Production, Preview, Development): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Nothing else may use `NEXT_PUBLIC_`. Never add the service role key.
+- Env vars (Production, Preview, Development): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and the server-only `SUPABASE_SERVICE_ROLE_KEY` (account creation, `app/api/*`). Nothing else may use `NEXT_PUBLIC_`; mark the service role key as sensitive and never expose it to the browser.
 - Install is `npm ci`: keep `package-lock.json` in sync (run `npm install` after changing dependencies and commit the lockfile).
 - Production URL: TBD (set after the new Vercel project exists).
 - Deployment Protection (Vercel login) blocks the child from opening the page. Turn it off for the child-facing domain.
@@ -53,7 +53,19 @@ Then Settings -> General -> Default branch -> `develop`, so new PRs default to i
 Authentication -> URL Configuration:
 - Site URL: the Production URL above (or the custom domain).
 - Redirect URLs: `<production URL>/**`, `http://localhost:3000/**`, and for previews `https://*-<new-team-slug>.vercel.app/**`.
+- Auth -> Email: set up custom SMTP (the built-in sender is rate limited and only for the team) and keep "Confirm email" on, because parents sign up themselves.
+- Auth -> Providers -> Email: minimum password length 8.
 Schema changes go through `supabase/migrations/*.sql` only (see `CLAUDE.md`).
+
+### Phase 3 first deployment runbook (owner steps)
+1. Create the new Supabase project; note its ref and the Vercel project/team ids and record them in this file.
+2. Apply every file in `supabase/migrations/` in order through the migration tool (Supabase MCP `apply_migration` or `supabase db push`); never paste SQL into the dashboard.
+3. First Super Admin (U6): sign up through `/sign-up` with the owner's email (the sign-up trigger needs a policy version, so the dashboard "Add user" button does not work), confirm the email, then run once: `update public.profiles set role = 'super_admin' where user_id = (select id from auth.users where email = '<owner email>');`. Later Super Admins are created in the app (`/admin/parents`).
+4. Seed rows made by earlier migrations have `owner_id` null and are global; only a Super Admin edits them.
+5. Configure SMTP and the redirect URLs above.
+6. Create the Vercel project, set the three env vars, deploy `main`.
+7. Smoke test: sign in as the Super Admin, create a parent and a child from `/admin/parents`, sign in as the child on `/play/sign-in`.
+Check before every release: `npm run typecheck && npm run lint && npm test && npm run test:rls && npm run e2e && npm run build`.
 
 ## Release checklist (`develop` -> `main`)
 1. `develop` is green and `npm run build` passes.
