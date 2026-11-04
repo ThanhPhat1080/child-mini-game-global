@@ -315,7 +315,7 @@ export function MediaLibrary({ mode = 'dialog', kind, onChoose, onClose, startCr
     } else {
       const type = cardAudioType(file.type);
       if (!type) return setUploadError('Use an MP3, M4A or WAV sound.');
-      if (file.size > MAX_SOUND_BYTES) return setUploadError('Sound must be 10 MB or smaller.');
+      if (file.size > MAX_SOUND_BYTES) return setUploadError('Sound must be 2 MB or smaller.');
       // the bucket only knows the standard names (e.g. Chrome calls .m4a "audio/x-m4a")
       if (type !== file.type) file = new File([file], file.name, { type });
     }

@@ -78,8 +78,8 @@ describe('saveLevels', () => {
     expect(r).toEqual({ error: null, warning: null });
     expect(h.log).toEqual(['upload', 'upload', 'upsert']);
     const rows = h.upsert.mock.calls[0][0];
-    expect(rows[0].image_a_path).toMatch(/^spot\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
-    expect(rows[0].image_b_path).toMatch(/^spot\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
+    expect(rows[0].image_a_path).toMatch(/^me\/spot\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
+    expect(rows[0].image_b_path).toMatch(/^me\/spot\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
     expect(rows.map((x: { sort_order: number }) => x.sort_order)).toEqual([0, 1]);
     expect(rows[0]).toMatchObject({ id: 'x', differences: three, active: true });
     expect(h.upsert.mock.calls[0][1]).toEqual({ onConflict: 'id' });
@@ -110,7 +110,7 @@ describe('saveLevels', () => {
     expect(r).toEqual({ error: 'db down', warning: null });
     const removed = h.remove.mock.calls[0][0] as string[];
     expect(removed).toHaveLength(1);
-    expect(removed[0]).toMatch(/^spot\/[A-Za-z0-9-]+-/);
+    expect(removed[0]).toMatch(/^me\/spot\/[A-Za-z0-9-]+-/);
     expect(removed).not.toContain('spot/old.png');
   });
 

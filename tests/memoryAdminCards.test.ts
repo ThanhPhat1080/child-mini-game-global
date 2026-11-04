@@ -125,8 +125,8 @@ describe('commitPendingMap', () => {
     const a = addPending(file('a.png'));
     const b = addPending(file('b.mp3', 'audio/mpeg'));
     const out = await commitPendingMap(new Map([[a, 'cards'], [b, 'card-voices']]));
-    expect(out.get(a)).toMatch(/^cards\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
-    expect(out.get(b)).toMatch(/^card-voices\/[A-Za-z0-9-]*-[0-9a-z]{13}\.mp3$/);
+    expect(out.get(a)).toMatch(/^me\/cards\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
+    expect(out.get(b)).toMatch(/^me\/card-voices\/[A-Za-z0-9-]*-[0-9a-z]{13}\.mp3$/);
   });
   it('removes what it uploaded and rethrows when one fails', async () => {
     h.upload.mockResolvedValueOnce({ error: null }).mockResolvedValueOnce({ error: { message: 'boom' } });
@@ -147,7 +147,7 @@ describe('saveCards', () => {
     expect(h.log).toEqual(['upload', 'upsert', 'remove']);
     expect(h.remove.mock.calls[0][0]).toEqual(['cards/old.png']);
     const row = h.upsert.mock.calls[0][0][0];
-    expect(row.image_path).toMatch(/^cards\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
+    expect(row.image_path).toMatch(/^me\/cards\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
     expect(h.upsert.mock.calls[0][1]).toEqual({ onConflict: 'id' });
   });
 
@@ -207,7 +207,7 @@ describe('saveCards', () => {
     expect(h.remove).toHaveBeenCalledTimes(1);
     const removed = h.remove.mock.calls[0][0] as string[];
     expect(removed).toHaveLength(1);
-    expect(removed[0]).toMatch(/^cards\/[A-Za-z0-9-]+-/);
+    expect(removed[0]).toMatch(/^me\/cards\/[A-Za-z0-9-]+-/);
   });
 
   it('keeps old files when the table delete fails', async () => {

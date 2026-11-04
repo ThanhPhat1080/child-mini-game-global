@@ -43,6 +43,24 @@ export function objectAudioPaths(objects: unknown): string[] {
 export async function referencedPaths(paths: string[]): Promise<Set<string>> {
   const found = new Set<string>();
   if (!paths.length) return found;
+  const supabase = createSupabaseBrowserClient();
+  // The database function sees every owner's content and ignores RLS (Q6); a client query only sees its own rows.
+  const results = await Promise.all([...new Set(paths)].map(async (p) => {
+    const { data, error } = await supabase.rpc('media_in_use', { p_path: p });
+    if (error) throw new Error(error.message);
+    return [p, data === true] as const;
+  }));
+  for (const [p, used] of results) if (used) found.add(p);
+  return found;
+}
+
+/**
+ * The older, client-side scan of every MEDIA_SOURCES column. It only sees rows the caller can read, so it is not
+ * used to decide deletes any more; it stays for the tests of which columns can point at a file.
+ */
+export async function referencedPathsByScan(paths: string[]): Promise<Set<string>> {
+  const found = new Set<string>();
+  if (!paths.length) return found;
   const wanted = new Set(paths);
   const supabase = createSupabaseBrowserClient();
 

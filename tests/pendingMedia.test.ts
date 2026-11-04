@@ -5,6 +5,7 @@ const upload = vi.fn();
 const remove = vi.fn();
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
+    auth: { getSession: () => Promise.resolve({ data: { session: { user: { id: 'me' } } } }) },
     storage: { from: () => ({ upload, remove, getPublicUrl: (p: string) => ({ data: { publicUrl: `https://cdn.test/${p}` } }) }) },
   }),
 }));
@@ -60,13 +61,13 @@ describe('commitPendingMedia (Save)', () => {
     d.qs[0].voice = addPending(file('v.mp3', 'audio/mpeg'));
     const { d: out, uploaded } = await commitPendingMedia(d);
     expect(upload).toHaveBeenCalledTimes(3);
-    const folders = upload.mock.calls.map((c) => (c[0] as string).split('/')[0]).sort();
+    const folders = upload.mock.calls.map((c) => (c[0] as string).split('/')[1]).sort();
     expect(folders).toEqual(['answers', 'covers', 'voices']);
     expect(uploaded).toHaveLength(3);
-    expect(out.cover).toMatch(/^covers\/[A-Za-z0-9-]*-[0-9a-z]{13}\.svg$/);
-    expect(out.qs[0].imgs[0]).toMatch(/^answers\/[A-Za-z0-9-]*-[0-9a-z]{13}\.svg$/);
+    expect(out.cover).toMatch(/^me\/covers\/[A-Za-z0-9-]*-[0-9a-z]{13}\.svg$/);
+    expect(out.qs[0].imgs[0]).toMatch(/^me\/answers\/[A-Za-z0-9-]*-[0-9a-z]{13}\.svg$/);
     expect(out.qs[0].imgs[1]).toBe('answers/old.png');
-    expect(out.qs[0].voice).toMatch(/^voices\/[A-Za-z0-9-]*-[0-9a-z]{13}\.mp3$/);
+    expect(out.qs[0].voice).toMatch(/^me\/voices\/[A-Za-z0-9-]*-[0-9a-z]{13}\.mp3$/);
     expect(JSON.stringify(out)).not.toContain('pending:');
   });
 
@@ -164,5 +165,27 @@ describe('mapSetMedia', () => {
     const seen: string[] = [];
     mapSetMedia({ cover: 'c', qs: [{ qimg: 'q', voice: 'v', imgs: ['a', null] }] }, (p, f) => { seen.push(`${f}:${p}`); return p; });
     expect(seen).toEqual(['covers:c', 'questions:q', 'voices:v', 'answers:a', 'answers:null']);
+  });
+});
+
+describe('owner folders and sound limit (Q1, Q3, Q5)', () => {
+  it('upload path starts with the user id', async () => {
+    const d = blank();
+    d.cover = addPending(file('cover.svg'));
+    const { d: out } = await commitPendingMedia(d);
+    expect(out.cover?.startsWith('me/')).toBe(true);
+    expect(upload.mock.calls[0][0]).toMatch(/^me\/covers\//);
+  });
+
+  it('a sound over 2 MB is refused with "Sound must be 2 MB or smaller."', () => {
+    expect(() => addPending(file('long.mp3', 'audio/mpeg', 3 * 1024 * 1024))).toThrow('Sound must be 2 MB or smaller.');
+    expect(() => addPending(file('ok.mp3', 'audio/mpeg', 2 * 1024 * 1024))).not.toThrow();
+  });
+
+  it('maps the database quota error to a plain message', async () => {
+    upload.mockResolvedValue({ error: { message: 'quota_exceeded: the folder would pass its quota' } });
+    const d = blank();
+    d.cover = addPending(file('cover.svg'));
+    await expect(commitPendingMedia(d)).rejects.toThrow(/storage is full/i);
   });
 });

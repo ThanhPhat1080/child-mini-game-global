@@ -2,9 +2,26 @@ import { randomId } from '@/lib/randomId';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { PENDING_PREFIX, isBucketPath, mapSetMedia, storedName, type SetPaths } from '@/lib/mediaPaths';
 import { referencedPaths } from '@/lib/media/refs';
+import { getMyUserId } from '@/lib/review';
 
 export const MEDIA_BUCKET = 'media';
 export const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
+/** Sounds are limited like images (Q5); the bucket and the storage policy allow more, this is the UI limit. */
+export const MAX_SOUND_BYTES = 2 * 1024 * 1024;
+
+const SIZE_ERRORS: [string, number, string][] = [
+  ['image/', MAX_IMAGE_BYTES, 'Image must be 2 MB or smaller.'],
+  ['audio/', MAX_SOUND_BYTES, 'Sound must be 2 MB or smaller.'],
+];
+
+/** Throws the friendly size message when a file is over the limit for its kind. */
+function checkSize(file: File): void {
+  for (const [prefix, max, message] of SIZE_ERRORS) if (file.type.startsWith(prefix) && file.size > max) throw new Error(message);
+}
+
+/** The database refuses an upload that would pass the owner's quota (Q4); say so in plain words. */
+const friendly = (message: string): string =>
+  /quota_exceeded/i.test(message) ? 'Your storage is full. Delete files you no longer use, or ask the Super Admin for more space.' : message;
 
 /** Files the admin picked but has not saved yet. They are previewed from memory and uploaded on Save. */
 const pending = new Map<string, { file: File; url: string }>();
@@ -13,7 +30,7 @@ export const isPending = (path: string | null | undefined): boolean => !!path &&
 
 /** Keeps a picked file in memory and returns a placeholder path for it. Nothing is sent to the bucket. */
 export function addPending(file: File): string {
-  if (file.type.startsWith('image/') && file.size > MAX_IMAGE_BYTES) throw new Error('Image must be 2 MB or smaller.');
+  checkSize(file);
   const token = PENDING_PREFIX + randomId();
   pending.set(token, { file, url: URL.createObjectURL(file) });
   return token;
@@ -58,19 +75,19 @@ export function mediaUrl(path: string | null | undefined): string | null {
   return supabase.storage.from(MEDIA_BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
-/** Uploads a file into the media bucket and returns its path. Admin only (RLS, T1). */
+/** Uploads a file into the signed-in user's own folder of the media bucket and returns its path `<userId>/<folder>/<name>` (Q1, Q3). */
 export async function uploadMedia(folder: string, file: File): Promise<string> {
-  if (file.type.startsWith('image/') && file.size > MAX_IMAGE_BYTES) {
-    throw new Error('Image must be 2 MB or smaller.');
-  }
+  checkSize(file);
+  const owner = await getMyUserId();
+  if (!owner) throw new Error('Please sign in again.');
   const supabase = createSupabaseBrowserClient();
   const dot = file.name.lastIndexOf('.');
   const ext = dot >= 0 ? file.name.slice(dot + 1).toLowerCase() : 'bin';
-  const path = `${folder}/${storedName(file.name, ext)}`;
+  const path = `${owner}/${folder}/${storedName(file.name, ext)}`;
   const { error } = await supabase.storage
     .from(MEDIA_BUCKET)
     .upload(path, file, { contentType: file.type, upsert: false });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(friendly(error.message));
   return path;
 }
 

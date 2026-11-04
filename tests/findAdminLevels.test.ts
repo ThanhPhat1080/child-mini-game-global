@@ -224,13 +224,13 @@ describe('saveFindLevels', () => {
     expect(r).toEqual({ error: null, warning: null });
     expect(h.log).toEqual(['upload', 'upload', 'upsert']);
     expect(h.upload.mock.calls.map((c) => c[0])).toEqual([
-      expect.stringMatching(/^find\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/),
-      expect.stringMatching(/^find\/[A-Za-z0-9-]*-[0-9a-z]{13}\.mp3$/),
+      expect.stringMatching(/^me\/find\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/),
+      expect.stringMatching(/^me\/find\/[A-Za-z0-9-]*-[0-9a-z]{13}\.mp3$/),
     ]);
     const rows = h.upsert.mock.calls[0][0];
-    expect(rows[0].image_path).toMatch(/^find\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
+    expect(rows[0].image_path).toMatch(/^me\/find\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
     expect(rows[0].objects[0]).toEqual({ x: 0.2, y: 0.5, r: DEFAULT_R, word: 'cat', audio_path: rows[0].objects[0].audio_path });
-    expect(rows[0].objects[0].audio_path).toMatch(/^find\/[A-Za-z0-9-]*-[0-9a-z]{13}\.mp3$/);
+    expect(rows[0].objects[0].audio_path).toMatch(/^me\/find\/[A-Za-z0-9-]*-[0-9a-z]{13}\.mp3$/);
     expect(rows[0].objects[1]).toEqual(obj(0.8, 'dog'));
     expect(rows[1]).toMatchObject({ id: 'y', image_path: 'find/q.png' });
     expect(rows[0]).toMatchObject({ id: 'x', active: true });
@@ -285,7 +285,7 @@ describe('saveFindLevels', () => {
     expect(r).toEqual({ error: 'db down', warning: null });
     const removed = h.remove.mock.calls[0][0] as string[];
     expect(removed).toHaveLength(1);
-    expect(removed[0]).toMatch(/^find\/[A-Za-z0-9-]+-/);
+    expect(removed[0]).toMatch(/^me\/find\/[A-Za-z0-9-]+-/);
     expect(removed).not.toContain('find/old.png');
   });
 
