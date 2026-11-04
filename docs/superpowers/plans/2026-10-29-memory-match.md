@@ -83,7 +83,7 @@
 - [ ] **Step 2: Run**, expect FAIL.
 - [ ] **Step 3: Write the migration** following the pattern of `20261026000000_init_schema.sql` (policies `memory_cards_read_active` for anon + authenticated where `active`, and `memory_cards_admin_all` for authenticated with `is_admin()`), plus the seed rows with `image_path = 'seed/<name>.svg'`, no audio. Add the missing SVG files.
 - [ ] **Step 4: Run** the test; expect PASS.
-- [ ] **Step 5: Apply to Supabase only after PO OK** (project `uhpsqaqejizcyzwhwnsl`). Verify read-only: as anon only active rows are readable; an anon insert is denied.
+- [ ] **Step 5: Apply to Supabase only after PO OK** (the new global Supabase project). Verify read-only: as anon only active rows are readable; an anon insert is denied.
 - [ ] **Step 6: Commit** `feat(db): memory_cards table, policies and sample cards (A11)`.
 
 ### Task 3: Deck drawing and level availability (M1, pure)

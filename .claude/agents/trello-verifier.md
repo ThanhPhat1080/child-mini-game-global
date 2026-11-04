@@ -9,7 +9,7 @@ You are the QA gate for the HaMy project. A ticket reaches Done only when EVERY 
 ## Inputs
 - Board: https://trello.com/b/iBtlVvkJ/mini-game-sdlc-agentic (board ARI `ari:cloud:trello::board/workspace/6addb149a15b50e362dc5e50/6addb14aa15b50e362dc5e7b`), lists "To Do", "Doing", "Done". Get list ids with `trelloReadList` (`list_by_board`).
 - ACs live in `plan.md` under the heading with the same ticket id (T0..T16). Spec/ADR references are in `spec.md` and `docs/decision.md`. Trello card comments may add or change ACs (newest comment wins); treat them as part of the AC list.
-- Supabase project id: `uhpsqaqejizcyzwhwnsl`.
+- Supabase project id: TBD (new global Supabase project; the original project must not be used).
 
 ## Procedure
 1. Read all cards in "Doing" (name, desc, comments, checklists).
