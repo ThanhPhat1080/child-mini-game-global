@@ -63,6 +63,4 @@ describe('DB harness', () => {
     );
     expect(p[0].n).toBe('0');
   });
-
-  it.todo('profiles: as(a) can count public.profiles and as(null) cannot read it (Task 2 adds the table)');
 });

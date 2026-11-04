@@ -89,21 +89,30 @@ export async function resetDb(): Promise<void> {
 
 export type TestRole = 'super_admin' | 'parent' | 'child';
 
-/** Insert an auth.users row (and a public.profiles row once that table exists). */
+/** A raw pooled connection as the (super)user, e.g. to hold a transaction open. Release it. */
+export function connect(): Promise<PoolClient> {
+  return db().connect();
+}
+
+/**
+ * Insert a provisioned auth.users row (app metadata `provisioned`, so the sign-up trigger
+ * skips it) plus its public.profiles row, the way the server routes do.
+ */
 export async function createUser(
   role: TestRole,
-  opts: { parentId?: string; banned?: boolean } = {},
+  opts: { parentId?: string; banned?: boolean; displayName?: string; policyVersion?: string } = {},
 ): Promise<string> {
   const id = randomUUID();
-  await db().query('insert into auth.users (id, email) values ($1, $2)', [id, `${role}-${id}@test.local`]);
-  const has = await db().query(`select to_regclass('public.profiles') as t`);
-  if (has.rows[0].t) {
-    // Column names follow spec U1; Task 2 owns the table and may adjust this insert.
-    await db().query(
-      `insert into public.profiles (user_id, role, parent_id, banned) values ($1, $2, $3, $4)`,
-      [id, role, opts.parentId ?? null, opts.banned ?? false],
-    );
-  }
+  await db().query(
+    `insert into auth.users (id, email, raw_app_meta_data) values ($1, $2, '{"provisioned": true}')`,
+    [id, `${role}-${id}@test.local`],
+  );
+  await db().query(
+    `insert into public.profiles
+       (user_id, role, parent_id, banned, display_name, policy_version_accepted, policy_accepted_at)
+     values ($1, $2, $3, $4, $5, $6, case when $6::text is null then null else now() end)`,
+    [id, role, opts.parentId ?? null, opts.banned ?? false, opts.displayName ?? null, opts.policyVersion ?? null],
+  );
   return id;
 }
 
