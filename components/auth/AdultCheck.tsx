@@ -43,13 +43,15 @@ function CheckDialog({ onPass, onCancel, random }: Omit<Props, 'open'> & { rando
     function onDocKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.preventDefault();
+        event.stopPropagation();
         onCancelRef.current();
         return;
       }
       if (event.key !== 'Tab') return;
       const root = dialogRef.current;
       if (!root) return;
-      const items = Array.from(root.querySelectorAll<HTMLElement>('button:not([disabled]), input, [tabindex]:not([tabindex="-1"])'));
+      event.stopPropagation();
+      const items = Array.from(root.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'));
       if (items.length === 0) {
         event.preventDefault();
         root.focus();
@@ -69,8 +71,8 @@ function CheckDialog({ onPass, onCancel, random }: Omit<Props, 'open'> & { rando
         first.focus();
       }
     }
-    document.addEventListener('keydown', onDocKeyDown);
-    return () => document.removeEventListener('keydown', onDocKeyDown);
+    window.addEventListener('keydown', onDocKeyDown, true);
+    return () => window.removeEventListener('keydown', onDocKeyDown, true);
   }, []);
 
   function onSubmit(event: FormEvent) {

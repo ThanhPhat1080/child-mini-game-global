@@ -40,6 +40,18 @@ describe('LogoutButton (U10)', () => {
     vi.restoreAllMocks();
   });
 
+  it('stays on the page when signOut returns an error', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    h.signOut.mockResolvedValue({ error: { message: 'x' } });
+    render(<LogoutButton />);
+    open();
+    answer('12');
+    await waitFor(() => expect(h.signOut).toHaveBeenCalled());
+    await Promise.resolve();
+    expect(h.push).not.toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
   it('cancel does not sign out', () => {
     render(<LogoutButton />);
     open();

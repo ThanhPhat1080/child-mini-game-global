@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import AdultCheck from '@/components/auth/AdultCheck';
 
@@ -17,6 +18,24 @@ const submit = (v: string) => {
   fireEvent.change(input(), { target: { value: v } });
   fireEvent.click(screen.getByRole('button', { name: /^ok$/i }));
 };
+
+describe('AdultCheck Escape isolation', () => {
+  it('Esc closes the dialog without reaching window bubble listeners, and reaches them again after close', () => {
+    const spy = vi.fn();
+    window.addEventListener('keydown', spy);
+    function Host() {
+      const [open, setOpen] = useState(true);
+      return <AdultCheck open={open} onPass={() => {}} onCancel={() => setOpen(false)} />;
+    }
+    render(<Host />);
+    fireEvent.keyDown(input(), { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(spy).not.toHaveBeenCalled();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(spy).toHaveBeenCalledTimes(1);
+    window.removeEventListener('keydown', spy);
+  });
+});
 
 describe('AdultCheck (U10)', () => {
   it('wrong answer keeps the dialog open and does not call onPass', () => {

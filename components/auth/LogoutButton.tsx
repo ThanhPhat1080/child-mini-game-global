@@ -13,12 +13,16 @@ export default function LogoutButton() {
 
   async function onPass() {
     setOpen(false);
+    let failed = false;
     try {
-      await createSupabaseBrowserClient().auth.signOut();
-    } finally {
-      router.push('/play/sign-in');
-      router.refresh();
+      const { error } = await createSupabaseBrowserClient().auth.signOut();
+      failed = !!error;
+    } catch {
+      failed = true;
     }
+    if (failed) return; // still signed in: stay on the page
+    router.push('/play/sign-in');
+    router.refresh();
   }
 
   return (
