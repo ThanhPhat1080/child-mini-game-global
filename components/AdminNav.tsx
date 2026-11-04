@@ -44,6 +44,23 @@ export function AdminNav() {
           Children
         </Link>
       )}
+      {role === 'super_admin' && (
+        <>
+          {([
+            ['/admin/queue', 'Review queue', <path key="a" d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />],
+            ['/admin/parents', 'Parents', <g key="b"><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" /></g>],
+            ['/admin/all-children', 'All children', <g key="c"><circle cx="12" cy="8" r="3" /><path d="M6 20c.5-3 2.7-4.5 6-4.5s5.5 1.5 6 4.5" /></g>],
+            ['/admin/content', 'All content', <path key="d" d="M4 6h16M4 12h16M4 18h16" />],
+            ['/admin/messages', 'Messages', <path key="e" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />],
+          ] as const).map(([href, label, glyph]) => (
+            <Link key={href} href={href} aria-current={pathname.startsWith(href) ? 'page' : undefined} className={cls(pathname.startsWith(href))}>
+              <svg {...icon}>{glyph}</svg>
+              {label}
+            </Link>
+          ))}
+          <div className={styles.divider} />
+        </>
+      )}
       <Link href="/admin/media" aria-current={pathname.startsWith('/admin/media') ? 'page' : undefined} className={cls(pathname.startsWith('/admin/media'))}>
         <svg {...icon}><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
         Media

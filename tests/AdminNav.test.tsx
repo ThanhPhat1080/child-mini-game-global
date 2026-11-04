@@ -19,6 +19,7 @@ describe('AdminNav (N2)', () => {
     expect(await screen.findByRole('link', { name: 'Children' })).toHaveProperty('pathname', '/admin/children');
     expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
     for (const n of ['Media', 'Quiz sets', 'Cards', 'Spot', 'Find']) expect(screen.getByRole('link', { name: n })).toBeTruthy();
+    for (const n of ['Review queue', 'Parents', 'All content', 'Messages']) expect(screen.queryByRole('link', { name: n })).toBeNull();
   });
 
   it('a Super Admin gets no Children link', async () => {
@@ -27,6 +28,9 @@ describe('AdminNav (N2)', () => {
     await waitFor(() => expect(screen.getByText('Super Admin')).toBeTruthy());
     expect(screen.queryByRole('link', { name: 'Children' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Quiz sets' })).toBeTruthy();
+    for (const [name, href] of [['Review queue', '/admin/queue'], ['Parents', '/admin/parents'], ['All children', '/admin/all-children'], ['All content', '/admin/content'], ['Messages', '/admin/messages']]) {
+      expect(screen.getByRole('link', { name })).toHaveProperty('pathname', href);
+    }
   });
 
   it('shows no role-specific link until the profile is known, or when it cannot be read', async () => {
