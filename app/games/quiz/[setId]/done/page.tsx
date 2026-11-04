@@ -21,7 +21,7 @@ export default function Done() {
   const [custom, setCustom] = useState<string | null>(null);
 
   useEffect(() => {
-    try { localStorage.setItem(`hamy:done:${setId}`, '1'); } catch { /* storage blocked */ }
+    try { localStorage.setItem(`childPlayer:done:${setId}`, '1'); } catch { /* storage blocked */ }
     getMyChildSettings().then((data) => { setName(data?.child_name ?? ''); setCustom(mediaUrl(data?.complete_path)); setLoaded(true); }, () => setLoaded(true));
   }, [setId]);
 

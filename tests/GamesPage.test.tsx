@@ -5,7 +5,7 @@ const h = vi.hoisted(() => ({ push: vi.fn() }));
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
-    from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { child_name: 'Ha My', avatar_path: null } }) }) }) }),
+    from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { child_name: 'childPlayer', avatar_path: null } }) }) }) }),
   }),
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: h.push }), usePathname: () => '/games' }));

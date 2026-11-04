@@ -15,7 +15,7 @@
 - Answer slots: number + fixed color (1 rose, 2 sky, 3 butter) from `SLOT_COLORS` in `lib/tokens.ts`, keys 1/2/3, same look and sizes as the Quiz answers.
 - Keys: 1/2/3 pick, Left/Right move focus, Enter/Space pick the focused one, R replays the word, Esc goes to `/games`. Visible focus ring.
 - Sounds: `ohOh` on a wrong pick, `yay` on a right pick (custom `hooray_path`/`ohoh_path` from `settings` as in Quiz, fetch errors ignored). Word voice: `sayWord` (recording, else `speakKid`). Nothing plays before "tap to enter".
-- Wrong-picks log: localStorage key `hamy.listen.wrong`, entries `{id, word, count}`; cleared when a round starts, on play again and when the page is left.
+- Wrong-picks log: localStorage key `childPlayer.listen.wrong`, entries `{id, word, count}`; cleared when a round starts, on play again and when the page is left.
 - Game list colors: lavender, border `#C9BFE4`, title and icon ring `#7B6BAE`, icon circle `#F0ECF8` (final values confirmed by the PO from screenshots in Task 1).
 - Name "Listen & Pick" (English). No hard-coded Vietnamese or other child text. No timers or penalties. Honor `prefers-reduced-motion` (no bounce or slide, fade only). Fonts as the other child pages.
 - Schema changes: none. Never the service role key in the frontend.
@@ -77,10 +77,10 @@
 - Test: `tests/listenWrongLog.test.ts`
 
 **Interfaces:**
-- Produces: `WRONG_KEY = 'hamy.listen.wrong'`; `type WrongEntry = { id: string; word: string; count: number }`; `recordWrong(card: { id: string; word: string }): void`; `readWrong(): WrongEntry[]` (in first-wrong order); `clearWrong(): void`; `totalWrong(entries: readonly WrongEntry[]): number`. None of them throws.
+- Produces: `WRONG_KEY = 'childPlayer.listen.wrong'`; `type WrongEntry = { id: string; word: string; count: number }`; `recordWrong(card: { id: string; word: string }): void`; `readWrong(): WrongEntry[]` (in first-wrong order); `clearWrong(): void`; `totalWrong(entries: readonly WrongEntry[]): number`. None of them throws.
 
 - [ ] **Step 1: Failing tests** (jsdom `localStorage`):
-  - `recordWrong` twice for card A and once for B gives `[{A, count 2}, {B, count 1}]` and `totalWrong` 3; the data is stored under `hamy.listen.wrong`; `clearWrong` empties both the storage and the result.
+  - `recordWrong` twice for card A and once for B gives `[{A, count 2}, {B, count 1}]` and `totalWrong` 3; the data is stored under `childPlayer.listen.wrong`; `clearWrong` empties both the storage and the result.
   - Junk in the key (`"not json"`, `"{}"`, `"[1,2]"`, entries with `count: -1`, `1.5`, a missing `id`) reads as `[]`, and the next `recordWrong` replaces it with a valid list.
   - With `localStorage.getItem`/`setItem` throwing (spy), `recordWrong` does not throw and `readWrong` still returns the entries recorded in this page session (memory copy); `clearWrong` clears that copy too.
 - [ ] **Step 2: Run** `npx vitest run tests/listenWrongLog.test.ts`; expect FAIL.
@@ -145,12 +145,12 @@
 - Produces: `ListenDone({ wrong, cards, childName, completeUrl, onAgain, gamesHref }: { wrong: readonly WrongEntry[]; cards: ReadonlyMap<string, MemoryCard>; childName: string; completeUrl: string | null; onAgain: () => void; gamesHref: string })` with root `data-listen-done`, the count in `<strong data-wrong-total>` inside "Wrong N times", the row `data-wrong-list` with one `data-wrong-item` per entry, and buttons `data-done-btn` "Play again" and "Back to games" (a link).
 
 - [ ] **Step 1: Failing tests.**
-  - `ListenDone`: greeting "You did it, Hà My!" (child name from props; without a name "You did it!"), same praise sound as `MemoryDone` (custom file when `completeUrl`, else applause and speech, once); "Wrong 3 times" with 3 in `data-wrong-total` for entries counts 2 and 1; the list shows each word and "x2" only when the count is above 1, each item is a button whose click calls `sayWord` for that card (picture from `cards`, a plain placeholder when the card is missing); with no entries "Wrong 0 times" shows and `data-wrong-list` is absent; Play again calls `onAgain`; Esc goes to `gamesHref`; arrows move between the two buttons.
+  - `ListenDone`: greeting "You did it, the child!" (child name from props; without a name "You did it!"), same praise sound as `MemoryDone` (custom file when `completeUrl`, else applause and speech, once); "Wrong 3 times" with 3 in `data-wrong-total` for entries counts 2 and 1; the list shows each word and "x2" only when the count is above 1, each item is a button whose click calls `sayWord` for that card (picture from `cards`, a plain placeholder when the card is missing); with no entries "Wrong 0 times" shows and `data-wrong-list` is absent; Play again calls `onAgain`; Esc goes to `gamesHref`; arrows move between the two buttons.
   - Page: after the last right pick plus `FINISH_DELAY_MS` the finish shows, built from `readWrong()` and the loaded cards; Play again clears the log (`clearWrong`), draws a new round and shows question 1; a reload-free run where storage throws still shows the correct count and list (memory fallback of Task 3).
 - [ ] **Step 2: Run** the two test files; expect FAIL.
 - [ ] **Step 3: Implement `ListenDone`** by following `components/memory/MemoryDone.tsx` (same buttons, sizes and focus handling), the count line styled like its "Total N times" line, and the list as a compact centered row of round pictures (about 96 px) with the word and count underneath in small text. Place it so it overlaps neither the two characters nor the buttons with up to 10 entries at 1920x1080 (wrap to two rows if needed). In the page, keep a `Map` of the round's cards for the list.
 - [ ] **Step 4: Run** the tests and `npm test`; expect PASS. `npm run build`.
-- [ ] **Step 5: E2E** (add to `e2e/listen-play.spec.ts`): a round with two wrong picks on one question and one on another ends with "Wrong 3 times" and two list items with "x2" on the first; a perfect round shows "Wrong 0 times" and no list; Play again starts a new round and the next finish starts from 0; leaving to `/games` and coming back also starts from 0 (read `localStorage['hamy.listen.wrong']` is null after leaving).
+- [ ] **Step 5: E2E** (add to `e2e/listen-play.spec.ts`): a round with two wrong picks on one question and one on another ends with "Wrong 3 times" and two list items with "x2" on the first; a perfect round shows "Wrong 0 times" and no list; Play again starts a new round and the next finish starts from 0; leaving to `/games` and coming back also starts from 0 (read `localStorage['childPlayer.listen.wrong']` is null after leaving).
 - [ ] **Step 6: Visual check (controller).** Screenshots of the finish screen with 0, 2 and 10 entries at 1920x1080.
 - [ ] **Step 7: Commit** `feat(listen): finish screen with wrong-picks list (L6, L7)`.
 

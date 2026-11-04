@@ -1,5 +1,5 @@
 /** Wrong picks of one Listen & Pick play (L7), kept in localStorage; never throws. */
-export const WRONG_KEY = 'hamy.listen.wrong';
+export const WRONG_KEY = 'childPlayer.listen.wrong';
 
 export type WrongEntry = { id: string; word: string; count: number };
 

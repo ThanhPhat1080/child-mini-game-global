@@ -23,7 +23,7 @@ const setup = (over: Partial<React.ComponentProps<typeof ListenDone>> = {}) => {
     <ListenDone
       wrong={[{ id: 'c1', word: 'word1', count: 2 }, { id: 'c2', word: 'word2', count: 1 }]}
       cards={cardMap(1, 2)}
-      childName="Hà My"
+      childName="childPlayer"
       completeUrl={null}
       onAgain={onAgain}
       gamesHref="/games"
@@ -46,7 +46,7 @@ afterEach(cleanup);
 describe('ListenDone (L6, L7)', () => {
   it('greets the child by name, or without one', () => {
     setup();
-    expect(screen.getByRole('heading').textContent).toBe('You did it, Hà My!');
+    expect(screen.getByRole('heading').textContent).toBe('You did it, childPlayer!');
     cleanup();
     setup({ childName: '' });
     expect(screen.getByRole('heading').textContent).toBe('You did it!');
@@ -115,8 +115,8 @@ describe('ListenDone (L6, L7)', () => {
     const { rerender, onAgain } = setup();
     expect(h.applause).toHaveBeenCalledTimes(1);
     expect(h.speakKid).toHaveBeenCalledTimes(1);
-    expect(h.speakKid.mock.calls[0][0]).toBe('You did it, Hà My!');
-    rerender(<ListenDone wrong={[]} cards={cardMap()} childName="Hà My" completeUrl={null} onAgain={onAgain} gamesHref="/games" />);
+    expect(h.speakKid.mock.calls[0][0]).toBe('You did it, childPlayer!');
+    rerender(<ListenDone wrong={[]} cards={cardMap()} childName="childPlayer" completeUrl={null} onAgain={onAgain} gamesHref="/games" />);
     expect(h.applause).toHaveBeenCalledTimes(1);
     expect(h.speakKid).toHaveBeenCalledTimes(1);
   });
@@ -128,7 +128,7 @@ describe('ListenDone (L6, L7)', () => {
     const stop = vi.fn();
     sound().mockReturnValue({ stop, ms: 3000 });
     const onAgain = vi.fn();
-    const props = { wrong: [], cards: cardMap(), childName: 'Hà My', completeUrl, onAgain, gamesHref: '/games' };
+    const props = { wrong: [], cards: cardMap(), childName: 'childPlayer', completeUrl, onAgain, gamesHref: '/games' };
     render(<StrictMode><ListenDone {...props} /></StrictMode>);
     expect(sound()).toHaveBeenCalledTimes(1);
     expect(stop).not.toHaveBeenCalled();

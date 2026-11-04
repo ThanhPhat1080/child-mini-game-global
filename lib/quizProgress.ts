@@ -13,7 +13,7 @@ export function nextUnfinished(ids: readonly string[], current: number, done: Re
 
 /** Minimal slice of `localStorage`, so the helpers can be tested without a browser. */
 type Store = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
-const key = (setId: string) => `hamy:progress:${setId}`;
+const key = (setId: string) => `childPlayer:progress:${setId}`;
 
 /** The device's storage, or a do-nothing stand-in when the browser blocks it (reading the property can throw). */
 export function deviceStore(): Store {

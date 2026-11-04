@@ -94,7 +94,7 @@ async function ready(pool: MemoryCard[] = POOL) {
 beforeEach(() => {
   vi.useFakeTimers();
   for (const f of [h.fetchSortCards, h.sayWord, h.stopWord, h.chime, h.ohOh, h.push, h.replace, h.settings, cancel]) f.mockReset();
-  h.settings.mockResolvedValue({ ohoh_path: null, child_name: 'Hà My', complete_path: null });
+  h.settings.mockResolvedValue({ ohoh_path: null, child_name: 'childPlayer', complete_path: null });
   h.sayWord.mockImplementation((_c: MemoryCard, onEnd?: () => void) => onEnd?.()); // a word that ends at once
   h.ohOh.mockReturnValue({ ms: 1900, stop: vi.fn() });
   Object.defineProperty(window, 'matchMedia', { configurable: true, writable: true, value: undefined });
@@ -299,7 +299,7 @@ describe('Sort It play screen (R1-R6, R8-R10)', () => {
     expect(document.querySelector('[data-basket]')).toBeNull();
     expect(document.querySelector('[data-sort-done]')).not.toBeNull();
     await advance(0);
-    expect(screen.getByRole('heading').textContent).toBe('You did it, Hà My!');
+    expect(screen.getByRole('heading').textContent).toBe('You did it, childPlayer!');
     expect(finishLine()).toBe('Wrong 0 times');
     expect(screen.getAllByRole('link', { name: 'Back to games' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'What is Sort It? Show how to play' })).toBeNull();

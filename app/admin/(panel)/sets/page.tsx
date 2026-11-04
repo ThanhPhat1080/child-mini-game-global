@@ -87,7 +87,7 @@ export default function SetsPage() {
       <section style={{ background: '#fff', borderRadius: 18, padding: '22px 24px 24px', boxShadow: '0 1px 0 #EADCC8', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
           <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700 }}>Front page preview</h2>
-          <p style={{ margin: '4px 0 0', color: '#7A6458', fontSize: 14 }}>This is what Hà My sees on the Quiz screen, left to right. Draft sets are hidden.</p>
+          <p style={{ margin: '4px 0 0', color: '#7A6458', fontSize: 14 }}>This is what the child sees on the Quiz screen, left to right. Draft sets are hidden.</p>
         </div>
         <div style={{ display: 'flex', gap: 22, padding: '28px 24px 34px', borderRadius: 16, background: '#FBF4E9', overflowX: 'auto', alignItems: 'flex-start' }}>
           {visible.map((r) => (

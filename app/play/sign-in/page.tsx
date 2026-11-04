@@ -39,7 +39,7 @@ export default function PlaySignIn() {
     <div className={`${styles.page} ${styles.signWrap}`}>
       <div className={styles.signCol}>
         <div className={styles.signBrand}>
-          <span className={styles.brand} style={{ fontSize: 28 }}>HaMy</span>
+          <span className={styles.brand} style={{ fontSize: 28 }}>childPlayer</span>
         </div>
         <form className={styles.card} onSubmit={onSubmit} noValidate>
           <div>

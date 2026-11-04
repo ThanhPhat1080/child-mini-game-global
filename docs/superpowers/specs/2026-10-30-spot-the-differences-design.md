@@ -3,7 +3,7 @@
 Status: **implemented on branch claude/kind-babbage-gd9qpd; migration not yet applied to the real Supabase project**. Phase 2 only adds games (ADR-029). The game plugs into the registry created for Memory Match (ADR-014). **ADR-032 (2026-10-31) supersedes the 4:3 and landscape rules here:** pictures are cropped to squares on upload, the board and level tiles are square, picture B uses picture A's crop, and the landscape tip and tall-picture warning are removed.
 
 ## 1. Goal
-Hà My (4-5, cannot read) looks at two almost identical pictures and taps the places where they differ, without anyone reading to her.
+A child (4-5, cannot read) looks at two almost identical pictures and taps the places where they differ, without anyone reading to her.
 
 Success:
 1. She plays a full level from the level grid to the end using only the mouse and pictures.

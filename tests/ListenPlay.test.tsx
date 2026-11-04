@@ -84,7 +84,7 @@ beforeEach(() => {
   h.recordWrong.mockImplementation((c: { id: string; word: string }) => h.real.recordWrong(c));
   h.clearWrong.mockImplementation(() => h.real.clearWrong());
   h.real.clearWrong();
-  h.settings.mockResolvedValue({ hooray_path: null, ohoh_path: null, child_name: 'Hà My', complete_path: null });
+  h.settings.mockResolvedValue({ hooray_path: null, ohoh_path: null, child_name: 'childPlayer', complete_path: null });
   h.sayWord.mockImplementation((_card: MemoryCard, onEnd?: () => void) => onEnd?.()); // a word that finishes at once
   h.yay.mockReturnValue({ ms: 2400, stop: vi.fn() });
   h.ohOh.mockReturnValue({ ms: 1900, stop: vi.fn() });
@@ -506,7 +506,7 @@ describe('Listen & Pick play screen (L1-L5, L8, L10)', () => {
       const ids = await playThrough(5, { 0: 2, 3: 1 });
       expect(root().getAttribute('data-done')).toBe('true');
       expect(document.querySelector('[data-listen-done]')).toBeTruthy();
-      expect(screen.getByRole('heading').textContent).toBe('You did it, Hà My!');
+      expect(screen.getByRole('heading').textContent).toBe('You did it, childPlayer!');
       expect(wrongLine()).toBe('Wrong 3 times');
       expect(wrongItems().map((e) => e.getAttribute('aria-label'))).toEqual([`Hear word${ids[0].slice(1)}`, `Hear word${ids[3].slice(1)}`]);
       expect(wrongItems()[0].textContent).toContain('x2');
@@ -556,7 +556,7 @@ describe('Listen & Pick play screen (L1-L5, L8, L10)', () => {
       h.clearWrong.mockClear();
       fireEvent.click(screen.getByRole('button', { name: 'Play again' }));
       expect(h.clearWrong).toHaveBeenCalled();
-      expect(window.localStorage.getItem('hamy.listen.wrong')).toBeNull();
+      expect(window.localStorage.getItem('childPlayer.listen.wrong')).toBeNull();
       await advance(PRELOAD_MS + 10);
       expect(root().getAttribute('data-done')).toBe('false');
       expect(qIndex()).toBe('0');
@@ -572,13 +572,13 @@ describe('Listen & Pick play screen (L1-L5, L8, L10)', () => {
       const r = await ready(cards(5));
       await playThrough(5, { 0: 1 });
       expect(document.querySelector('[data-listen-done]')).toBeTruthy();
-      expect(window.localStorage.getItem('hamy.listen.wrong')).not.toBeNull();
+      expect(window.localStorage.getItem('childPlayer.listen.wrong')).not.toBeNull();
       h.push.mockClear();
       fireEvent.keyDown(window, { key: 'Escape' });
       expect(h.push).toHaveBeenCalledTimes(1);
       expect(h.push).toHaveBeenCalledWith('/games');
       r.unmount();
-      expect(window.localStorage.getItem('hamy.listen.wrong')).toBeNull();
+      expect(window.localStorage.getItem('childPlayer.listen.wrong')).toBeNull();
     });
 
     it('arrows move between the two finish buttons', async () => {

@@ -33,7 +33,7 @@ export async function getMyUserId(client: Client = createSupabaseBrowserClient()
 export const isLocked = (visibility: Visibility | undefined, ownerId: string | null | undefined, me: string | null): boolean =>
   visibility !== undefined && (visibility !== 'private' || (ownerId ?? null) !== me);
 
-const KEY = 'hamy:scope';
+const KEY = 'childPlayer:scope';
 
 /** The remembered scope. A convenience only: storage may be blocked, then it is "mine". */
 export function getStoredScope(): Scope {

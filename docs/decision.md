@@ -58,7 +58,7 @@
 ### ADR-028: Computer browser is the target platform
 
 - **Status:** Accepted (2026-10-28, PO decision)
-- **Context:** Hà My plays on a computer; casting it to the TV already works well enough.
+- **Context:** The child plays on a computer; casting it to the TV already works well enough.
 - **Decision:** Support the latest Chromium-based desktop browsers. Do not test or design for LG webOS, other Smart TV browsers or the Magic Remote. Remove TV requirements from the spec and plan.
 - **Consequences:** Supersedes ADR-012. ADR-001's TV rationale no longer drives choices. Existing code (keyboard shortcuts, large buttons, `browserslist`, the scaled 1920x1080 stage) stays because it still works; nothing is built for TVs from now on.
 

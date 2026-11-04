@@ -3,7 +3,7 @@
 Status: **implemented on branch `claude/phase2/find-it`, awaiting the PO play-test and the migration being applied.** Phase 2 only adds games (ADR-029). Integration branch `claude/phase2/find-it`. The name "Find It" is provisional (the PO decides); it only appears in the game list art alt text and the help badge.
 
 ## 1. Goal
-Hà My (4-5, cannot read) sees one big picture full of mixed-up everyday objects. The app says the name of one object aloud (and shows the word); she finds it in the picture and clicks it. She finds each object in turn until the picture is done. Secondary goal: learn English words by hearing and seeing them, without pressure.
+A child (4-5, cannot read) sees one big picture full of mixed-up everyday objects. The app says the name of one object aloud (and shows the word); she finds it in the picture and clicks it. She finds each object in turn until the picture is done. Secondary goal: learn English words by hearing and seeing them, without pressure.
 
 Success:
 1. She plays a full picture from the game list to the celebration with the mouse, nobody reading to her.

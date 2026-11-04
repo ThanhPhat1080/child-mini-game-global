@@ -1,4 +1,4 @@
-# HaMy
+# childPlayer
 
 A calm quiz and mini-game hub for a young child who cannot read yet, plus a parent admin and a Super Admin console. Next.js, Supabase (Postgres, Storage, Auth), Vercel.
 

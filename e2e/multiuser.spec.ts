@@ -83,7 +83,7 @@ test('share, approve, ban: the whole review loop', async ({ browser }) => {
   const child = await signedOut(browser);
   await signInAsChild(child);
   await child.getByRole('button', { name: /everyone/i }).click();
-  await expect.poll(() => child.evaluate(() => localStorage.getItem('hamy:scope'))).toBe('global');
+  await expect.poll(() => child.evaluate(() => localStorage.getItem('childPlayer:scope'))).toBe('global');
 
   // The Super Admin bans the parent with a reason: the parent is sent to the suspended page, the child still plays.
   await sa.goto('/admin/parents');

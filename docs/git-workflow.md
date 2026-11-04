@@ -42,7 +42,7 @@ Optionally protect `develop` the same way, minus the approval requirement.
 Then Settings -> General -> Default branch -> `develop`, so new PRs default to it.
 
 ## Vercel
-- Project: a NEW Vercel project (not the original `hamy`), linked to `ThanhPhat1080/child-mini-game-global`. Team `rock-and-roll` (`team_qw0M5lBhhbrXr4DV9NL0J0ij`), project `child-mini-game-global` (`prj_FgOSoPaQxIc92WFDzSUQ5gSALRQP`).
+- Project: a NEW Vercel project, linked to `ThanhPhat1080/child-mini-game-global`. Team `rock-and-roll` (`team_qw0M5lBhhbrXr4DV9NL0J0ij`), project `child-mini-game-global` (`prj_FgOSoPaQxIc92WFDzSUQ5gSALRQP`).
 - Production branch is `main`; every other branch gets a Preview deployment.
 - Env vars (Production, Preview, Development): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and the server-only `SUPABASE_SERVICE_ROLE_KEY` (account creation, `app/api/*`). Nothing else may use `NEXT_PUBLIC_`; mark the service role key as sensitive and never expose it to the browser.
 - Install is `npm ci`: keep `package-lock.json` in sync (run `npm install` after changing dependencies and commit the lockfile).

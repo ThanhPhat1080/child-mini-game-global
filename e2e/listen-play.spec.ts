@@ -206,10 +206,10 @@ test.describe('finish screen (L6, L7)', () => {
     await open(page);
     await playWithWrong(page, 5, { 0: 2 });
     await expect(wrongLine(page)).toHaveText('Wrong 2 times');
-    expect(await page.evaluate(() => localStorage.getItem('hamy.listen.wrong'))).not.toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem('childPlayer.listen.wrong'))).not.toBeNull();
     await page.getByRole('link', { name: 'Back to games' }).click();
     await expect(page).toHaveURL(/\/games$/);
-    expect(await page.evaluate(() => localStorage.getItem('hamy.listen.wrong'))).toBeNull();
+    expect(await page.evaluate(() => localStorage.getItem('childPlayer.listen.wrong'))).toBeNull();
     await open(page);
     await playWithWrong(page, 5);
     await expect(wrongLine(page)).toHaveText('Wrong 0 times');

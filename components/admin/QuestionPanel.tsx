@@ -70,7 +70,7 @@ export function QuestionPanel({ d, cur, q, onSelect, onAdd, onMove, onEdit, onAs
               <svg aria-hidden="true" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#B8737B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></svg>
             </span>
             <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>No questions yet</h2>
-            <p style={{ margin: 0, color: '#6E5A4E', fontSize: 15, maxWidth: 360 }}>Each question has a voice (optional) and 2–3 picture answers. Hà My taps a picture, or presses 1, 2 or 3.</p>
+            <p style={{ margin: 0, color: '#6E5A4E', fontSize: 15, maxWidth: 360 }}>Each question has a voice (optional) and 2–3 picture answers. The child taps a picture, or presses 1, 2 or 3.</p>
             <button type="button" className={s.btn} onClick={onAdd} style={{ height: 46, padding: '0 22px', borderRadius: 12, border: 'none', background: '#5A4038', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer' }}>Add your first question</button>
           </div>
         )}
@@ -144,7 +144,7 @@ export function QuestionPanel({ d, cur, q, onSelect, onAdd, onMove, onEdit, onAs
                   ))}
                 </span>
               </div>
-              <CheckOption checked={q.readAnswers} onChange={() => onEdit({ readAnswers: !q.readAnswers })} title="Read the answers aloud" hint="After the question, the app reads each answer text one by one. Turn off to read only the question. The answer Hà My picks is always read aloud." />
+              <CheckOption checked={q.readAnswers} onChange={() => onEdit({ readAnswers: !q.readAnswers })} title="Read the answers aloud" hint="After the question, the app reads each answer text one by one. Turn off to read only the question. The answer the child picks is always read aloud." />
               <CheckOption checked={q.hideAnswerText} onChange={() => onEdit({ hideAnswerText: !q.hideAnswerText })} title="Hide the answer text" hint="The answer cards show only the picture, without the text. The text is still read aloud: in the one-by-one reading when “Read the answers aloud” is on, and always for the answer the child picks." />
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
                 {SLOTS.slice(0, q.count).map((c, i) => {

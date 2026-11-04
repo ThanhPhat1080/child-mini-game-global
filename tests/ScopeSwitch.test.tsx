@@ -33,7 +33,7 @@ describe('child scope switch (N6)', () => {
   });
 
   it('starts on global when that was remembered, and survives blocked storage', async () => {
-    localStorage.setItem('hamy:scope', 'global');
+    localStorage.setItem('childPlayer:scope', 'global');
     render(<ScopeSwitch />);
     expect((await screen.findByRole('button', { name: 'Everyone' })).getAttribute('aria-pressed')).toBe('true');
   });

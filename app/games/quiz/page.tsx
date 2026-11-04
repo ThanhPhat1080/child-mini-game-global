@@ -51,7 +51,7 @@ export default function QuizSets() {
         const rows = ((data as unknown as Row[]) ?? []).map((r) => ({ ...r, count: r.questions.filter(isComplete).length })).filter((r) => r.count > 0);
         setSets(rows);
         const d: Record<string, boolean> = {};
-        try { rows.forEach((r) => { if (localStorage.getItem(`hamy:done:${r.id}`)) d[r.id] = true; }); } catch { /* storage blocked */ }
+        try { rows.forEach((r) => { if (localStorage.getItem(`childPlayer:done:${r.id}`)) d[r.id] = true; }); } catch { /* storage blocked */ }
         setDone(d);
       });
   }, []);

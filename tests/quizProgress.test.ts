@@ -61,9 +61,9 @@ describe('progress kept on the device', () => {
 
   it('starts empty when nothing is stored or the data is broken', () => {
     expect(loadProgress(fakeStore(), 'set1', ids).size).toBe(0);
-    expect(loadProgress(fakeStore({ 'hamy:progress:set1': '{not json' }), 'set1', ids).size).toBe(0);
-    expect(loadProgress(fakeStore({ 'hamy:progress:set1': '{"a":1}' }), 'set1', ids).size).toBe(0);
-    expect(loadProgress(fakeStore({ 'hamy:progress:set1': '[1,null,"a"]' }), 'set1', ids)).toEqual(new Set(['a']));
+    expect(loadProgress(fakeStore({ 'childPlayer:progress:set1': '{not json' }), 'set1', ids).size).toBe(0);
+    expect(loadProgress(fakeStore({ 'childPlayer:progress:set1': '{"a":1}' }), 'set1', ids).size).toBe(0);
+    expect(loadProgress(fakeStore({ 'childPlayer:progress:set1': '[1,null,"a"]' }), 'set1', ids)).toEqual(new Set(['a']));
   });
 
   it('saving nothing removes the entry; clearProgress forgets the set', () => {

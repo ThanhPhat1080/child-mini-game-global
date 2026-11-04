@@ -6,7 +6,7 @@ Requirement IDs for this phase: `U1..` (users and auth), `V1..` (visibility and 
 
 ## 1. Goal
 
-Turn HaMy from "one deployment per child" into a product many families use. Parents sign up themselves, create 1 to 5 child accounts, author their own game content for those children, and may offer content to everyone through a Super Admin review. Children sign in once on a device and play read-only.
+Turn childPlayer from "one deployment per child" into a product many families use. Parents sign up themselves, create 1 to 5 child accounts, author their own game content for those children, and may offer content to everyone through a Super Admin review. Children sign in once on a device and play read-only.
 
 Success means: two unrelated parents can each run their own children and content on one deployment with no data leaking between them; Super Admin can moderate; a banned parent loses admin access and their content disappears, while their children can still play global content.
 

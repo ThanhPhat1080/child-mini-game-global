@@ -12,7 +12,7 @@ const { s, createUser, deleteUser, serviceQueries } = h.harness;
 
 import { POST } from '@/app/api/children/route';
 
-const good = { email: 'kid@example.com', password: 'longenough1', displayName: 'Hà My' };
+const good = { email: 'kid@example.com', password: 'longenough1', displayName: 'childPlayer' };
 const call = (body: unknown) => POST(post('http://app.test/api/children', body)).then(read);
 
 beforeEach(() => {
@@ -88,7 +88,7 @@ describe('POST /api/children (U8)', () => {
     expect(upd?.payload).toEqual({
       role: 'child',
       parent_id: 'p1',
-      display_name: 'Hà My',
+      display_name: 'childPlayer',
       policy_version_accepted: null,
       policy_accepted_at: null,
     });

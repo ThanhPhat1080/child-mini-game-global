@@ -18,11 +18,11 @@ describe('child_settings (U4)', () => {
 
   it('creates a default row when a child profile is inserted', async () => {
     const p = await createUser('parent');
-    const c = await createUser('child', { parentId: p, displayName: 'Hà My' });
+    const c = await createUser('child', { parentId: p, displayName: 'childPlayer' });
     const rows = await superQuery<Row>(`select * from public.child_settings where child_id = $1`, [c]);
     expect(rows).toHaveLength(1);
     expect(rows[0].music_volume).toBe(30);
-    expect(rows[0].child_name).toBe('Hà My');
+    expect(rows[0].child_name).toBe('childPlayer');
     // parents and super admins get none
     await createUser('super_admin');
     expect(Number((await superQuery<{ n: string }>(`select count(*) n from public.child_settings`))[0].n)).toBe(1);

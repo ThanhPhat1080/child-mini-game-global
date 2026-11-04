@@ -1,4 +1,4 @@
-# Plan: HaMy Phase 1 (Quiz MVP + Admin)
+# Plan: childPlayer Phase 1 (Quiz MVP + Admin)
 
 Source: `spec.md` (requirement IDs C1-C12, A1-A8), `docs/decision.md` (ADRs). Stack per ADR-027: Next.js + React + TypeScript, Supabase, Vercel.
 Status: **Phase 1 CLOSED 2026-10-28 (PO decision).** All tickets below are built and deployed except the leftovers in section 4, which are parked. The platform is a computer browser (child may cast it to a TV, which is not a requirement; ADR-028), so all TV and webOS work was removed from scope.
@@ -31,7 +31,7 @@ Done only when every Acceptance Criterion (AC) passes.
 ### T0 Scaffold
 Next.js + TS app, scripts (dev, build, lint, typecheck, test, e2e script placeholder), `browserslist`, self-hosted Baloo 2 and Nunito, design tokens, global focus ring and `prefers-reduced-motion` base.
 - AC: install, dev, build, lint, typecheck and test all run clean on a fresh clone.
-- AC: Vietnamese diacritics (e.g. "Hà My ơi, bé ngoan") render correctly in both fonts with no CDN request.
+- AC: Vietnamese diacritics (e.g. "Bé ơi, bé ngoan") render correctly in both fonts with no CDN request.
 - AC: `CLAUDE.md` "Commands" updated with the real commands, including single-test and migrations.
 
 ### T1 Schema, RLS, storage (spec 5; ADR-008, 015, 024)
@@ -114,7 +114,7 @@ Next.js + TS app, scripts (dev, build, lint, typecheck, test, e2e script placeho
 - AC: wrong answer dims the card gently with an "oh-oh" sound and the "Oh-oh… try again!" toast, which disappears after 2 s; retry allowed, no penalty.
 - AC: question dots are clickable to jump to that question, and "n / total" is shown; the replay-voice and music buttons are clickable with press animation.
 - AC: a question counts as finished only when the child picks its right answer. Its dot turns yellow then; every dot of a question not finished yet stays gray (the current one is gray with a pink ring), whatever the order the child played in. A wrong answer or jumping past a question never finishes it.
-- AC: the finished questions are kept on the device (localStorage `hamy:progress:<setId>`, per set, no identity): after a reload or coming back later the yellow dots are still there and the child resumes at the first unfinished question. Questions that no longer exist in the set are ignored; blocked storage never breaks the page; another device starts clean.
+- AC: the finished questions are kept on the device (localStorage `childPlayer:progress:<setId>`, per set, no identity): after a reload or coming back later the yellow dots are still there and the child resumes at the first unfinished question. Questions that no longer exist in the set are ignored; blocked storage never breaks the page; another device starts clean.
 - AC: when the set is completed the saved dots are cleared (the star stays), so "Play this set again" starts with all dots gray.
 - AC: after the Hooray popup the app goes to the next question that is not finished yet (continuing past the last one back to the first unfinished one); it never assumes earlier questions are done.
 - AC: correct answer plays a kid-voice "Yay, hooray!" sound with slow pastel confetti, then advances. Sounds are synthesized/browser voice for now; recorded kid-voice files can replace them later.
@@ -214,7 +214,7 @@ Phase 2 only adds games on top of the game registry (ADR-014). The play-time lim
 Files: `lib/listen/rounds.ts`, `lib/listen/wrongLog.ts`, `components/listen/ListenQuestion.tsx`, `components/listen/ListenDone.tsx`, `components/ListenHelp.tsx`, `app/games/listen/page.tsx`; tests `tests/Listen*.test.ts(x)`, `tests/listenRounds.test.ts`, `tests/listenWrongLog.test.ts`, `e2e/listen-play.spec.ts`.
 - [x] **LP-T1 Game list entry (G1).** Acceptance: the registry has a ready `listen` entry; its card has the lavender border/title (`#C9BFE4` / `#7B6BAE`) and a decorative `aria-hidden` icon; clicking the card opens `/games/listen`.
 - [x] **LP-T2 Round building (L2, L10).** Acceptance: 10 different answer cards, two distinct distractors per question, random answer position; 3-9 usable cards give one question per card; fewer than 3 is reported as empty.
-- [x] **LP-T3 Wrong-picks log (L7).** Acceptance: key `hamy.listen.wrong`, entries `{id, word, count}`, written at every wrong pick; cleared on round start, play again and leaving; blocked storage falls back to memory for the page visit.
+- [x] **LP-T3 Wrong-picks log (L7).** Acceptance: key `childPlayer.listen.wrong`, entries `{id, word, count}`, written at every wrong pick; cleared on round start, play again and leaving; blocked storage falls back to memory for the page visit.
 - [x] **LP-T4 Question view (L1, L3, L8, L9, L10).** Acceptance: three picture buttons with number badge and fixed color (rose, sky, butter); speaker button and key R replay the word; 1/2/3, Left/Right, Enter/Space, Esc work with a visible focus ring; reduced motion fades only; missing picture shows a placeholder.
 - [x] **LP-T5 Play page (L1-L5, L8, L10).** Acceptance: a full round plays at `/games/listen`; wrong pick says "Oh-Oh", dims and disables the picture, then repeats the word; right pick says "Hooray" and the word, then the next question; leaving cancels timers and speech; the "? Listen & Pick" help badge opens `ListenHelp`; empty/failed pool shows a friendly picture screen.
 - [x] **LP-T6 Finish screen (L6, L7).** Acceptance: celebration scene with "Wrong N times" (N highlighted), play again and back buttons; a row of round pictures with word and count when there were wrong picks (tap says the word), no row otherwise.
