@@ -285,24 +285,20 @@ describe('profiles (U1, U2, U6)', () => {
       expect(await banned(randomUUID())).toBe(false);
     });
 
-    it('is_admin is current_role() = super_admin and ignores the old admins table', async () => {
-      const admin = await createUser('super_admin');
-      const p = await createUser('parent');
-      await superQuery(`insert into public.admins (user_id) values ($1)`, [p]);
-      const isAdmin = async (u: string | null) =>
-        (await as(u).query<{ a: boolean }>(`select public.is_admin() as a`))[0].a;
-      expect(await isAdmin(admin)).toBe(true);
-      expect(await isAdmin(p)).toBe(false);
-      expect(await isAdmin(null)).toBe(false);
+    it('is_admin is gone once nothing references it', async () => {
+      const r = await superQuery<{ n: string }>(
+        `select count(*) n from pg_proc where pronamespace = 'public'::regnamespace and proname = 'is_admin'`,
+      );
+      expect(Number(r[0].n)).toBe(0);
     });
 
     it('helpers are security definer, stable, with a pinned search_path', async () => {
       const rows = await superQuery<{ proname: string; prosecdef: boolean; provolatile: string; cfg: string[] }>(
         `select proname, prosecdef, provolatile, proconfig as cfg from pg_proc
           where pronamespace = 'public'::regnamespace
-            and proname in ('current_role', 'owner_scope', 'is_banned', 'is_admin') order by proname`,
+            and proname in ('current_role', 'owner_scope', 'is_banned') order by proname`,
       );
-      expect(rows.map((r) => r.proname)).toEqual(['current_role', 'is_admin', 'is_banned', 'owner_scope']);
+      expect(rows.map((r) => r.proname)).toEqual(['current_role', 'is_banned', 'owner_scope']);
       for (const r of rows) {
         expect(r.prosecdef).toBe(true);
         expect(r.provolatile).toBe('s');
