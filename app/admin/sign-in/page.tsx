@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
@@ -66,6 +67,7 @@ export default function SignInPage() {
           <button type="submit" className={styles.primary} disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
         </form>
 
+        <p className={styles.foot}><Link href="/sign-up">Create a parent account</Link></p>
         <p className={styles.foot}>Admin accounts only · Supabase Auth</p>
       </div>
     </div>
