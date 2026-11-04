@@ -15,7 +15,8 @@
     "tts": "scripts/.venv/bin/python scripts/generate_tts.py",
     "tts:fast": "scripts/.venv/bin/python scripts/generate_tts.py --rate +15% --out text-to-speech-out/fast",
     "tts:slow": "scripts/.venv/bin/python scripts/generate_tts.py --rate -15% --out text-to-speech-out/slow",
-    "tts:voices": "scripts/.venv/bin/edge-tts --list-voices | grep en-US"
+    "tts:voices": "scripts/.venv/bin/edge-tts --list-voices | grep en-US",
+    "test:rls": "bash scripts/test-rls.sh"
   },
   "dependencies": {
     "@fontsource/baloo-2": "^5.0.0",
@@ -31,12 +32,14 @@
     "@playwright/test": "^1.64.1",
     "@testing-library/react": "^16.0.0",
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.3.0",
     "eslint": "^4.0.0",
     "eslint-config-next": "^0.2.4",
     "jsdom": "^25.0.0",
+    "pg": "^8.23.1",
     "typescript": "^5.6.0",
     "vitest": "^5.0.5"
   },
