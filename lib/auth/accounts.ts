@@ -5,7 +5,9 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  * service-role client; nothing here returns raw Supabase errors to the caller.
  */
 
-export const MAX_CHILDREN = 5;
+import { MAX_CHILDREN } from '@/lib/auth/limits';
+
+export { MAX_CHILDREN };
 export const MIN_PASSWORD = 8;
 export const MAX_DISPLAY_NAME = 40;
 /** bcrypt (GoTrue) only uses the first 72 bytes of a password; longer ones are rejected, not truncated. */

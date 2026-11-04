@@ -40,3 +40,12 @@ export async function updateChildSettings(
   const { error } = await client.from('child_settings').update(rest).eq('child_id', childId);
   if (error) throw new Error(error.message);
 }
+
+export type ChildSummary = Pick<ChildSettings, 'child_id' | 'child_name' | 'avatar_path'>;
+
+/** The signed-in parent's children (RLS limits the rows), oldest first by name. */
+export async function listMyChildren(client: Client = createSupabaseBrowserClient()): Promise<ChildSummary[]> {
+  const { data, error } = await client.from('child_settings').select('child_id, child_name, avatar_path').order('child_name');
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ChildSummary[];
+}

@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { getMyProfile, type Role } from '@/lib/auth/roles';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import styles from '@/app/admin/admin.module.css';
 
@@ -10,6 +12,13 @@ const icon = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none', stroke
 export function AdminNav() {
   const pathname = usePathname();
   const router = useRouter();
+  // Links that depend on the role appear once the profile is known; the shared ones show at once.
+  const [role, setRole] = useState<Role | null>(null);
+  useEffect(() => {
+    let live = true;
+    getMyProfile(createSupabaseBrowserClient()).then((p) => { if (live) setRole(p?.role ?? null); }, () => undefined);
+    return () => { live = false; };
+  }, []);
 
   async function signOut() {
     await createSupabaseBrowserClient().auth.signOut();
@@ -27,12 +36,14 @@ export function AdminNav() {
             <path d="M4 38 L8 10 L20 24 L30 4 L40 24 L52 10 L56 38 Z" />
           </svg>
         </span>
-        <span className={styles.brand}>Parent Admin</span>
+        <span className={styles.brand}>{role === 'super_admin' ? 'Super Admin' : 'Parent Admin'}</span>
       </div>
-      <Link href="/admin/settings" aria-current={pathname === '/admin/settings' ? 'page' : undefined} className={cls(pathname === '/admin/settings')}>
-        <svg {...icon}><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" /></svg>
-        Settings
-      </Link>
+      {role === 'parent' && (
+        <Link href="/admin/children" aria-current={pathname.startsWith('/admin/children') ? 'page' : undefined} className={cls(pathname.startsWith('/admin/children'))}>
+          <svg {...icon}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" /><circle cx="18" cy="9" r="2.5" /><path d="M17.5 14.2c2.4.2 3.8 1.7 4.3 4.3" /></svg>
+          Children
+        </Link>
+      )}
       <Link href="/admin/media" aria-current={pathname.startsWith('/admin/media') ? 'page' : undefined} className={cls(pathname.startsWith('/admin/media'))}>
         <svg {...icon}><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
         Media

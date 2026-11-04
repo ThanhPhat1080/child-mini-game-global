@@ -1,5 +1,9 @@
 import { redirect } from 'next/navigation';
+import { getMyProfile } from '@/lib/auth/roles';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export default function AdminHome() {
-  redirect('/admin/settings');
+/** Role-based landing: a parent starts at their children, a Super Admin at the content lists. */
+export default async function AdminHome() {
+  const me = await getMyProfile(await createSupabaseServerClient());
+  redirect(me?.role === 'super_admin' ? '/admin/sets' : '/admin/children');
 }
