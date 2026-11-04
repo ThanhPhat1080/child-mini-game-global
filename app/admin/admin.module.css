@@ -1,0 +1,58 @@
+.page { min-height: 100vh; background: #fbf4e9; font-family: 'Nunito', sans-serif; color: #4a3830; }
+.brand { white-space: nowrap; font-family: 'Baloo 2', 'Nunito', sans-serif; font-weight: 600; color: #8a5560; }
+.crownDot { border-radius: 50%; background: #f5d9c4; display: flex; align-items: center; justify-content: center; flex: none; }
+
+/* sign-in */
+.signWrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 48px 16px; box-sizing: border-box; }
+.signCol { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 28px; }
+.signBrand { display: flex; align-items: center; gap: 14px; justify-content: center; }
+.card { background: #fff; border-radius: 20px; padding: 36px; box-shadow: 0 1px 0 #eadcc8, 0 10px 30px rgba(90, 64, 56, 0.06); display: flex; flex-direction: column; gap: 20px; }
+.card h1 { margin: 0; font-size: 24px; font-weight: 700; }
+.sub { margin: 6px 0 0; color: #7a6458; font-size: 15px; }
+.fieldGroup { display: flex; flex-direction: column; gap: 8px; }
+.fieldGroup label, .label { font-size: 14px; font-weight: 700; }
+.input { height: 48px; border: 1.5px solid #e3d5c4; border-radius: 12px; padding: 0 14px; font-size: 16px; font-family: 'Nunito', sans-serif; background: #fffdf9; color: #4a3830; }
+.input:focus { outline: 3px solid #c77d85; outline-offset: 1px; }
+.primary { height: 50px; border-radius: 12px; border: none; background: #5a4038; color: #fff; font-size: 16px; font-weight: 700; font-family: 'Nunito', sans-serif; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0 22px; }
+.primary:hover { background: #6a4a40; }
+.primary:disabled { opacity: 0.6; cursor: default; }
+.error { margin: 0; font-size: 14px; font-weight: 700; color: #a8484f; }
+.foot { margin: 0; font-size: 13px; color: #7a6458; text-align: center; }
+
+/* panel */
+.shell { min-height: 100vh; background: #fbf4e9; font-family: 'Nunito', sans-serif; color: #4a3830; display: flex; flex-wrap: wrap; align-items: flex-start; }
+.nav { flex: 1 1 240px; max-width: 280px; min-width: 220px; padding: 28px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; }
+.navBrand { white-space: nowrap; display: flex; align-items: center; gap: 10px; padding: 0 12px 20px; font-size: 22px; }
+.navLink { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; color: #4a3830; font-weight: 600; text-decoration: none; background: transparent; border: none; font-family: 'Nunito', sans-serif; font-size: 16px; cursor: pointer; text-align: left; }
+.navLink:hover { background: #f6eadc; }
+.navActive { background: #fff; font-weight: 700; box-shadow: 0 1px 0 #eadcc8; }
+.navActive:hover { background: #fff; }
+.navMuted { color: #7a6458; }
+.divider { height: 1px; background: #eadcc8; margin: 14px 12px; }
+.main { flex: 999 1 560px; min-width: 0; padding: 36px 32px 64px; box-sizing: border-box; }
+.mainInner { max-width: 880px; display: flex; flex-direction: column; gap: 24px; }
+.head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; }
+.head h1 { margin: 0; font-size: 30px; font-weight: 700; }
+.section { background: #fff; border-radius: 18px; padding: 28px; box-shadow: 0 1px 0 #eadcc8; display: flex; flex-direction: column; gap: 16px; }
+.section h2 { margin: 0; font-size: 19px; font-weight: 700; }
+.section p { margin: 4px 0 0; color: #7a6458; font-size: 14px; }
+.profile { flex-direction: row; flex-wrap: wrap; gap: 28px; align-items: center; }
+.avatar { width: 112px; height: 112px; border-radius: 56px; background: #f5d9c4; border: 5px solid #fbf4e9; display: flex; align-items: center; justify-content: center; flex: none; }
+.profileBody { flex: 1 1 280px; display: flex; flex-direction: column; gap: 14px; }
+.nameInput { max-width: 360px; height: 46px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 14px 16px; border-radius: 14px; background: #fbf4e9; }
+.rowSel { background: #fbf4e9; border: 1.5px solid #e5c9b4; }
+.rowText { flex: 1 1 200px; min-width: 0; }
+.rowTitle { font-weight: 700; font-size: 15px; overflow-wrap: anywhere; }
+.rowMeta { font-size: 13px; color: #7a6458; }
+.playBtn { width: 44px; height: 44px; border-radius: 22px; border: none; background: #ebb7bc; display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none; }
+.ghost { height: 40px; padding: 0 16px; border-radius: 10px; border: 1.5px solid #e3d5c4; background: #fff; color: #4a3830; font-weight: 700; font-family: 'Nunito', sans-serif; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; }
+.ghost:hover { background: #f6eadc; }
+.ghost:disabled { opacity: 0.5; cursor: default; background: #fff; }
+.hidden { display: none; }
+.volume { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding-top: 6px; }
+.volume input[type='range'] { flex: 0 1 260px; accent-color: #8a5560; }
+.note { font-size: 13px; color: #7a6458; }
+
+.avatarImg { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+.avatar { overflow: hidden; }

@@ -1,0 +1,7 @@
+{
+    "Note": "This is an example template for TTS input. You should create new files based on this template.",
+    "Filename": "tts-input-template.json",
+    "template": {
+        "voices": [ { "text": ".1." }, { "text": ".2." } ]
+    }
+}

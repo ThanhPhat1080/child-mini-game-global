@@ -1,0 +1,19 @@
+.btn {
+  position: absolute;
+  z-index: 10;
+  left: 56px;
+  bottom: 48px;
+  width: 104px;
+  height: 104px;
+  border-radius: 52px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.btn:hover { filter: brightness(1.03); }
+.btn:focus-visible { outline: 6px solid #c77d85; outline-offset: 4px; }
+.btn[aria-disabled='true'] { cursor: default; }
+.on { background: #ffffff; box-shadow: 0 6px 0 #eadcc8; }
+.off { background: #f1e7da; }

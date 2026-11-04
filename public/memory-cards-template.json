@@ -1,0 +1,17 @@
+{
+  "_readme": [
+    "Quick import template for Memory Match cards. Keys that start with _ are ignored.",
+    "word: the English word that is read aloud (required, up to 40 characters).",
+    "image: leave it as \"\" to upload the picture later in the editor, paste a link that starts with https://, or paste SVG code (<svg ...>...</svg>).",
+    "SVG code: use single quotes inside the SVG, keep it on one line, under 30,000 characters. SVG is best; PNG, JPG and WebP up to 2 MB can be uploaded in the editor.",
+    "audio: optional. Leave it as \"\" (the word is read by the browser voice) or give an https:// link to a recorded pronunciation.",
+    "group: optional, for Sort It. Leave it as \"\" or leave the key out for no group. A name must already exist under Groups (any capital letters are fine); the seeded groups are food, animals, shapes, school, home and nature unless the parent changed them. The import never creates groups, and an unknown name stops the whole import.",
+    "active: true or false (default true). Turn a card off to keep it out of the game.",
+    "Cards are added to the end of the list and are unsaved until you press Save. Cards without a picture must be finished by hand before you can save."
+  ],
+  "cards": [
+    { "word": "apple", "image": "", "audio": "", "group": "", "active": true },
+    { "word": "banana", "image": "", "audio": "", "group": "", "active": true },
+    { "word": "cat", "image": "<svg viewBox='0 0 84 84'><circle cx='42' cy='42' r='36' fill='#E59AA1'/></svg>", "audio": "", "group": "", "active": true }
+  ]
+}
