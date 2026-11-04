@@ -258,7 +258,8 @@ describe('profiles (U1, U2, U6)', () => {
       expect(await role(p)).toBe('parent');
       expect(await role(c)).toBe('child');
       expect(await role(nobody)).toBeNull();
-      expect(await role(null)).toBeNull();
+      // Signed-out visitors may not call it at all (20261105000000_revoke_anon_execute).
+      await expect(role(null)).rejects.toThrow(/permission denied/);
     });
 
     it('owner_scope returns self for parent, parent_id for child, null for super_admin', async () => {
@@ -272,7 +273,7 @@ describe('profiles (U1, U2, U6)', () => {
       expect(await scope(c)).toBe(p);
       expect(await scope(admin)).toBeNull();
       expect(await scope(nobody)).toBeNull();
-      expect(await scope(null)).toBeNull();
+      await expect(scope(null)).rejects.toThrow(/permission denied/);
     });
 
     it('is_banned reads profiles.banned (false for unknown users)', async () => {
@@ -335,8 +336,7 @@ describe('profiles (U1, U2, U6)', () => {
     it('anon sees nothing', async () => {
       await createUser('parent');
       await expect(as(null).query(`select * from public.profiles`)).rejects.toThrow(/permission denied/);
-      const rows = await as(null).query<{ r: string | null }>(`select public.current_role() as r`);
-      expect(rows[0].r).toBeNull();
+      await expect(as(null).query(`select public.current_role() as r`)).rejects.toThrow(/permission denied/);
     });
 
     it('a client cannot read or write another profile, nor write its own', async () => {
