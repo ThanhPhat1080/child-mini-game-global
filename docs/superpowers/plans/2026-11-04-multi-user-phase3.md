@@ -23,7 +23,7 @@
 
 ## Review Focus
 
-1. A sign-up request that puts `role: 'super_admin'` or a `parent_id` in user metadata must still produce a plain `parent` (test in Task 2).
+1. A sign-up request that puts `role` (any value) or `parent_id` in user metadata must be rejected by the DB with an error, and no user is created (test in Task 2).
 2. Concurrent creation of the 6th child must fail for one of the two requests, and a failed child creation must leave no orphan auth user (Tasks 2, 7).
 3. A parent banned while holding a valid session is blocked on the next request, and their writes are rejected by RLS, not just by the UI (Tasks 3, 6).
 4. Two uploads racing past the 50 MB quota: at most one succeeds; deleting a file used only by someone else's `global` content is refused (Task 5).
@@ -64,9 +64,9 @@
 
 **Interfaces — Produces (SQL):** table `public.profiles(user_id, role, parent_id, display_name, banned, ban_reason_code, ban_note, banned_at, policy_version_accepted, policy_accepted_at, quota_bytes default 52428800, created_at)`; functions `current_role() returns text`, `owner_scope() returns uuid`, `is_banned(uuid) returns boolean`; trigger on `auth.users` insert creating a `parent` profile; `public.is_admin()` kept as `current_role() = 'super_admin'` only until Task 3 rewrites policies, then dropped.
 
-- [ ] **Step 1:** Failing tests: `a client cannot read or write another profile`; `inserting auth.users with raw_user_meta_data {"role":"super_admin","parent_id":"<x>"} yields role parent with null parent_id`; `sign-up metadata without policy_version raises`; `a parent gets at most 5 children, the 6th insert (also two concurrent inserts for the 5th slot) fails`; `a child must have a parent`; `owner_scope returns self for parent, parent_id for child, null for super_admin`.
+- [ ] **Step 1:** Failing tests: `a client cannot read or write another profile`; `inserting auth.users with raw_user_meta_data containing role (any value, including "parent") or parent_id raises 'forbidden_metadata' and creates neither user nor profile`; `sign-up metadata without policy_version raises`; `a parent gets at most 5 children, the 6th insert (also two concurrent inserts for the 5th slot) fails`; `a child must have a parent`; `owner_scope returns self for parent, parent_id for child, null for super_admin`.
 - [ ] **Step 2:** Run; expected FAIL.
-- [ ] **Step 3:** Write the migration. Children limit uses `pg_advisory_xact_lock(hashtext(parent_id::text))` in the trigger. The signup trigger reads only `raw_user_meta_data->>'policy_version'` and stores it; role is always `parent` there. Children and Super Admins are inserted only by service role.
+- [ ] **Step 3:** Write the migration. Children limit uses `pg_advisory_xact_lock(hashtext(parent_id::text))` in the trigger. The signup trigger raises `forbidden_metadata` if `raw_user_meta_data` has a `role` or `parent_id` key, requires `policy_version`, stores it, and creates the profile as `parent`. Children and Super Admins are inserted only by service role.
 - [ ] **Step 4:** Run `npm run test:rls`; expected PASS.
 - [ ] **Step 5:** Commit `feat(db): profiles and roles (U1,U2,U6)`.
 
