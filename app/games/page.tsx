@@ -12,6 +12,7 @@ import { MusicButton } from '@/components/MusicButton';
 import { AvatarSay } from '@/components/AvatarSay';
 import { isPressKey } from '@/lib/keynav';
 import { GAMES } from '@/lib/games/registry';
+import LogoutButton from '@/components/auth/LogoutButton';
 import { GameArt, GameIcon } from '@/components/games/GameArt';
 
 const PITCH = 712;
@@ -120,6 +121,7 @@ export default function Games() {
         <AvatarSay avatar={avatar} initials={initials} />
       </div>
       <MusicButton />
+      <LogoutButton />
     </Stage>
   );
 }

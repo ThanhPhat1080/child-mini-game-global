@@ -14,3 +14,11 @@
 .nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .navEnd { display: flex; gap: 12px; }
 .count { font-size: 13px; color: #7a6458; text-align: center; margin: 0; }
+.adultForm { display: flex; flex-direction: column; gap: 14px; }
+.adultQ { margin: 0; font-size: 32px; font-weight: 700; text-align: center; }
+.shake { animation: adultShake .4s ease; }
+@keyframes adultShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+@media (prefers-reduced-motion: reduce) { .shake { animation: none; } .logout { transition: none; } }
+.logout { position: absolute; left: 24px; bottom: 24px; width: 56px; height: 56px; border-radius: 28px; border: none; background: rgba(255, 255, 255, 0.55); opacity: 0.55; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; transition: opacity .3s ease; z-index: 5; }
+.logout:hover, .logout:focus-visible { opacity: 1; }
+.logout:focus-visible { outline: 3px solid #c77d85; outline-offset: 2px; }
