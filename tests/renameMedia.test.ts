@@ -32,7 +32,7 @@ const FROM = 'library/oh-ring-9j2k4m1a7b3cx.mp3';
 const TO = 'library/Bell-9j2k4m1a7b3cx.mp3';
 
 beforeEach(() => {
-  db.rows = { settings: [{ greeting_path: FROM }], memory_cards: [{ audio_path: FROM }, { audio_path: 'x.mp3' }], find_levels: [{ id: '1', objects: [{ audio_path: FROM }] }] };
+  db.rows = { child_settings: [{ greeting_path: FROM }], memory_cards: [{ audio_path: FROM }, { audio_path: 'x.mp3' }], find_levels: [{ id: '1', objects: [{ audio_path: FROM }] }] };
   db.failTable = '';
   db.move.mockReset().mockResolvedValue({ error: null });
 });
@@ -43,7 +43,7 @@ describe('renameMedia', () => {
     renderHook(() => useMediaRenamed(seen));
     await expect(renameMedia(FROM, 'Bell')).resolves.toBe(TO);
     expect(db.move).toHaveBeenCalledWith(FROM, TO);
-    expect(db.rows.settings[0].greeting_path).toBe(TO);
+    expect(db.rows.child_settings[0].greeting_path).toBe(TO);
     expect(db.rows.memory_cards.map((r) => r.audio_path)).toEqual([TO, 'x.mp3']);
     expect(db.rows.find_levels[0].objects).toEqual([{ audio_path: TO }]);
     expect(seen).toHaveBeenCalledWith(FROM, TO);
@@ -53,7 +53,7 @@ describe('renameMedia', () => {
     db.failTable = 'memory_cards';
     await expect(renameMedia(FROM, 'Bell')).rejects.toThrow('db down');
     expect(db.move).toHaveBeenLastCalledWith(TO, FROM);
-    expect(db.rows.settings[0].greeting_path).toBe(FROM);
+    expect(db.rows.child_settings[0].greeting_path).toBe(FROM);
   });
 
   it('says so when the name is taken', async () => {

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getMyChildSettings } from '@/lib/settings';
 import { Stage } from '@/components/Stage';
 import { CelebrationScene } from '@/components/CelebrationScene';
 import { applause, playFile, speakKid } from '@/lib/sfx';
@@ -22,7 +22,7 @@ export default function Done() {
 
   useEffect(() => {
     try { localStorage.setItem(`hamy:done:${setId}`, '1'); } catch { /* storage blocked */ }
-    createSupabaseBrowserClient().from('settings').select('child_name, complete_path').eq('id', 1).single().then(({ data }) => { setName(data?.child_name ?? ''); setCustom(mediaUrl(data?.complete_path)); setLoaded(true); });
+    getMyChildSettings().then((data) => { setName(data?.child_name ?? ''); setCustom(mediaUrl(data?.complete_path)); setLoaded(true); }, () => setLoaded(true));
   }, [setId]);
 
   const spoken = useRef(false);

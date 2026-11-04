@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getMyChildSettings } from '@/lib/settings';
 import { mediaUrl } from '@/lib/media';
 import { Stage } from '@/components/Stage';
 import { Hills } from '@/components/Hills';
@@ -34,12 +34,12 @@ export default function Games() {
   const viewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    createSupabaseBrowserClient().from('settings').select('child_name, avatar_path').eq('id', 1).single().then(({ data }) => {
+    getMyChildSettings().then((data) => {
       if (!data) return;
       const w = (data.child_name ?? '').trim().split(/\s+/).filter(Boolean);
       if (w.length) setInitials(w.map((x: string) => x[0]).join('').slice(0, 2).toUpperCase());
       setAvatar(mediaUrl(data.avatar_path));
-    });
+    }, () => undefined);
     viewRef.current?.focus();
   }, []);
 

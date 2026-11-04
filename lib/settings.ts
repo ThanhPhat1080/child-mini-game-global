@@ -17,9 +17,9 @@ type Client = ReturnType<typeof createSupabaseBrowserClient>;
 
 /** The signed-in child's row, or null when nobody is signed in or there is no row. */
 export async function getMyChildSettings(client: Client = createSupabaseBrowserClient()): Promise<ChildSettings | null> {
-  const { data } = await client.auth.getUser();
-  if (!data.user) return null;
-  return getChildSettings(data.user.id, client);
+  const { data } = await client.auth.getSession();
+  if (!data.session) return null;
+  return getChildSettings(data.session.user.id, client);
 }
 
 export async function getChildSettings(

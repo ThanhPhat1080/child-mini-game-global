@@ -9,12 +9,12 @@ export type MediaSource =
   | { table: 'find_levels'; column: 'objects'; kind: 'audio'; objectAudio: true };
 
 export const MEDIA_SOURCES: MediaSource[] = [
-  { table: 'settings', column: 'greeting_path', kind: 'audio' },
-  { table: 'settings', column: 'music_path', kind: 'audio' },
-  { table: 'settings', column: 'avatar_path', kind: 'image' },
-  { table: 'settings', column: 'hooray_path', kind: 'audio' },
-  { table: 'settings', column: 'ohoh_path', kind: 'audio' },
-  { table: 'settings', column: 'complete_path', kind: 'audio' },
+  { table: 'child_settings', column: 'greeting_path', kind: 'audio' },
+  { table: 'child_settings', column: 'music_path', kind: 'audio' },
+  { table: 'child_settings', column: 'avatar_path', kind: 'image' },
+  { table: 'child_settings', column: 'hooray_path', kind: 'audio' },
+  { table: 'child_settings', column: 'ohoh_path', kind: 'audio' },
+  { table: 'child_settings', column: 'complete_path', kind: 'audio' },
   { table: 'quiz_sets', column: 'cover_path', kind: 'image' },
   { table: 'questions', column: 'prompt_image_path', kind: 'image' },
   { table: 'questions', column: 'prompt_audio_path', kind: 'audio' },

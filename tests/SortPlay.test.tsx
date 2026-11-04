@@ -11,17 +11,12 @@ const h = vi.hoisted(() => ({
   push: vi.fn(),
   replace: vi.fn(),
   settings: vi.fn(),
-  select: vi.fn(),
 }));
 
 vi.mock('@/lib/sort/cards', () => ({ fetchSortCards: h.fetchSortCards }));
 vi.mock('@/lib/memory/cards', () => ({ fetchActiveCards: vi.fn(), sayWord: h.sayWord, stopWord: h.stopWord }));
 vi.mock('@/lib/sfx', () => ({ chime: h.chime, ohOh: h.ohOh, yay: vi.fn(), applause: vi.fn(), speakKid: vi.fn(), playFile: vi.fn(), flipTick: vi.fn() }));
-vi.mock('@/lib/supabase/client', () => ({
-  createSupabaseBrowserClient: () => ({
-    from: () => ({ select: (cols: string) => { h.select(cols); return { eq: () => ({ single: () => h.settings() }) }; } }),
-  }),
-}));
+vi.mock('@/lib/settings', () => ({ getMyChildSettings: () => h.settings() }));
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null | undefined) => (p ? `/media/${p}` : null) }));
 vi.mock('next/navigation', () => ({
   useParams: () => ({}),
@@ -98,8 +93,8 @@ async function ready(pool: MemoryCard[] = POOL) {
 
 beforeEach(() => {
   vi.useFakeTimers();
-  for (const f of [h.fetchSortCards, h.sayWord, h.stopWord, h.chime, h.ohOh, h.push, h.replace, h.settings, h.select, cancel]) f.mockReset();
-  h.settings.mockResolvedValue({ data: { ohoh_path: null, child_name: 'Hà My', complete_path: null } });
+  for (const f of [h.fetchSortCards, h.sayWord, h.stopWord, h.chime, h.ohOh, h.push, h.replace, h.settings, cancel]) f.mockReset();
+  h.settings.mockResolvedValue({ ohoh_path: null, child_name: 'Hà My', complete_path: null });
   h.sayWord.mockImplementation((_c: MemoryCard, onEnd?: () => void) => onEnd?.()); // a word that ends at once
   h.ohOh.mockReturnValue({ ms: 1900, stop: vi.fn() });
   Object.defineProperty(window, 'matchMedia', { configurable: true, writable: true, value: undefined });
@@ -308,7 +303,7 @@ describe('Sort It play screen (R1-R6, R8-R10)', () => {
     expect(finishLine()).toBe('Wrong 0 times');
     expect(screen.getAllByRole('link', { name: 'Back to games' })).toHaveLength(1);
     expect(screen.queryByRole('button', { name: 'What is Sort It? Show how to play' })).toBeNull();
-    expect(h.select).toHaveBeenCalledWith('child_name, complete_path');
+    expect(h.settings).toHaveBeenCalled();
   });
 
   it('the finish shows the round wrong count', async () => {
@@ -362,7 +357,7 @@ describe('Sort It play screen (R1-R6, R8-R10)', () => {
   });
 
   it('Play again starts a new round: 0 wrong, 6 objects, empty baskets, and a second round finishes with its own count', async () => {
-    h.settings.mockResolvedValue({ data: { ohoh_path: null, child_name: '', complete_path: null } });
+    h.settings.mockResolvedValue({ ohoh_path: null, child_name: '', complete_path: null });
     await ready();
     const first = ids()[0];
     drop(first, wrongBasket(first));
@@ -541,9 +536,9 @@ describe('Sort It play screen (R1-R6, R8-R10)', () => {
   });
 
   it('reads the custom oh-oh path from settings', async () => {
-    h.settings.mockResolvedValue({ data: { ohoh_path: 'sfx/oh.mp3' } });
+    h.settings.mockResolvedValue({ ohoh_path: 'sfx/oh.mp3' });
     await ready();
-    expect(h.select).toHaveBeenCalledWith('ohoh_path');
+    expect(h.settings).toHaveBeenCalled();
     const id = ids()[0];
     drop(id, wrongBasket(id));
     expect(h.ohOh).toHaveBeenCalledWith('/media/sfx/oh.mp3');

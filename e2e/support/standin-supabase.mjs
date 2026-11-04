@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 
 const PORT = Number(process.env.STANDIN_PORT ?? 54391);
 const ADMIN = { email: 'admin@test.local', password: 'secret', id: '11111111-1111-4111-8111-111111111111' };
-const TABLES = ['memory_cards', 'card_groups', 'spot_levels', 'find_levels', 'settings', 'quiz_sets', 'questions', 'answers'];
+const TABLES = ['memory_cards', 'card_groups', 'spot_levels', 'find_levels', 'child_settings', 'quiz_sets', 'questions', 'answers'];
 const RESERVED = new Set(['select', 'order', 'limit', 'offset', 'on_conflict', 'columns']);
 
 const SAMPLE_WORDS = [
@@ -27,7 +27,7 @@ function defaultState() {
     card_groups: [],
     spot_levels: [],
     find_levels: [],
-    settings: [{ id: 1, child_name: 'Test', music_volume: 30, greeting_path: null, music_path: null, avatar_path: null }],
+    child_settings: [{ child_id: 'test-child', child_name: 'Test', music_volume: 30, greeting_path: null, music_path: null, avatar_path: null }],
     quiz_sets: [],
     questions: [],
     answers: [],
@@ -172,8 +172,8 @@ function applyOrder(rows, order) {
 
 function withDefaults(table, row) {
   const r = { ...row };
-  if (table !== 'settings' && r.id === undefined) r.id = randomUUID();
-  if (r.created_at === undefined && table !== 'settings') r.created_at = new Date().toISOString();
+  if (table !== 'child_settings' && r.id === undefined) r.id = randomUUID();
+  if (r.created_at === undefined && table !== 'child_settings') r.created_at = new Date().toISOString();
   if (table === 'memory_cards' && r.active === undefined) r.active = true;
   if (table === 'spot_levels' || table === 'find_levels') {
     if (r.active === undefined) r.active = true;

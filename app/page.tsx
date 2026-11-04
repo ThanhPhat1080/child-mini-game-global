@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getMyChildSettings } from '@/lib/settings';
 import { mediaUrl } from '@/lib/media';
 import { playOnce, startMusic } from '@/lib/audio';
 import { Stage } from '@/components/Stage';
@@ -20,12 +20,8 @@ export default function Welcome() {
   const [entered, setEntered] = useState(false);
 
   useEffect(() => {
-    createSupabaseBrowserClient()
-      .from('settings')
-      .select('child_name, greeting_path, music_path, music_volume, avatar_path')
-      .eq('id', 1)
-      .single()
-      .then(({ data }) => setSettings((data as Settings) ?? null));
+    getMyChildSettings()
+      .then((data) => setSettings((data as Settings) ?? null), () => setSettings(null));
   }, []);
 
   function onEnter() {

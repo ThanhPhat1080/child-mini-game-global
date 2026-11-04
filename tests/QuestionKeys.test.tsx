@@ -5,17 +5,16 @@ const h = vi.hoisted(() => ({ questions: [] as unknown[], yay: vi.fn(), ohOh: vi
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
-    from: (table: string) => ({
+    from: () => ({
       select: () => ({
-        eq: () => (table === 'settings'
-          ? { single: () => Promise.resolve({ data: {} }) }
-          : { order: () => Promise.resolve({ data: h.questions }) }),
+        eq: () => ({ order: () => Promise.resolve({ data: h.questions }) }),
       }),
     }),
   }),
 }));
 vi.mock('next/navigation', () => ({ useParams: () => ({ setId: 's1' }), useRouter: () => ({ push: vi.fn() }), usePathname: () => '/games/quiz/s1' }));
 vi.mock('next/link', () => ({ default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }));
+vi.mock('@/lib/settings', () => ({ getMyChildSettings: () => Promise.resolve({}) }));
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p}` : null) }));
 vi.mock('@/lib/sfx', () => ({
   yay: h.yay, ohOh: h.ohOh,

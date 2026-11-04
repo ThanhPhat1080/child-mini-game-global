@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({
-  getUser: vi.fn(),
+  getSession: vi.fn(),
   maybeSingle: vi.fn(),
   eq: vi.fn(),
   select: vi.fn(),
@@ -10,7 +10,7 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/supabase/client', () => ({
-  createSupabaseBrowserClient: () => ({ auth: { getUser: h.getUser }, from: h.from }),
+  createSupabaseBrowserClient: () => ({ auth: { getSession: h.getSession }, from: h.from }),
 }));
 
 import { getChildSettings, getMyChildSettings, updateChildSettings } from '@/lib/settings';
@@ -22,7 +22,7 @@ beforeEach(() => {
   h.from.mockReturnValue({ select: h.select, update: h.update });
   h.select.mockReturnValue({ eq: h.eq });
   h.eq.mockReturnValue({ maybeSingle: h.maybeSingle });
-  h.getUser.mockResolvedValue({ data: { user: { id: 'c1' } } });
+  h.getSession.mockResolvedValue({ data: { session: { user: { id: 'c1' } } } });
   h.maybeSingle.mockResolvedValue({ data: row, error: null });
 });
 
@@ -34,7 +34,7 @@ describe('child settings (U4)', () => {
   });
 
   it('getMyChildSettings returns null when nobody is signed in', async () => {
-    h.getUser.mockResolvedValue({ data: { user: null } });
+    h.getSession.mockResolvedValue({ data: { session: null } });
     await expect(getMyChildSettings()).resolves.toBeNull();
     expect(h.from).not.toHaveBeenCalled();
   });
