@@ -1,3 +1,6 @@
+// Resolved by Next's bundled copy (no npm dependency): a client-component import fails the build.
+// Plain Node/Vitest cannot resolve it, so tests mock this module (vi.mock('@/lib/supabase/service')).
+import 'server-only';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 /**

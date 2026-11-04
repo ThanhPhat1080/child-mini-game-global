@@ -133,6 +133,63 @@ describe('POST /api/children (U8)', () => {
     expect(deleteUser).not.toHaveBeenCalled();
   });
 
+  describe('DB guard error mapping (contract with the profiles migration)', () => {
+    it.each([
+      ['message prefix', { code: '23514', message: 'too_many_children: a parent has at most 5 children' }, 409],
+      ['details prefix', { code: '23514', message: 'check failed', details: 'too_many_children: limit 5' }, 409],
+      ['hint prefix', { code: '23514', message: 'check failed', hint: 'child_needs_parent: set parent_id' }, 400],
+      ['token anywhere in message, other code', { code: 'P0001', message: 'ERROR: too_many_children (5)' }, 409],
+      ['child_needs_parent prefix', { code: '23514', message: 'child_needs_parent: parent_id must point to a parent profile' }, 400],
+      ['unknown 23514 text', { code: '23514', message: 'some_other_rule: nope', details: 'detail text' }, 500],
+      ['23514 token not at start of details', { code: '23514', message: 'x', details: 'not too_many_children' }, 500],
+    ])('%s: rollback, fixed status, no DB text', async (_n, error, status) => {
+      s.updateResult = { data: null, error };
+      const r = await call(good);
+      expect(r.status).toBe(status);
+      expect(deleteUser).toHaveBeenCalledWith('new1');
+      expect(r.text).not.toMatch(/too_many_children|child_needs_parent|some_other_rule|detail text|check failed/);
+      if (status === 500) expect(r.json).toEqual({ error: 'failed' });
+    });
+  });
+
+  describe('password and name rules', () => {
+    it('400 when GoTrue rejects a weak password, no rollback needed', async () => {
+      s.createResult = { data: { user: null }, error: { code: 'weak_password', status: 422, message: 'Password is known to be weak' } };
+      const r = await call(good);
+      expect(r.status).toBe(400);
+      expect(r.json).toEqual({ error: 'invalid_body' });
+      expect(deleteUser).not.toHaveBeenCalled();
+    });
+
+    it('400 for another password policy error', async () => {
+      s.createResult = { data: { user: null }, error: { status: 422, message: 'Password should contain at least one digit' } };
+      expect((await call(good)).status).toBe(400);
+    });
+
+    it('accepts a 72-byte password, rejects 73+ bytes (UTF-8)', async () => {
+      expect((await call({ ...good, password: 'a'.repeat(72) })).status).toBe(201);
+      expect((await call({ ...good, password: 'a'.repeat(73) })).status).toBe(400);
+      expect((await call({ ...good, password: 'é'.repeat(37) })).status).toBe(400); // 37 chars, 74 bytes
+    });
+
+    it.each([['newline', 'Hà\nMy'], ['bell', 'Hà\u0007My'], ['C1 control', 'Hà\u0085My']])('400 for a name with a %s', async (_n, displayName) => {
+      expect((await call({ ...good, displayName })).status).toBe(400);
+      expect(createUser).not.toHaveBeenCalled();
+    });
+  });
+
+  it('logs server-side and answers 500 when createUser throws', async () => {
+    createUser.mockImplementationOnce(async () => {
+      throw new Error(`network ${SERVICE_KEY}`);
+    });
+    const r = await call(good);
+    expect(r.status).toBe(500);
+    expect(r.text).not.toContain(SERVICE_KEY);
+    expect(console.error).toHaveBeenCalled();
+    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain(SERVICE_KEY);
+    expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain('kid@example.com');
+  });
+
   describe('as super admin', () => {
     const parentId = '00000000-0000-4000-8000-000000000009';
 

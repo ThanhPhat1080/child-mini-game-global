@@ -10,6 +10,7 @@ test-results/
 next-env.d.ts
 .vercel
 .env*
+!.env.example
 .venv/
 tts-input-template.json
 text-to-speech-out/

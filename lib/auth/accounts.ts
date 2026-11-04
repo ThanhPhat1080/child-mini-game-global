@@ -8,8 +8,11 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 export const MAX_CHILDREN = 5;
 export const MIN_PASSWORD = 8;
 export const MAX_DISPLAY_NAME = 40;
+/** bcrypt (GoTrue) only uses the first 72 bytes of a password; longer ones are rejected, not truncated. */
+export const MAX_PASSWORD_BYTES = 72;
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const CONTROL = /[\u0000-\u001f\u007f-\u009f]/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type AccountInput = { email: string; password: string; displayName: string };
@@ -55,7 +58,8 @@ export function parseAccountInput(body: Record<string, unknown>): AccountInput |
   const name = displayName.trim();
   if (!EMAIL.test(cleanEmail)) return null;
   if (password.length < MIN_PASSWORD) return null;
-  if (name.length < 1 || [...name].length > MAX_DISPLAY_NAME) return null;
+  if (new TextEncoder().encode(password).length > MAX_PASSWORD_BYTES) return null;
+  if (name.length < 1 || [...name].length > MAX_DISPLAY_NAME || CONTROL.test(name)) return null;
   return { email: cleanEmail, password, displayName: name };
 }
 
@@ -79,7 +83,10 @@ export async function countChildren(service: SupabaseClient, parentId: string): 
   return error || count == null ? null : count;
 }
 
-type MaybeError = { code?: string; message?: string; status?: number } | null | undefined;
+type MaybeError =
+  | { code?: string; message?: string; status?: number; details?: string; hint?: string }
+  | null
+  | undefined;
 
 function emailTaken(e: MaybeError): boolean {
   if (!e) return false;
@@ -90,10 +97,29 @@ function emailTaken(e: MaybeError): boolean {
   );
 }
 
+/** GoTrue password-policy rejections (too short, too weak, leaked) are the caller's input problem. */
+function weakPassword(e: MaybeError): boolean {
+  if (!e) return false;
+  return e.code === 'weak_password' || ((e.status === 400 || e.status === 422) && /password/i.test(e.message ?? ''));
+}
+
+/**
+ * CONTRACT with the profiles guard trigger in supabase/migrations/20261104000000_profiles_roles.sql
+ * (owned by the DB task): it raises SQLSTATE 23514 with a message that starts with one of these tokens.
+ * Keep the two lists in sync. A token counts when the code is 23514 and message, details or hint starts
+ * with it, or when the message contains it anywhere. Anything else is an unknown failure (500, rollback).
+ */
+const GUARD_TOKENS: [RegExp, RegExp, AccountError][] = [
+  [/^too_many_children\b/, /too_many_children/, 'child_limit'],
+  [/^child_needs_parent\b/, /child_needs_parent/, 'invalid_parent'],
+];
+
 function updateError(e: MaybeError): AccountError {
-  const msg = e?.message ?? '';
-  if (/too_many_children/.test(msg)) return 'child_limit';
-  if (/child_needs_parent/.test(msg)) return 'invalid_parent';
+  const fields = [e?.message, e?.details, e?.hint].filter((f): f is string => typeof f === 'string');
+  for (const [prefix, anywhere, code] of GUARD_TOKENS) {
+    if (e?.code === '23514' && fields.some((f) => prefix.test(f.trim()))) return code;
+    if (anywhere.test(e?.message ?? '')) return code;
+  }
   return 'failed';
 }
 
@@ -115,9 +141,15 @@ export async function provisionAccount(
       email_confirm: true,
       user_metadata: { policy_version: 'server-provisioned' },
     });
-    if (error || !data?.user) return { ok: false, error: emailTaken(error) ? 'email_taken' : 'failed' };
+    if (error || !data?.user) {
+      if (emailTaken(error)) return { ok: false, error: 'email_taken' };
+      if (weakPassword(error)) return { ok: false, error: 'invalid_body' };
+      console.error('[accounts] createUser failed', { code: error?.code, status: error?.status });
+      return { ok: false, error: 'failed' };
+    }
     userId = data.user.id;
-  } catch {
+  } catch (e) {
+    console.error('[accounts] createUser threw', { name: e instanceof Error ? e.name : typeof e });
     return { ok: false, error: 'failed' };
   }
 
