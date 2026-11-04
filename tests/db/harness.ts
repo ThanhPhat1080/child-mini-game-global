@@ -69,9 +69,21 @@ export async function resetDb(): Promise<void> {
     for p in select policyname from pg_policies where schemaname = 'storage' and tablename = 'objects' loop
       execute format('drop policy %I on storage.objects', p.policyname);
     end loop; end $$`);
-  await q('delete from storage.objects');
-  await q('delete from storage.buckets');
-  await q('delete from auth.users');
+  // Replica mode skips triggers, so storage's protect_delete trigger (newer schemas) cannot block this.
+  const c = await db().connect();
+  try {
+    await c.query('begin');
+    await c.query('set local session_replication_role = replica');
+    await c.query('delete from storage.objects');
+    await c.query('delete from storage.buckets');
+    await c.query('delete from auth.users');
+    await c.query('commit');
+  } catch (e) {
+    await c.query('rollback').catch(() => {});
+    throw e;
+  } finally {
+    c.release();
+  }
   await applyMigrations();
 }
 

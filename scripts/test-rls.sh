@@ -24,13 +24,13 @@ else
 fi
 
 cleanup() {
-  "${RUN[@]}" "$PGBIN/pg_ctl" -D "$DATA" -m immediate stop >/dev/null 2>&1 || true
+  ${RUN[@]+"${RUN[@]}"} "$PGBIN/pg_ctl" -D "$DATA" -m immediate stop >/dev/null 2>&1 || true
   rm -rf "$WORK"
 }
 trap cleanup EXIT
 
-"${RUN[@]}" "$PGBIN/initdb" -D "$DATA" -U postgres -A trust >/dev/null
-"${RUN[@]}" "$PGBIN/pg_ctl" -D "$DATA" -w -l "$WORK/pg.log" \
+${RUN[@]+"${RUN[@]}"} "$PGBIN/initdb" -D "$DATA" -U postgres -A trust >/dev/null
+${RUN[@]+"${RUN[@]}"} "$PGBIN/pg_ctl" -D "$DATA" -w -l "$WORK/pg.log" \
   -o "-p $PORT -k $WORK -c listen_addresses=127.0.0.1 -c fsync=off" start >/dev/null
 
 export RLS_DATABASE_URL="postgresql://postgres@127.0.0.1:$PORT/postgres"

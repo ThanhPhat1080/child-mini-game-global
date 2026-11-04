@@ -52,5 +52,17 @@ describe('DB harness', () => {
     expect(rows[0].n).toBe('0');
   });
 
+  it('resetDb removes storage objects, policies and users', async () => {
+    await superQuery(`insert into storage.objects (bucket_id, name) values ('media', 'x/a.png')`);
+    await superQuery(`create policy leftover on storage.objects for select using (true)`);
+    await resetDb();
+    const o = await superQuery<{ n: string }>(`select count(*)::text as n from storage.objects`);
+    expect(o[0].n).toBe('0');
+    const p = await superQuery<{ n: string }>(
+      `select count(*)::text as n from pg_policies where policyname = 'leftover'`,
+    );
+    expect(p[0].n).toBe('0');
+  });
+
   it.todo('profiles: as(a) can count public.profiles and as(null) cannot read it (Task 2 adds the table)');
 });
