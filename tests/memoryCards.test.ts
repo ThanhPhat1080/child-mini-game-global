@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   speakKid: vi.fn(),
 }));
 
+vi.mock('@/lib/review', () => ({ applyScope: (q: unknown) => q }));
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
     from: h.from,

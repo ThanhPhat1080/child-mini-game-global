@@ -14,6 +14,7 @@ import { isPressKey } from '@/lib/keynav';
 import { GAMES } from '@/lib/games/registry';
 import LogoutButton from '@/components/auth/LogoutButton';
 import { GameArt, GameIcon } from '@/components/games/GameArt';
+import { ScopeSwitch } from '@/components/games/ScopeSwitch';
 
 const PITCH = 712;
 const N = GAMES.length;
@@ -120,6 +121,7 @@ export default function Games() {
         <span style={{ marginTop: 8 }}><BackButton href="/" label="Back home" home /></span>
         <AvatarSay avatar={avatar} initials={initials} />
       </div>
+      <ScopeSwitch />
       <MusicButton />
       <LogoutButton />
     </Stage>

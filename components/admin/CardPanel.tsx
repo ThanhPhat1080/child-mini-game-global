@@ -8,6 +8,10 @@ import s from './admin-ui.module.css';
 import { LibraryButton } from './LibraryButton';
 import { PicIcon, dangerBtn, fileName, ghostBtn, inputStyle, panel } from './editor-parts';
 import { Pic } from '@/components/Pic';
+import { EditLock } from './EditLock';
+import { ShareToggle } from './ShareToggle';
+import { VisibilityBadge } from './VisibilityBadge';
+import type { Visibility } from '@/lib/review';
 
 export const WORD_MAX = 40;
 /** Accepted picture and pronunciation files (A11). */
@@ -42,14 +46,18 @@ const hint = { fontSize: 12, color: '#7A6458' } as const;
 export const WEAK_GROUP_TEXT = 'Sort It needs at least 4 cards with different words in a group.';
 
 /** One card of the pool: picture, word, pronunciation, group (A18), on/off and delete. Edits go up through `onEdit`. */
-export function CardPanel({ c, n, duplicate, message, autoFocus, groups, weakGroup, onEdit, onChooseLibrary, onSvg, onPlay, onAskDelete }: {
+export function CardPanel({ c, n, duplicate, message, autoFocus, groups, weakGroup, onEdit, onChooseLibrary, onSvg, onPlay, onAskDelete, onVisibility }: {
   c: ECard; n: number; duplicate: boolean; message: string | null; autoFocus: boolean;
   groups: readonly EGroup[]; weakGroup: boolean;
   onEdit: (patch: Partial<ECard>) => void;
   /** A picture or sound already in the library: the bucket path, nothing uploaded (A24). */
   onChooseLibrary: (kind: 'image' | 'audio', path: string) => void;
   onSvg: (code: string) => void; onPlay: () => void; onAskDelete: () => void;
+  /** The row was shared (it is now under review). */
+  onVisibility?: (v: Visibility) => void;
 }) {
+  // Under review or global: read-only (V2, V3). Only the sharing row below stays usable.
+  const locked = !!c.visibility && c.visibility !== 'private';
   const [svg, setSvg] = useState('');
   const len = c.word.trim().length;
   const img = mediaUrl(c.image);
@@ -58,6 +66,7 @@ export function CardPanel({ c, n, duplicate, message, autoFocus, groups, weakGro
 
   return (
     <article aria-label={`Card ${n}`} style={{ ...panel, padding: 16, gap: 10, opacity: c.active ? 1 : 0.75, border: isCardComplete(c) ? '1.5px solid transparent' : '1.5px dashed #E5C979' }}>
+      <EditLock locked={locked}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: '#7A6458' }}>Card {n}</span>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
@@ -108,6 +117,13 @@ export function CardPanel({ c, n, duplicate, message, autoFocus, groups, weakGro
       {missing && <span style={{ fontSize: 13, color: '#7A5410' }}>Needs {missing} before you can save.</span>}
 
       <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete card ${n}`} onClick={onAskDelete} style={{ ...dangerBtn, height: 36, alignSelf: 'flex-start' }}>Delete</button>
+      </EditLock>
+      {!c.isNew && c.visibility && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start', borderTop: '1px solid #F1E7DA', paddingTop: 10 }}>
+          <VisibilityBadge visibility={c.visibility} />
+          <ShareToggle table="memory_cards" id={c.id} visibility={c.visibility} onChanged={onVisibility} />
+        </div>
+      )}
     </article>
   );
 }

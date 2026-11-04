@@ -5,6 +5,7 @@ const h = vi.hoisted(() => ({ rows: [] as unknown[], deleteSet: vi.fn() }));
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
+    auth: { getSession: () => Promise.resolve({ data: { session: { user: { id: 'me' } } } }) },
     from: () => ({ select: () => ({ order: () => Promise.resolve({ data: h.rows, error: null }) }) }),
   }),
 }));
@@ -25,8 +26,8 @@ const done = (n: number) => ({
   ],
 });
 const incomplete = { prompt_text: '', prompt_audio_path: null, answers: [{ slot: 1, image_path: null, is_correct: false }, { slot: 2, image_path: null, is_correct: false }] };
-const set = (id: string, title: string, status: string, questions: unknown[]) => ({
-  id, title, subtitle: null, heading_color: '#E59AA1', cover_path: null, status, updated_at: '2026-10-20T00:00:00Z', questions,
+const set = (id: string, title: string, status: string, questions: unknown[], owner_id = 'me', visibility = 'private') => ({
+  id, title, subtitle: null, heading_color: '#E59AA1', cover_path: null, status, updated_at: '2026-10-20T00:00:00Z', owner_id, visibility, questions,
 });
 
 function rowOf(title: string) {
@@ -42,7 +43,10 @@ beforeEach(() => {
     set('s3', 'Empty draft', 'draft', []),
   ];
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+});
 
 // T4 / A3: set list table, actions, front-page preview strip.
 describe('Admin set list (T4, A3)', () => {
@@ -122,5 +126,49 @@ describe('Admin set list (T4, A3)', () => {
     h.rows = [];
     render(<SetsPage />);
     expect(await screen.findByText(/No quiz sets yet/)).toBeTruthy();
+  });
+});
+
+// N3, N4, V1-V3: Mine / Global tabs, status badge, read-only global view.
+describe('Admin set list scope (N3, N4)', () => {
+  beforeEach(() => {
+    h.rows = [
+      set('s1', 'My private', 'published', [done(1)]),
+      set('s2', 'My shared', 'published', [done(1)], 'me', 'pending'),
+      set('s3', 'My approved', 'published', [done(1)], 'me', 'global'),
+      set('s4', 'Their approved', 'published', [done(1)], 'other', 'global'),
+    ];
+  });
+
+  it('Mine lists only my own sets with their status badge, Global is not shown', async () => {
+    render(<SetsPage />);
+    await screen.findByRole('button', { name: 'Delete My private' });
+    expect(screen.queryAllByText('Their approved')).toHaveLength(0);
+    const table = screen.getByRole('table');
+    expect(within(table).getByText('Private')).toBeTruthy();
+    expect(within(table).getByText('Under review')).toBeTruthy();
+    expect(within(table).getByText('Global')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /New quiz set/ })).toBeTruthy();
+  });
+
+  it('only a private set of mine has Edit and Delete; pending and global ones are View only', async () => {
+    render(<SetsPage />);
+    await screen.findByRole('button', { name: 'Delete My private' });
+    expect(screen.getByRole('button', { name: 'Delete My private' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Delete My shared' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Delete My approved' })).toBeNull();
+    expect(screen.getAllByRole('link', { name: 'View' })).toHaveLength(2);
+  });
+
+  it('Global tab never shows edit controls and lists other families\' approved sets', async () => {
+    render(<SetsPage />);
+    await screen.findByRole('button', { name: 'Delete My private' });
+    fireEvent.click(screen.getByRole('tab', { name: 'Global' }));
+    expect(await screen.findAllByText('Their approved')).not.toHaveLength(0);
+    expect(screen.queryAllByText('My private')).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: /^Delete/ })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Edit' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /New quiz set/ })).toBeNull();
+    expect(screen.getByRole('link', { name: 'View' })).toBeTruthy();
   });
 });

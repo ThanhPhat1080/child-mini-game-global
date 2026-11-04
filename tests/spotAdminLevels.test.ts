@@ -15,6 +15,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
+    auth: { getSession: () => Promise.resolve({ data: { session: { user: { id: 'me' } } } }) },
     from: h.from,
     storage: { from: () => ({ upload: h.upload, remove: h.remove, getPublicUrl: (p: string) => ({ data: { publicUrl: `https://cdn.test/${p}` } }) }) },
   }),
@@ -59,8 +60,8 @@ describe('newLevel / isLevelComplete', () => {
 
 describe('loadLevels', () => {
   it('reads every level ordered by created_at then sort_order and maps the columns', async () => {
-    h.selectResult = { data: [{ id: 'a', image_a_path: 'spot/a.png', image_b_path: 'spot/b.png', differences: three, active: false, sort_order: 1 }], error: null };
-    await expect(loadLevels()).resolves.toEqual([{ id: 'a', isNew: false, a: 'spot/a.png', b: 'spot/b.png', differences: three, active: false }]);
+    h.selectResult = { data: [{ id: 'a', image_a_path: 'spot/a.png', image_b_path: 'spot/b.png', differences: three, active: false, sort_order: 1, owner_id: 'me', visibility: 'private' }, { id: 'z', image_a_path: 'q', image_b_path: 'r', differences: three, active: true, sort_order: 2, owner_id: 'other', visibility: 'global' }], error: null };
+    await expect(loadLevels()).resolves.toEqual([{ id: 'a', isNew: false, a: 'spot/a.png', b: 'spot/b.png', differences: three, active: false, visibility: 'private' }]);
     expect(h.from).toHaveBeenCalledWith('spot_levels');
     expect(h.order).toHaveBeenNthCalledWith(1, 'created_at');
   });

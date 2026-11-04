@@ -1,5 +1,6 @@
 import { randomId } from '@/lib/randomId';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import type { Visibility } from '@/lib/review';
 import { removeMedia } from '@/lib/media';
 import { setMediaPaths } from '@/lib/mediaPaths';
 
@@ -54,6 +55,9 @@ export type ESet = {
   cover: string | null;
   published: boolean;
   qs: EQuestion[];
+  /** Sharing state and owner (spec V1-V4); absent for a set not saved yet. */
+  visibility?: Visibility;
+  ownerId?: string | null;
 };
 
 /** An answer needs a picture, a text, or both (C4). Both empty is invalid. */
@@ -73,14 +77,14 @@ export function blankSet(): ESet {
 }
 
 type Row = {
-  id: string; title: string; subtitle: string | null; heading_color: string; cover_path: string | null; status: string;
+  id: string; title: string; subtitle: string | null; heading_color: string; cover_path: string | null; status: string; owner_id: string | null; visibility: Visibility;
   questions: { id: string; position: number; prompt_text: string | null; prompt_image_path: string | null; prompt_audio_path: string | null; read_answers: boolean; hide_answer_text: boolean; answers: { slot: number; image_path: string | null; text: string | null; is_correct: boolean }[] }[];
 };
 
 export async function loadSet(id: string): Promise<ESet | null> {
   const { data, error } = await createSupabaseBrowserClient()
     .from('quiz_sets')
-    .select('id, title, subtitle, heading_color, cover_path, status, questions(id, position, prompt_text, prompt_image_path, prompt_audio_path, read_answers, hide_answer_text, answers(slot, image_path, text, is_correct))')
+    .select('id, title, subtitle, heading_color, cover_path, status, owner_id, visibility, questions(id, position, prompt_text, prompt_image_path, prompt_audio_path, read_answers, hide_answer_text, answers(slot, image_path, text, is_correct))')
     .eq('id', id)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -94,7 +98,7 @@ export async function loadSet(id: string): Promise<ESet | null> {
     const slots = q.answers.length;
     return { id: q.id, text: q.prompt_text ?? '', voice: q.prompt_audio_path, qimg: q.prompt_image_path, imgs, texts, readAnswers: q.read_answers, hideAnswerText: !!q.hide_answer_text, correct, count: slots === 2 ? 2 : 3 };
   });
-  return { id: r.id, isNew: false, name: r.title, subtitle: r.subtitle ?? '', color: r.heading_color, cover: r.cover_path, published: r.status === 'published', qs };
+  return { id: r.id, isNew: false, name: r.title, subtitle: r.subtitle ?? '', color: r.heading_color, cover: r.cover_path, published: r.status === 'published', qs, visibility: r.visibility, ownerId: r.owner_id };
 }
 
 /** Saves the whole set. Returns an error message, or null on success. */

@@ -16,6 +16,7 @@ vi.mock('@/lib/media/refs', () => ({ referencedPaths: h.referencedPaths }));
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
+    auth: { getSession: () => Promise.resolve({ data: { session: { user: { id: 'me' } } } }) },
     from: h.from,
     storage: { from: () => ({ upload: h.upload, remove: h.remove, getPublicUrl: (p: string) => ({ data: { publicUrl: `https://cdn.test/${p}` } }) }) },
   }),
@@ -191,8 +192,8 @@ describe('levelMediaPaths', () => {
 describe('loadFindLevels', () => {
   it('reads every level ordered by created_at then sort_order and maps the columns', async () => {
     const objects = [obj(0.2, 'cat'), obj(0.8, 'dog')];
-    h.selectResult = { data: [{ id: 'a', image_path: 'find/p.png', objects, active: false, sort_order: 1 }], error: null };
-    await expect(loadFindLevels()).resolves.toEqual([{ id: 'a', isNew: false, image: 'find/p.png', objects, active: false }]);
+    h.selectResult = { data: [{ id: 'a', image_path: 'find/p.png', objects, active: false, sort_order: 1, owner_id: 'me', visibility: 'private' }, { id: 'z', image_path: 'q', objects, active: true, sort_order: 2, owner_id: 'other', visibility: 'global' }], error: null };
+    await expect(loadFindLevels()).resolves.toEqual([{ id: 'a', isNew: false, image: 'find/p.png', objects, active: false, visibility: 'private' }]);
     expect(h.from).toHaveBeenCalledWith('find_levels');
     expect(h.order).toHaveBeenNthCalledWith(1, 'created_at');
   });

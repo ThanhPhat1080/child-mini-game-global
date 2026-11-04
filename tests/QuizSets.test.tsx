@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({ rows: [] as unknown[], eq: vi.fn(), push: vi.fn() }));
 
+vi.mock('@/lib/review', () => ({ applyScope: (q: unknown) => q }));
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
     from: () => ({

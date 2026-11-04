@@ -16,6 +16,10 @@ import { Toast, useToast, type ToastKind } from './Toast';
 import { useMediaRenamed } from '@/lib/media/renames';
 import { replacePath } from '@/lib/mediaPaths';
 import { RevertButton, SaveButton } from './SaveButtons';
+import { EditLock } from './EditLock';
+import { ShareToggle } from './ShareToggle';
+import { VisibilityBadge } from './VisibilityBadge';
+import { getMyUserId, isLocked } from '@/lib/review';
 import { SvgPaste } from './SvgPaste';
 import { checkSvg } from '@/lib/quizImport';
 import { CheckOption, panel, inputStyle, ghostBtn, dangerBtn, fileName, Img, PicIcon, Eye, Shell } from './editor-parts';
@@ -36,6 +40,8 @@ export function SetEditor({ setId }: { setId: string }) {
   const [deleted, setDeleted] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [missing, setMissing] = useState(false);
+  const [me, setMe] = useState<string | null | undefined>(undefined);
+  useEffect(() => { void getMyUserId().then(setMe, () => setMe(null)); }, []);
   const { toast, show: showToast, close: closeToast } = useToast();
   // a file renamed in the library: edits not saved yet follow it
   useMediaRenamed(useCallback((from: string, to: string) => {
@@ -199,10 +205,13 @@ export function SetEditor({ setId }: { setId: string }) {
     confirmButton = 'Delete set';
   }
 
+  // Only the owner edits, and only while the set is private (V1-V3). Until the user id is known, only the state counts.
+  const locked = !d.isNew && isLocked(d.visibility, d.ownerId ?? null, me === undefined ? d.ownerId ?? null : me);
   const cardTitleColor = d.name.trim() ? d.color : '#B0A094';
 
   return (
     <Shell>
+      <EditLock locked={locked}>
       <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#FBF4E9', padding: '12px 0', margin: '-12px 0', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, boxShadow: '0 8px 8px -8px rgba(90,64,56,0.18)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <Link href="/admin/sets" className={s.link} style={{ fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -229,6 +238,21 @@ export function SetEditor({ setId }: { setId: string }) {
         )}
       </div>
 
+      </EditLock>
+
+      {!d.isNew && d.visibility && !deleted && (
+        <section style={{ ...panel, padding: '16px 24px', flexDirection: 'row', flexWrap: 'wrap', gap: 24, alignItems: 'center' }} aria-label="Sharing">
+          <VisibilityBadge visibility={d.visibility} />
+          {d.ownerId === me || me === undefined ? (
+            <ShareToggle table="quiz_sets" id={d.id} visibility={d.visibility}
+              onChanged={(v) => { setD((x) => (x ? { ...x, visibility: v } : x)); setSaved((x) => (x ? { ...x, visibility: v } : x)); }} />
+          ) : (
+            <span style={{ fontSize: 14, color: '#7A6458' }}>Shared by another family. You can look but not change it.</span>
+          )}
+        </section>
+      )}
+
+      <EditLock locked={locked}>
       {deleted && (
         <section style={{ ...panel, padding: '56px 28px', alignItems: 'center', gap: 14, textAlign: 'center' }}>
           <span style={{ width: 64, height: 64, borderRadius: 32, background: '#E3EEDD', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -344,6 +368,7 @@ export function SetEditor({ setId }: { setId: string }) {
         />
       )}
       {confirm && <ConfirmDialog title={confirmTitle} body={confirmBody} button={confirmButton} busy={busy} onCancel={() => setConfirm(null)} onConfirm={confirmDelete} />}
+      </EditLock>
       <Toast toast={toast} onClose={closeToast} />
     </Shell>
   );

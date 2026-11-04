@@ -15,6 +15,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
+    auth: { getSession: () => Promise.resolve({ data: { session: { user: { id: 'me' } } } }) },
     from: h.from,
     storage: { from: () => ({ upload: h.upload, remove: h.remove, getPublicUrl: (p: string) => ({ data: { publicUrl: `https://cdn.test/${p}` } }) }) },
   }),
@@ -79,22 +80,43 @@ describe('cardMediaPaths', () => {
 describe('loadCards', () => {
   it('selects and maps group_id, keeping null as null', async () => {
     h.selectResult = { data: [
-      { id: 'a', word: 'cat', image_path: 'cards/a.png', audio_path: null, active: true, group_id: 'g1' },
-      { id: 'b', word: 'dog', image_path: 'cards/b.png', audio_path: null, active: true, group_id: null },
+      { id: 'a', word: 'cat', image_path: 'cards/a.png', audio_path: null, active: true, group_id: 'g1', owner_id: 'me', visibility: 'private' },
+      { id: 'b', word: 'dog', image_path: 'cards/b.png', audio_path: null, active: true, group_id: null, owner_id: 'me', visibility: 'private' },
     ], error: null };
     const cards = await loadCards();
     expect(cards.map((c) => c.groupId)).toEqual(['g1', null]);
     expect(h.select.mock.calls[0][0]).toContain('group_id');
   });
   it('reads all cards ordered by created_at and maps the columns', async () => {
-    h.selectResult = { data: [{ id: 'a', word: 'cat', image_path: 'cards/a.png', audio_path: null, active: false, group_id: null }], error: null };
-    await expect(loadCards()).resolves.toEqual([{ id: 'a', isNew: false, word: 'cat', image: 'cards/a.png', audio: null, active: false, groupId: null }]);
+    h.selectResult = { data: [{ id: 'a', word: 'cat', image_path: 'cards/a.png', audio_path: null, active: false, group_id: null, owner_id: 'me', visibility: 'private' }], error: null };
+    await expect(loadCards()).resolves.toEqual([{ id: 'a', isNew: false, word: 'cat', image: 'cards/a.png', audio: null, active: false, groupId: null, visibility: 'private' }]);
     expect(h.from).toHaveBeenCalledWith('memory_cards');
     expect(h.order).toHaveBeenCalledWith('created_at', { ascending: false });
   });
   it('throws the Supabase error message', async () => {
     h.selectResult = { data: null, error: { message: 'boom' } };
     await expect(loadCards()).rejects.toThrow('boom');
+  });
+});
+
+describe('loadCards ownership (V1)', () => {
+  it("keeps only the signed-in user's own cards, so a global card of another family is never edited", async () => {
+    h.selectResult = { data: [
+      { id: 'a', word: 'cat', image_path: 'x.png', audio_path: null, active: true, group_id: null, owner_id: 'me', visibility: 'global' },
+      { id: 'b', word: 'dog', image_path: 'y.png', audio_path: null, active: true, group_id: null, owner_id: 'other', visibility: 'global' },
+    ], error: null };
+    expect((await loadCards()).map((c) => c.id)).toEqual(['a']);
+  });
+});
+
+describe('saveCards locked rows (V2, V3)', () => {
+  it('does not write cards under review or global, but writes private ones', async () => {
+    const mk = (id: string, visibility: 'private' | 'pending' | 'global') =>
+      ({ id, isNew: false, word: 'w' + id, image: 'cards/x.png', audio: null, active: true, groupId: null, visibility });
+    const all = [mk('p', 'private'), mk('q', 'pending'), mk('g', 'global')];
+    await saveCards(all, all);
+    const rows = h.upsert.mock.calls[0][0] as { id: string }[];
+    expect(rows.map((r) => r.id)).toEqual(['p']);
   });
 });
 
