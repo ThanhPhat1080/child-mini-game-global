@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { reset, signInAsAdmin, STANDIN } from './support/fixtures';
+import { reset, signInAsAdmin, SIGNED_OUT, STANDIN } from './support/fixtures';
 
 test.beforeEach(async () => {
   await reset();
@@ -10,9 +10,16 @@ test('the game list shows the Quiz card', async ({ page }) => {
   await expect(page.getByRole('link', { name: 'Play Quiz' })).toBeVisible();
 });
 
-test('admin pages redirect to sign-in when signed out', async ({ page }) => {
+test('admin pages redirect to sign-in when signed out', async ({ browser }) => {
+  const page = await (await browser.newContext({ storageState: SIGNED_OUT })).newPage();
   await page.goto('/admin/cards');
   await expect(page).toHaveURL(/\/admin\/sign-in$/);
+});
+
+test('the game list sends a signed-out visitor to the grown-up sign-in', async ({ browser }) => {
+  const page = await (await browser.newContext({ storageState: SIGNED_OUT })).newPage();
+  await page.goto('/games');
+  await expect(page).toHaveURL(/\/play\/sign-in$/);
 });
 
 test('after sign-in the sets page loads with a session cookie', async ({ page, context }) => {

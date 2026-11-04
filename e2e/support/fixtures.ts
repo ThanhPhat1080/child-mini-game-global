@@ -43,6 +43,9 @@ export type StandinState = {
   quiz_sets: Row[];
   questions: Row[];
   answers: Row[];
+  profiles: Row[];
+  support_messages: Row[];
+  review_events: Row[];
   /** Paths of files already in the media bucket (empty placeholders). */
   storage: string[];
 };
@@ -137,11 +140,39 @@ export function makeFindLevels(n: number, objectsPer = 3, active = true): FindLe
   }));
 }
 
-/** Signs in through the real login form (admin@test.local / secret). */
+export const ACCOUNTS = {
+  super: { email: 'super@test.local', password: 'secret', id: '11111111-1111-4111-8111-111111111111' },
+  parent: { email: 'admin@test.local', password: 'secret', id: '22222222-2222-4222-8222-222222222222' },
+  child: { email: 'child@test.local', password: 'secret', id: '33333333-3333-4333-8333-333333333333' },
+} as const;
+
+/** Signs in through the real admin form as the parent (admin@test.local / secret); a parent lands on /admin/children. */
 export async function signInAsAdmin(page: Page): Promise<void> {
-  await page.goto('/admin/sign-in');
-  await page.getByLabel('Email').fill('admin@test.local');
-  await page.getByLabel('Password').fill('secret');
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL('**/admin/settings');
+  await signInAdminForm(page, ACCOUNTS.parent);
+  await page.waitForURL('**/admin/children');
 }
+
+/** Signs in through the real admin form as the Super Admin; the landing page is the review queue. */
+export async function signInAsSuper(page: Page): Promise<void> {
+  await signInAdminForm(page, ACCOUNTS.super);
+  await page.waitForURL('**/admin/queue');
+}
+
+async function signInAdminForm(page: Page, who: { email: string; password: string }): Promise<void> {
+  await page.goto('/admin/sign-in');
+  await page.getByLabel('Email').fill(who.email);
+  await page.getByLabel('Password').fill(who.password);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+}
+
+/** Signs in on the child's device (/play/sign-in) and waits for the game list. */
+export async function signInAsChild(page: Page, who: { email: string; password: string } = ACCOUNTS.child): Promise<void> {
+  await page.goto('/play/sign-in');
+  await page.getByLabel('Email').fill(who.email);
+  await page.getByLabel('Password').fill(who.password);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.waitForURL('**/games');
+}
+
+/** Clears the browser session (use `test.use({ storageState: SIGNED_OUT })` to start a file signed out). */
+export const SIGNED_OUT = { cookies: [], origins: [] };

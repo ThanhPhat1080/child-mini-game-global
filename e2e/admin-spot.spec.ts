@@ -79,8 +79,8 @@ test('build a level, save it, play it, delete it', async ({ page }) => {
     expect(d.y).toBeCloseTo(clicked[i].y, 2);
     expect(d.r).toBe(0.06);
   });
-  expect(rows[0].image_a_path).toMatch(/^spot\/.+\.svg$/);
-  expect(rows[0].image_b_path).toMatch(/^spot\/.+\.svg$/);
+  expect(rows[0].image_a_path).toMatch(/^[0-9a-f-]{36}\/spot\/.+\.svg$/);
+  expect(rows[0].image_b_path).toMatch(/^[0-9a-f-]{36}\/spot\/.+\.svg$/);
   expect([...(await storage())].sort()).toEqual([rows[0].image_a_path, rows[0].image_b_path].sort());
 
   await page.goto('/games/spot');

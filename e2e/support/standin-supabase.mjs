@@ -5,8 +5,13 @@ import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 
 const PORT = Number(process.env.STANDIN_PORT ?? 54391);
-const ADMIN = { email: 'admin@test.local', password: 'secret', id: '11111111-1111-4111-8111-111111111111' };
-const TABLES = ['memory_cards', 'card_groups', 'spot_levels', 'find_levels', 'child_settings', 'quiz_sets', 'questions', 'answers'];
+// Phase 3: three fixed accounts. `admin@test.local` is the parent so the older admin specs keep working.
+const SUPER = { email: 'super@test.local', password: 'secret', id: '11111111-1111-4111-8111-111111111111' };
+const PARENT = { email: 'admin@test.local', password: 'secret', id: '22222222-2222-4222-8222-222222222222' };
+const CHILD = { email: 'child@test.local', password: 'secret', id: '33333333-3333-4333-8333-333333333333' };
+const TABLES = ['memory_cards', 'card_groups', 'spot_levels', 'find_levels', 'child_settings', 'quiz_sets', 'questions', 'answers', 'profiles', 'support_messages', 'review_events'];
+const CONTENT = ['quiz_sets', 'memory_cards', 'spot_levels', 'card_groups', 'find_levels'];
+const QUOTA = 50 * 1024 * 1024;
 const RESERVED = new Set(['select', 'order', 'limit', 'offset', 'on_conflict', 'columns']);
 
 const SAMPLE_WORDS = [
@@ -14,8 +19,20 @@ const SAMPLE_WORDS = [
   'heart', 'square', 'apple2', 'banana2', 'berry2', 'bird2', 'cat2', 'duck2', 'fish2',
 ];
 
+const profile = (u, role, extra = {}) => ({
+  user_id: u.id, role, parent_id: null, display_name: role, banned: false, ban_reason_code: null, ban_note: null,
+  banned_at: null, quota_bytes: QUOTA, created_at: new Date(Date.UTC(2026, 0, 1)).toISOString(), ...extra,
+});
+
 function defaultState() {
   return {
+    profiles: [
+      profile(SUPER, 'super_admin', { display_name: 'Super' }),
+      profile(PARENT, 'parent', { display_name: 'Parent' }),
+      profile(CHILD, 'child', { display_name: 'Test', parent_id: PARENT.id }),
+    ],
+    support_messages: [],
+    review_events: [],
     memory_cards: SAMPLE_WORDS.map((w, i) => ({
       id: `00000000-0000-4000-9000-${String(i + 1).padStart(12, '0')}`,
       word: w,
@@ -27,7 +44,7 @@ function defaultState() {
     card_groups: [],
     spot_levels: [],
     find_levels: [],
-    child_settings: [{ child_id: 'test-child', child_name: 'Test', music_volume: 30, greeting_path: null, music_path: null, avatar_path: null }],
+    child_settings: [{ child_id: CHILD.id, child_name: 'Test', music_volume: 30, greeting_path: null, music_path: null, avatar_path: null }],
     quiz_sets: [],
     questions: [],
     answers: [],
@@ -35,33 +52,44 @@ function defaultState() {
 }
 
 let state = defaultState();
+let currentUserId = null; // the account behind the request being handled (column defaults like auth.uid())
 const files = new Map(); // storage path -> { type, body }
-const accessTokens = new Set();
+const accessTokens = new Map(); // token -> user id
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 
-const adminUser = () => ({
-  id: ADMIN.id, aud: 'authenticated', role: 'authenticated', email: ADMIN.email,
+const users = new Map(); // id -> { id, email, password }
+const resetUsers = () => {
+  users.clear();
+  for (const u of [SUPER, PARENT, CHILD]) users.set(u.id, { ...u });
+};
+resetUsers();
+normalize();
+
+const authUser = (u) => ({
+  id: u.id, aud: 'authenticated', role: 'authenticated', email: u.email,
   email_confirmed_at: new Date().toISOString(), app_metadata: {}, user_metadata: {},
   created_at: new Date().toISOString(),
 });
 
-function issueSession() {
+function issueSession(u) {
   const now = Math.floor(Date.now() / 1000);
   const expiresAt = now + 3600 * 24;
-  const user = adminUser();
-  const jwt = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: ADMIN.id, role: 'authenticated', aud: 'authenticated', email: ADMIN.email, exp: expiresAt, iat: now })}.${randomUUID().replace(/-/g, '')}`;
-  accessTokens.add(jwt);
+  const jwt = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: u.id, role: 'authenticated', aud: 'authenticated', email: u.email, exp: expiresAt, iat: now })}.${randomUUID().replace(/-/g, '')}`;
+  accessTokens.set(jwt, u.id);
   return {
     access_token: jwt, token_type: 'bearer', expires_in: 3600 * 24, expires_at: expiresAt,
-    refresh_token: `refresh-${randomUUID()}`, user,
+    refresh_token: `refresh-${u.id}-${randomUUID()}`, user: authUser(u),
   };
 }
 
-function bearerOk(req) {
+/** The account a request's bearer token belongs to, or null (the anon key and unknown tokens are anonymous). */
+function bearerUser(req) {
   const m = /^Bearer (.+)$/.exec(req.headers.authorization ?? '');
-  return !!m && accessTokens.has(m[1]);
+  const id = m && accessTokens.get(m[1]);
+  return id ? users.get(id) ?? null : null;
 }
+const bearerOk = (req) => !!bearerUser(req);
 
 function cors(req, res) {
   res.setHeader('Access-Control-Allow-Origin', req.headers.origin ?? '*');
@@ -172,14 +200,89 @@ function applyOrder(rows, order) {
 
 function withDefaults(table, row) {
   const r = { ...row };
-  if (table !== 'child_settings' && r.id === undefined) r.id = randomUUID();
+  if (table !== 'child_settings' && table !== 'profiles' && r.id === undefined) r.id = randomUUID();
   if (r.created_at === undefined && table !== 'child_settings') r.created_at = new Date().toISOString();
   if (table === 'memory_cards' && r.active === undefined) r.active = true;
+  if (CONTENT.includes(table)) {
+    if (r.owner_id === undefined) r.owner_id = currentUserId;
+    if (r.visibility === undefined) r.visibility = 'private';
+  }
+  if (table === 'support_messages') Object.assign(r, { from_user: currentUserId, read_at: null, resolved_at: null, ...r });
   if (table === 'spot_levels' || table === 'find_levels') {
     if (r.active === undefined) r.active = true;
     if (r.sort_order === undefined) r.sort_order = 0;
   }
   return r;
+}
+
+const nowIso = () => new Date().toISOString();
+
+/** Rows made by older specs have no owner or visibility: they belong to the parent and are private. */
+function normalize() {
+  for (const t of CONTENT) {
+    state[t] = state[t].map((r) => ({ owner_id: PARENT.id, visibility: 'private', ...r }));
+  }
+}
+
+function createUser(email, password) {
+  const u = { id: randomUUID(), email: String(email).toLowerCase(), password };
+  users.set(u.id, u);
+  state.profiles.push(profile(u, 'parent', { display_name: null, created_at: nowIso() })); // the sign-up trigger
+  return u;
+}
+
+const bad = (res, message, code = 'P0001') => send(res, 400, { code, details: null, hint: null, message });
+
+/** Stand-ins for the definer functions of the review migration: same effect on the in-memory rows, no real checks beyond the role. */
+function rpc(req, res, name, args) {
+  const me = bearerUser(req);
+  const myRole = me && state.profiles.find((p) => p.user_id === me.id)?.role;
+  if (!me) return bad(res, 'not_authenticated', '42501');
+  if (name === 'storage_used') return send(res, 200, 0);
+  if (name === 'media_in_use') return send(res, 200, false);
+  const find = () => state[args.p_table]?.find((r) => String(r.id) === String(args.p_id));
+  const setVis = (v) => {
+    const row = find();
+    if (!row) return false;
+    row.visibility = v;
+    return true;
+  };
+  const event = (action) => state.review_events.push({ id: randomUUID(), table_name: args.p_table, item_id: args.p_id, action, note: args.p_note ?? null, created_at: nowIso() });
+  switch (name) {
+    case 'share_item': {
+      const row = find();
+      if (!row || row.owner_id !== me.id || row.visibility !== 'private') return bad(res, 'not_shareable');
+      row.visibility = 'pending';
+      event('shared');
+      return send(res, 200, null);
+    }
+    case 'request_edit':
+      event('edit_requested');
+      return send(res, 200, null);
+    case 'review_approve':
+    case 'review_reject':
+    case 'unpublish_item':
+    case 'delete_item': {
+      if (myRole !== 'super_admin') return bad(res, 'forbidden', '42501');
+      if (name === 'delete_item') state[args.p_table] = state[args.p_table].filter((r) => String(r.id) !== String(args.p_id));
+      else if (!setVis(name === 'review_approve' ? 'global' : 'private')) return bad(res, 'not_found');
+      event(name);
+      return send(res, 200, null);
+    }
+    case 'ban_parent':
+    case 'unban_parent':
+    case 'set_quota': {
+      if (myRole !== 'super_admin') return bad(res, 'forbidden', '42501');
+      const p = state.profiles.find((x) => x.user_id === args.p_user && x.role === 'parent');
+      if (!p) return bad(res, 'not_a_parent');
+      if (name === 'ban_parent') Object.assign(p, { banned: true, ban_reason_code: args.p_code, ban_note: args.p_note ?? null, banned_at: nowIso() });
+      else if (name === 'unban_parent') Object.assign(p, { banned: false, ban_reason_code: null, ban_note: null, banned_at: null });
+      else p.quota_bytes = Number(args.p_bytes);
+      return send(res, 200, null);
+    }
+    default:
+      return bad(res, `stand-in: no rpc ${name}`);
+  }
 }
 
 function rest(req, res, table, url, bodyBuf) {
@@ -221,6 +324,7 @@ function rest(req, res, table, url, bodyBuf) {
   }
 
   const body = parseJson(bodyBuf);
+  currentUserId = bearerUser(req)?.id ?? null;
 
   if (req.method === 'POST') {
     const incoming = Array.isArray(body) ? body : [body ?? {}];
@@ -249,6 +353,13 @@ function rest(req, res, table, url, bodyBuf) {
     for (let i = 0; i < rows.length; i++) {
       if (match(rows[i])) { rows[i] = { ...rows[i], ...(body ?? {}) }; out.push(rows[i]); }
     }
+    if (table === 'profiles') {
+      for (const p of out) {
+        if (p.role === 'child' && !state.child_settings.some((c) => c.child_id === p.user_id)) {
+          state.child_settings.push({ child_id: p.user_id, child_name: p.display_name, music_volume: 30, greeting_path: null, music_path: null, avatar_path: null });
+        }
+      }
+    }
     return respond(200, out);
   }
 
@@ -276,6 +387,8 @@ const server = createServer(async (req, res) => {
     if (path === '/__reset' && req.method === 'POST') {
       const { storage = [], ...rows } = parseJson(bodyBuf) ?? {};
       state = { ...defaultState(), ...rows };
+      resetUsers();
+      normalize();
       files.clear();
       for (const p of storage) files.set(p, { type: 'application/octet-stream', body: Buffer.alloc(0) }); // files already in the bucket
       return send(res, 200, { ok: true });
@@ -285,21 +398,46 @@ const server = createServer(async (req, res) => {
     if (path === '/auth/v1/token' && req.method === 'POST') {
       const grant = url.searchParams.get('grant_type');
       const body = parseJson(bodyBuf) ?? {};
-      if (grant === 'password' && body.email === ADMIN.email && body.password === ADMIN.password) {
-        return send(res, 200, issueSession());
+      if (grant === 'password') {
+        const u = [...users.values()].find((x) => x.email === String(body.email).toLowerCase() && x.password === body.password);
+        if (u) return send(res, 200, issueSession(u));
       }
-      if (grant === 'refresh_token' && typeof body.refresh_token === 'string' && body.refresh_token.startsWith('refresh-')) {
-        return send(res, 200, issueSession());
+      if (grant === 'refresh_token' && typeof body.refresh_token === 'string') {
+        const id = /^refresh-([0-9a-f-]{36})-/.exec(body.refresh_token)?.[1];
+        if (id && users.has(id)) return send(res, 200, issueSession(users.get(id)));
       }
       return send(res, 400, { code: 400, error_code: 'invalid_credentials', msg: 'Invalid login credentials' });
     }
     if (path === '/auth/v1/user' && req.method === 'GET') {
-      if (!bearerOk(req)) return send(res, 401, { code: 401, error_code: 'bad_jwt', msg: 'invalid JWT' });
-      return send(res, 200, adminUser());
+      const u = bearerUser(req);
+      if (!u) return send(res, 401, { code: 401, error_code: 'bad_jwt', msg: 'invalid JWT' });
+      return send(res, 200, authUser(u));
     }
     if (path === '/auth/v1/logout') return send(res, 204);
+    if (path === '/auth/v1/signup' && req.method === 'POST') {
+      const body = parseJson(bodyBuf) ?? {};
+      if ([...users.values()].some((x) => x.email === String(body.email).toLowerCase())) {
+        return send(res, 422, { code: 422, error_code: 'user_already_exists', msg: 'User already registered' });
+      }
+      const u = createUser(body.email, body.password);
+      return send(res, 200, authUser(u)); // confirmed already; no session, like a project that needs email confirmation
+    }
+    if (path === '/auth/v1/admin/users' && req.method === 'POST') {
+      const body = parseJson(bodyBuf) ?? {};
+      if ([...users.values()].some((x) => x.email === String(body.email).toLowerCase())) {
+        return send(res, 422, { code: 422, error_code: 'email_exists', msg: 'A user with this email address has already been registered' });
+      }
+      return send(res, 200, authUser(createUser(body.email, body.password)));
+    }
+    const adminDel = /^\/auth\/v1\/admin\/users\/([0-9a-f-]+)$/.exec(path);
+    if (adminDel && req.method === 'DELETE') {
+      users.delete(adminDel[1]);
+      state.profiles = state.profiles.filter((p) => p.user_id !== adminDel[1]);
+      return send(res, 200, {});
+    }
 
-    if (path === '/rest/v1/rpc/is_admin' && req.method === 'POST') return send(res, 200, bearerOk(req));
+    const rpcM = /^\/rest\/v1\/rpc\/([a-z_]+)$/.exec(path);
+    if (rpcM && req.method === 'POST') return rpc(req, res, rpcM[1], parseJson(bodyBuf) ?? {});
 
     const m = /^\/rest\/v1\/([a-z_]+)$/.exec(path);
     if (m && TABLES.includes(m[1])) return rest(req, res, m[1], url, bodyBuf);
