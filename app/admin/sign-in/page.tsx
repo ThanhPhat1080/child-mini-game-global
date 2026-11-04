@@ -4,7 +4,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { adminAccess, getMyProfile } from '@/lib/auth/roles';
 import styles from '../admin.module.css';
+
+/** Where each adminAccess result goes after sign-in (U11). */
+const DESTINATION = { ok: '/admin', forbidden: '/admin/forbidden', banned: '/admin/suspended' } as const;
 
 export default function SignInPage() {
   const router = useRouter();
@@ -26,15 +30,15 @@ export default function SignInPage() {
       return;
     }
 
-    const { data: isAdmin } = await supabase.rpc('is_admin');
-    if (!isAdmin) {
+    const access = adminAccess(await getMyProfile(supabase));
+    if (access === 'signin') {
       await supabase.auth.signOut();
-      setError('This account is not an admin.');
+      setError('This account cannot open the admin yet. Please try again later.');
       setBusy(false);
       return;
     }
 
-    router.push('/admin/settings');
+    router.push(DESTINATION[access]);
     router.refresh();
   }
 
@@ -68,7 +72,7 @@ export default function SignInPage() {
         </form>
 
         <p className={styles.foot}><Link href="/sign-up">Create a parent account</Link></p>
-        <p className={styles.foot}>Admin accounts only · Supabase Auth</p>
+        <p className={styles.foot}>Parents and Super Admins · Supabase Auth</p>
       </div>
     </div>
   );
