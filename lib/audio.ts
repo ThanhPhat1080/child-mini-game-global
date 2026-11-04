@@ -3,7 +3,7 @@
  * so start sounds only from a click handler. Missing files are silent.
  * The background track lives here, so it keeps playing across screens.
  */
-const PREF_KEY = 'hamy-music';
+const PREF_KEY = 'childPlayer-music';
 
 let music: HTMLAudioElement | null = null;
 let currentUrl: string | null = null;

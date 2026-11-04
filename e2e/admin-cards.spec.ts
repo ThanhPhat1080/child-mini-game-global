@@ -59,7 +59,7 @@ test('add a card with a picture and a word: nothing is uploaded until Save, then
   await expect(save(page)).toBeDisabled();
 
   const lion = (await cardsOf()).find((c) => c.word === 'lion');
-  expect(lion?.image_path).toMatch(/^cards\/.+\.svg$/);
+  expect(lion?.image_path).toMatch(/^[0-9a-f-]{36}\/cards\/.+\.svg$/);
   expect(lion?.active).toBe(true);
   expect(await storage()).toEqual([lion!.image_path]);
 
@@ -153,7 +153,7 @@ test('importing the shipped template: blank pictures keep Save disabled until pi
   await save(page).click();
   await expect(page.getByRole('status').filter({ hasText: /^Saved$/ })).toBeVisible();
   await expect.poll(async () => (await cardsOf()).map((c) => c.word).sort()).toEqual(['apple', 'banana', 'cat']);
-  for (const c of await cardsOf()) expect(c.image_path).toMatch(/^cards\/.+\.svg$/);
+  for (const c of await cardsOf()) expect(c.image_path).toMatch(/^[0-9a-f-]{36}\/cards\/.+\.svg$/);
 });
 
 test('a file with one bad card imports nothing and names the card', async ({ page }) => {
@@ -234,6 +234,8 @@ test.describe('Quick import cards header button', () => {
   test('at 390 px the header does not overflow and Save stays visible', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await openCards(page);
+    // The stacked nav and the Mine/Global tabs push the header below the fold at this width; it is sticky, so it pins once the page scrolls.
+    await page.mouse.wheel(0, 600);
     await expect(save(page)).toBeVisible();
     await expect(save(page)).toBeInViewport({ ratio: 1 });
     await expect(importBtn(page)).toBeInViewport({ ratio: 1 });

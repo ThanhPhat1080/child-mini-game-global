@@ -41,8 +41,8 @@ test('a wide picture is cropped to a square WebP before it is stored (A24)', asy
   await expect(crop.getByRole('button', { name: 'Save' })).toBeEnabled();
   await crop.getByRole('button', { name: 'Save' }).click();
 
-  await expect.poll(async () => (await storage()).filter((p) => p.startsWith('library/') && p.endsWith('.webp'))).toHaveLength(1);
-  const [path] = (await storage()).filter((p) => p.startsWith('library/') && p.endsWith('.webp'));
+  await expect.poll(async () => (await storage()).filter((p) => p.includes('/library/') && p.endsWith('.webp'))).toHaveLength(1);
+  const [path] = (await storage()).filter((p) => p.includes('/library/') && p.endsWith('.webp'));
 
   const res = await page.request.get(`${STANDIN}/storage/v1/object/public/media/${path}`);
   expect(res.ok()).toBe(true);

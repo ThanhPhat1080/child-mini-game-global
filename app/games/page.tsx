@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getMyChildSettings } from '@/lib/settings';
 import { mediaUrl } from '@/lib/media';
 import { Stage } from '@/components/Stage';
 import { Hills } from '@/components/Hills';
@@ -12,7 +12,9 @@ import { MusicButton } from '@/components/MusicButton';
 import { AvatarSay } from '@/components/AvatarSay';
 import { isPressKey } from '@/lib/keynav';
 import { GAMES } from '@/lib/games/registry';
+import LogoutButton from '@/components/auth/LogoutButton';
 import { GameArt, GameIcon } from '@/components/games/GameArt';
+import { ScopeSwitch } from '@/components/games/ScopeSwitch';
 
 const PITCH = 712;
 const N = GAMES.length;
@@ -33,12 +35,12 @@ export default function Games() {
   const viewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    createSupabaseBrowserClient().from('settings').select('child_name, avatar_path').eq('id', 1).single().then(({ data }) => {
+    getMyChildSettings().then((data) => {
       if (!data) return;
       const w = (data.child_name ?? '').trim().split(/\s+/).filter(Boolean);
       if (w.length) setInitials(w.map((x: string) => x[0]).join('').slice(0, 2).toUpperCase());
       setAvatar(mediaUrl(data.avatar_path));
-    });
+    }, () => undefined);
     viewRef.current?.focus();
   }, []);
 
@@ -119,7 +121,9 @@ export default function Games() {
         <span style={{ marginTop: 8 }}><BackButton href="/" label="Back home" home /></span>
         <AvatarSay avatar={avatar} initials={initials} />
       </div>
+      <ScopeSwitch />
       <MusicButton />
+      <LogoutButton />
     </Stage>
   );
 }

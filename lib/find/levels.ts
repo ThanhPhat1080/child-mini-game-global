@@ -1,4 +1,5 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { applyScope } from '@/lib/review';
 import type { FindLevel } from '@/lib/find/types';
 import { isPlayable } from '@/lib/find/validate';
 
@@ -9,10 +10,9 @@ const COLUMNS = 'id, image_path, objects, active, sort_order';
  * (bad object list, blank word, missing picture) are dropped. Throws Error(message) when Supabase fails.
  */
 export async function fetchActiveFindLevels(): Promise<FindLevel[]> {
-  const { data, error } = await createSupabaseBrowserClient()
-    .from('find_levels')
-    .select(COLUMNS)
-    .eq('active', true)
+  const { data, error } = await applyScope(
+    createSupabaseBrowserClient().from('find_levels').select(COLUMNS).eq('active', true),
+  )
     .order('sort_order')
     .order('created_at');
   if (error) throw new Error(error.message);

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({ rows: [] as unknown[], eq: vi.fn(), push: vi.fn() }));
 
+vi.mock('@/lib/review', () => ({ applyScope: (q: unknown) => q }));
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
     from: () => ({
@@ -68,7 +69,7 @@ describe('Quiz set selection (T9, C3, C11)', () => {
   });
 
   it('TC3: a finished set shows the star and "completed"; an unfinished one does not', async () => {
-    localStorage.setItem('hamy:done:s1', '1');
+    localStorage.setItem('childPlayer:done:s1', '1');
     render(<QuizSets />);
     const animals = await screen.findByRole('link', { name: 'Animals, 2 questions, completed' });
     expect(animals.querySelector('svg[fill="#EED79A"]')).toBeTruthy();

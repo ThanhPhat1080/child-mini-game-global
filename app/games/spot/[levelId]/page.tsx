@@ -16,7 +16,7 @@ import { isWon, markFound, startSpot, type SpotState } from '@/lib/spot/rules';
 import type { SpotLevel } from '@/lib/spot/types';
 import { preloadImages } from '@/lib/memory/preload';
 import { mediaUrl } from '@/lib/media';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getMyChildSettings } from '@/lib/settings';
 import { chime } from '@/lib/sfx';
 
 /** After the last difference, a short breath before the celebration. */
@@ -95,8 +95,8 @@ export default function SpotPlay() {
     const done = (name: string, url: string | null) => live && setPraise({ name, url });
     later(() => { if (live) setPraise((p) => p ?? { name: '', url: null }); }, PRAISE_FALLBACK_MS);
     try {
-      createSupabaseBrowserClient().from('settings').select('child_name, complete_path').eq('id', 1).single()
-        .then(({ data }) => done(data?.child_name ?? '', mediaUrl(data?.complete_path)), () => done('', null));
+      getMyChildSettings()
+        .then((data) => done(data?.child_name ?? '', mediaUrl(data?.complete_path)), () => done('', null));
     } catch {
       done('', null);
     }

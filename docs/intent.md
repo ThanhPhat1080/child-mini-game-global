@@ -1,15 +1,15 @@
 # Intent: Kid-Friendly Interactive Web Gaming Hub
 
 ## 1. Overview & Vision
-A personalized, safe, web-based gaming platform built specifically for a 4-5-year-old child (Hà My) who cannot yet read. The application runs in a computer browser (the child plays on a computer; the screen can be cast to a TV, see ADR-028), combining a friendly, customized UI with calm, gentle games chosen by the parent, so the child plays in a safe, toxic-free environment.
+A personalized, safe, web-based gaming platform built specifically for a 4-5-year-old child who cannot yet read. The application runs in a computer browser (the child plays on a computer; the screen can be cast to a TV, see ADR-028), combining a friendly, customized UI with calm, gentle games chosen by the parent, so the child plays in a safe, toxic-free environment.
 
 ## 2. Target Audience & Personas & Creator Philosophy
-* **Primary User (The Child):** Hà My (4-5 years old). Needs ultra-simplified UI ("Mega Buttons"), large click targets, visual/auditory feedback (anime princess graphics, personalized audio greetings), and zero negative reinforcement (no punishment for wrong answers).
+* **Primary User (The Child):** A child (4-5 years old). Needs ultra-simplified UI ("Mega Buttons"), large click targets, visual/auditory feedback (anime princess graphics, personalized audio greetings), and zero negative reinforcement (no punishment for wrong answers).
 * **Secondary User (The Parent):** Looking for a safe environment where they can add and update games and content themselves, without touching code.
 * **Creator Philosophy (Calm & Slow Gaming):** Inspired by the innocent, straightforward nature of 8x/9x retro games, the webapp strictly avoids over-hyped, flashy, high-stimulation elements (such as neon colors, rapid jarring animations, and loud sensory overload). The goal is to cultivate a **calm, focused, and stress-free cognitive environment** that prevents unwanted hyperactivity and screen fatigue.
 
 ## 3. Core Functional Requirements & Aesthetic Principles
-* **Personalized Onboarding:** Load custom anime princess artwork, user avatar, and an automated voice greeting ("Hà My ơi...") fetched from Supabase storage upon initial page load.
+* **Personalized Onboarding:** Load custom anime princess artwork, user avatar, and an automated voice greeting ("Bé ơi...") fetched from Supabase storage upon initial page load.
 * **Aesthetic & Sensory Design (Ghibli & Minimalist Style in 2D):**
   * **Color Palette:** Desaturated, warm pastel tones (soft warm cream, muted pinks, soft peach, gentle yellows) avoiding high-saturation neon glare to protect eyes and maintain deep focus.
   * **Audio Experience:** Continuous, gentle, lofi/acoustic instrumental background music (Studio Ghibli style) with soft, comforting feedback sounds (gentle "Hooray" with slow pastel confetti, mild "Oh-oh" for wrong attempts without harsh penalties).
@@ -28,7 +28,7 @@ A personalized, safe, web-based gaming platform built specifically for a 4-5-yea
 
 ### Phase 1: MVP (build first)
 
-**Goal:** Hà My can finish a full quiz set with images. Parents update the content themselves without touching code.
+**Goal:** The child can finish a full quiz set with images. Parents update the content themselves without touching code.
 
 **In scope:**
 

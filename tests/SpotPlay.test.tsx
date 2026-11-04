@@ -15,9 +15,7 @@ const h = vi.hoisted(() => ({
 vi.mock('@/lib/spot/levels', () => ({ fetchLevel: h.fetchLevel }));
 vi.mock('@/lib/sfx', () => ({ chime: h.chime, applause: vi.fn(), speakKid: vi.fn(), playFile: vi.fn() }));
 vi.mock('@/lib/memory/preload', () => ({ preloadImages: h.preload }));
-vi.mock('@/lib/supabase/client', () => ({
-  createSupabaseBrowserClient: () => ({ from: () => ({ select: () => ({ eq: () => ({ single: () => h.settings() }) }) }) }),
-}));
+vi.mock('@/lib/settings', () => ({ getMyChildSettings: () => h.settings() }));
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p}` : null) }));
 vi.mock('next/navigation', () => ({
   useParams: () => ({ levelId: h.id }),
@@ -57,7 +55,7 @@ beforeEach(() => {
   for (const f of [h.fetchLevel, h.chime, h.push, h.replace, h.preload, h.settings]) f.mockReset();
   h.id = 'L1';
   h.preload.mockImplementation((_urls: unknown, done: () => void) => { done(); return () => {}; });
-  h.settings.mockResolvedValue({ data: { child_name: 'Mi', complete_path: null } });
+  h.settings.mockResolvedValue({ child_name: 'Mi', complete_path: null });
   Object.defineProperty(window, 'matchMedia', { configurable: true, writable: true, value: undefined });
   HTMLElement.prototype.getBoundingClientRect = () => ({ left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600, x: 0, y: 0, toJSON() {} }) as DOMRect;
 });

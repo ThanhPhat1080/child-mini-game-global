@@ -14,7 +14,7 @@ import { drawDeck, pairsOf, parseLevel, type Level } from '@/lib/memory/deck';
 import { flip, MISMATCH_MS, resolveMismatch, startGame, WIN_DELAY_MS, type GameEvent, type GameState } from '@/lib/memory/rules';
 import { preloadImages } from '@/lib/memory/preload';
 import { mediaUrl } from '@/lib/media';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getMyChildSettings } from '@/lib/settings';
 import { chime, flipTick } from '@/lib/sfx';
 import { gridStep } from '@/lib/keynav';
 
@@ -112,8 +112,8 @@ export default function MemoryPlay() {
     if (!won) return;
     let live = true;
     const done = (name: string, url: string | null) => live && setPraise({ name, url });
-    createSupabaseBrowserClient().from('settings').select('child_name, complete_path').eq('id', 1).single()
-      .then(({ data }) => done(data?.child_name ?? '', mediaUrl(data?.complete_path)), () => done('', null));
+    getMyChildSettings()
+      .then((data) => done(data?.child_name ?? '', mediaUrl(data?.complete_path)), () => done('', null));
     return () => { live = false; };
   }, [won]);
 

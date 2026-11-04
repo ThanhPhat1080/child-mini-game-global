@@ -12,6 +12,10 @@ import { LibraryButton } from './LibraryButton';
 import { PicIcon, dangerBtn, fileName, ghostBtn, panel } from './editor-parts';
 import { SpotMarkerEditor } from './SpotMarkerEditor';
 import { Pic } from '@/components/Pic';
+import { EditLock } from './EditLock';
+import { ShareToggle } from './ShareToggle';
+import { VisibilityBadge } from './VisibilityBadge';
+import type { Visibility } from '@/lib/review';
 
 /** Accepted level pictures (A14). */
 export const SPOT_IMG_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
@@ -54,7 +58,7 @@ function PicturePicker({ side, n, path, open, onLibrary, onSvg, startCrop, onCro
 }
 
 /** One level: both pictures, the spots, on/off, preview and delete. Edits go up through `onEdit`. */
-export function SpotLevelPanel({ l, n, message, shapeWarning, startCrop, onCropped, onEdit, onChooseLibrary, onSvg, onAskDelete }: {
+export function SpotLevelPanel({ l, n, message, shapeWarning, startCrop, onCropped, onEdit, onChooseLibrary, onSvg, onAskDelete, onVisibility }: {
   l: ELevel; n: number; message: string | null; shapeWarning: boolean;
   /** Picture A's crop: picture B starts from the same square (A25). */
   startCrop?: Crop;
@@ -62,12 +66,17 @@ export function SpotLevelPanel({ l, n, message, shapeWarning, startCrop, onCropp
   onCropped: (side: Side, crop: Crop) => void;
   onEdit: (patch: Partial<ELevel>) => void; onChooseLibrary: (side: Side, path: string) => void; onSvg: (side: Side, code: string) => void;
   onAskDelete: () => void;
+  /** The row was shared (it is now under review). */
+  onVisibility?: (v: Visibility) => void;
 }) {
   const [open, setOpen] = useState(l.isNew); // a saved level starts collapsed: only its header shows
+  // Under review or global: read-only (V2, V3). Only the sharing row below stays usable.
+  const locked = !!l.visibility && l.visibility !== 'private';
   const problem = checkDifferences(l.differences);
   const missing = !l.a || !l.b ? 'two pictures' : problem ? 'at least 3 spots (up to 10)' : '';
   return (
     <article aria-label={`Level ${n}`} style={{ ...panel, padding: 18, gap: 14, opacity: l.active ? 1 : 0.8, border: missing ? '1.5px dashed #E5C979' : '1.5px solid transparent' }}>
+      <EditLock locked={locked}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>
           <button type="button" aria-expanded={open} aria-label={`${open ? 'Collapse' : 'Expand'} level ${n}`} onClick={() => setOpen(!open)}
@@ -102,6 +111,13 @@ export function SpotLevelPanel({ l, n, message, shapeWarning, startCrop, onCropp
       {message && <span role="alert" style={{ fontSize: 13, fontWeight: 700, color: '#A8484F' }}>{message}</span>}
       {missing && <span style={{ fontSize: 13, color: '#7A5410' }}>Needs {missing} before you can save.</span>}
         </>
+      )}
+      </EditLock>
+      {!l.isNew && l.visibility && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start', borderTop: '1px solid #F1E7DA', paddingTop: 10 }}>
+          <VisibilityBadge visibility={l.visibility} />
+          <ShareToggle table="spot_levels" id={l.id} visibility={l.visibility} onChanged={onVisibility} />
+        </div>
       )}
     </article>
   );

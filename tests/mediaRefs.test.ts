@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const db = vi.hoisted(() => ({
   rows: {} as Record<string, Record<string, unknown>[]>,
   offline: false,
+  rpcCalls: [] as [string, string][],
   remove: vi.fn(),
 }));
 
@@ -26,12 +27,20 @@ vi.mock('@/lib/supabase/client', () => ({
         }),
       };
     },
+    // The database function media_in_use: true when any row of any table (any owner) holds the path.
+    rpc: async (name: string, args: { p_path: string }) => {
+      if (db.offline) throw new Error('offline');
+      db.rpcCalls.push([name, args.p_path]);
+      const used = Object.values(db.rows).some((rows) => rows.some((r) => Object.values(r).some((v) =>
+        v === args.p_path || (Array.isArray(v) && v.some((o) => (o as { audio_path?: string } | null)?.audio_path === args.p_path)))));
+      return { data: used, error: null };
+    },
     storage: { from: () => ({ remove: db.remove, upload: vi.fn(), getPublicUrl: (p: string) => ({ data: { publicUrl: p } }) }) },
   }),
 }));
 
-import { MEDIA_SOURCES, referencedPaths } from '@/lib/media/refs';
-import { removeMedia } from '@/lib/media';
+import { MEDIA_SOURCES, referencedPaths, referencedPathsByScan } from '@/lib/media/refs';
+import { deleteMedia, isMediaInUse, removeMedia } from '@/lib/media';
 
 beforeEach(() => {
   db.rows = {};
@@ -43,8 +52,8 @@ describe('MEDIA_SOURCES', () => {
   it('lists every column that can point at a bucket file', () => {
     const cols = MEDIA_SOURCES.map((s) => `${s.table}.${s.column}`);
     for (const c of [
-      'settings.greeting_path', 'settings.music_path', 'settings.avatar_path',
-      'settings.hooray_path', 'settings.ohoh_path', 'settings.complete_path',
+      'child_settings.greeting_path', 'child_settings.music_path', 'child_settings.avatar_path',
+      'child_settings.hooray_path', 'child_settings.ohoh_path', 'child_settings.complete_path',
       'quiz_sets.cover_path', 'questions.prompt_image_path', 'questions.prompt_audio_path',
       'answers.image_path', 'memory_cards.image_path', 'memory_cards.audio_path',
       'spot_levels.image_a_path', 'spot_levels.image_b_path', 'find_levels.image_path',
@@ -53,11 +62,11 @@ describe('MEDIA_SOURCES', () => {
   });
 });
 
-describe('referencedPaths', () => {
+describe('referencedPathsByScan (client-side column scan)', () => {
   const cases: [string, string, Record<string, unknown>, string][] = [
-    ['settings', 'greeting_path', { id: 1, greeting_path: 'audio/g.mp3' }, 'audio/g.mp3'],
-    ['settings', 'avatar_path', { id: 1, avatar_path: 'img/avatar.png' }, 'img/avatar.png'],
-    ['settings', 'complete_path', { id: 1, complete_path: 'sfx/done.mp3' }, 'sfx/done.mp3'],
+    ['child_settings', 'greeting_path', { child_id: 'c', greeting_path: 'audio/g.mp3' }, 'audio/g.mp3'],
+    ['child_settings', 'avatar_path', { child_id: 'c', avatar_path: 'img/avatar.png' }, 'img/avatar.png'],
+    ['child_settings', 'complete_path', { child_id: 'c', complete_path: 'sfx/done.mp3' }, 'sfx/done.mp3'],
     ['quiz_sets', 'cover_path', { id: 'q', cover_path: 'covers/c.png' }, 'covers/c.png'],
     ['questions', 'prompt_image_path', { id: 'p', prompt_image_path: 'questions/p.png' }, 'questions/p.png'],
     ['questions', 'prompt_audio_path', { id: 'p', prompt_audio_path: 'voices/v.mp3' }, 'voices/v.mp3'],
@@ -71,7 +80,7 @@ describe('referencedPaths', () => {
 
   it.each(cases)('reports a path used by %s.%s as referenced', async (table, _col, row, path) => {
     db.rows = { [table]: [row] };
-    expect(await referencedPaths([path])).toEqual(new Set([path]));
+    expect(await referencedPathsByScan([path])).toEqual(new Set([path]));
   });
 
   it('reports a find object sound as referenced (objects[].audio_path)', async () => {
@@ -85,16 +94,16 @@ describe('referencedPaths', () => {
         ],
       }],
     };
-    expect(await referencedPaths(['find/cup.mp3'])).toEqual(new Set(['find/cup.mp3']));
+    expect(await referencedPathsByScan(['find/cup.mp3'])).toEqual(new Set(['find/cup.mp3']));
   });
 
   it('does not report an unused path, and returns only the referenced subset', async () => {
     db.rows = { memory_cards: [{ id: 'm', image_path: 'cards/used.png', audio_path: null }] };
-    expect(await referencedPaths(['cards/used.png', 'cards/unused.png'])).toEqual(new Set(['cards/used.png']));
+    expect(await referencedPathsByScan(['cards/used.png', 'cards/unused.png'])).toEqual(new Set(['cards/used.png']));
   });
 
   it('returns an empty set for no paths', async () => {
-    expect(await referencedPaths([])).toEqual(new Set());
+    expect(await referencedPathsByScan([])).toEqual(new Set());
   });
 
   it('throws when a query fails, so callers can keep files', async () => {
@@ -136,5 +145,43 @@ describe('removeMedia with the reference guard', () => {
   it('returns the storage error message when the remove itself fails', async () => {
     db.remove.mockResolvedValueOnce({ error: { message: 'bucket down' } });
     expect(await removeMedia(['cards/gone.png'])).toBe('bucket down');
+  });
+});
+
+// Q6: the delete guard asks the database, which sees every owner's content.
+describe('referencedPaths (media_in_use)', () => {
+  beforeEach(() => { db.rows = {}; db.offline = false; db.rpcCalls = []; });
+
+  it("is true for a path used only by another owner's row, which a client query could not see", async () => {
+    db.rows = { memory_cards: [{ image_path: 'other/cards/a.png', owner_id: 'other' }] };
+    expect(await referencedPaths(['other/cards/a.png', 'me/cards/free.png'])).toEqual(new Set(['other/cards/a.png']));
+    expect(db.rpcCalls).toEqual([['media_in_use', 'other/cards/a.png'], ['media_in_use', 'me/cards/free.png']]);
+  });
+
+  it('asks once per distinct path and throws when the check fails', async () => {
+    await referencedPaths(['a', 'a', 'b']);
+    expect(db.rpcCalls).toHaveLength(2);
+    db.offline = true;
+    await expect(referencedPaths(['a'])).rejects.toThrow();
+  });
+
+  it('delete is blocked: removeMedia keeps a file media_in_use reports as used', async () => {
+    db.remove.mockReset().mockResolvedValue({ error: null });
+    db.rows = { find_levels: [{ objects: [{ audio_path: 'other/find/cat.mp3' }] }] };
+    await removeMedia(['other/find/cat.mp3']);
+    expect(db.remove).not.toHaveBeenCalled();
+  });
+});
+
+describe('library delete guard (Q6)', () => {
+  beforeEach(() => { db.rows = {}; db.offline = false; db.rpcCalls = []; db.remove.mockReset().mockResolvedValue({ error: null }); });
+
+  it('delete is blocked when media_in_use returns true, and allowed when it returns false', async () => {
+    db.rows = { memory_cards: [{ image_path: 'other/cards/used.png' }] };
+    expect(await isMediaInUse('other/cards/used.png')).toBe(true);
+    expect(await deleteMedia('other/cards/used.png')).toBe(false);
+    expect(db.remove).not.toHaveBeenCalled();
+    expect(await deleteMedia('me/cards/free.png')).toBe(true);
+    expect(db.remove).toHaveBeenCalledWith(['me/cards/free.png']);
   });
 });

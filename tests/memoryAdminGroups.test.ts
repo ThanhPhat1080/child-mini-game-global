@@ -10,7 +10,7 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/supabase/client', () => ({
-  createSupabaseBrowserClient: () => ({ from: h.from }),
+  createSupabaseBrowserClient: () => ({ auth: { getSession: () => Promise.resolve({ data: { session: { user: { id: 'me' } } } }) }, from: h.from }),
 }));
 
 import {
@@ -75,10 +75,10 @@ describe('pruneDeletedGroups', () => {
 
 describe('loadGroups', () => {
   it('reads groups ordered by created_at and maps rows', async () => {
-    h.selectResult = { data: [{ id: 'a', name: 'Animals' }], error: null };
+    h.selectResult = { data: [{ id: 'a', name: 'Animals', owner_id: 'me' }, { id: 'z', name: 'Theirs', owner_id: 'other' }], error: null };
     await expect(loadGroups()).resolves.toEqual([{ id: 'a', isNew: false, name: 'Animals' }]);
     expect(h.from).toHaveBeenCalledWith('card_groups');
-    expect(h.select).toHaveBeenCalledWith('id, name');
+    expect(h.select).toHaveBeenCalledWith('id, name, owner_id');
     expect(h.order).toHaveBeenCalledWith('created_at');
   });
   it('throws the Supabase error message', async () => {

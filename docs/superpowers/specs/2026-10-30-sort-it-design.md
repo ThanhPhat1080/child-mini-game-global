@@ -3,7 +3,7 @@
 Status: **implemented on branch `claude/phase2/sort-it` (2026-10-30), awaiting the PO play-test and the migration being applied to the real Supabase project before merge into `develop`** (approved by the PO in the brainstorm; groups changed the same day from free text to admin-managed tags, one tag per card). Phase 2 only adds games (ADR-029). Order chosen by the PO: Memory Match and Listen & Pick (built), Sort It, then Spot the Differences (own spec later). Each game has its own spec, plan and integration branch (`claude/phase2/sort-it`).
 
 ## 1. Goal
-Hà My (4-5, cannot read) drags everyday objects into the basket where they belong (animals with animals, food with food) and hears the English word of every object she picks up. Secondary goal: learn English words by hearing them, without pressure.
+A child (4-5, cannot read) drags everyday objects into the basket where they belong (animals with animals, food with food) and hears the English word of every object she picks up. Secondary goal: learn English words by hearing them, without pressure.
 
 Success:
 1. She plays a full round from the game list to the end with the mouse, nobody reading to her.

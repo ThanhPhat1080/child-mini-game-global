@@ -15,7 +15,7 @@ import { buildSortRound, type SortRound } from '@/lib/sort/rounds';
 import { sayWord, stopWord } from '@/lib/memory/cards';
 import { preloadImages } from '@/lib/memory/preload';
 import { mediaUrl } from '@/lib/media';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getMyChildSettings } from '@/lib/settings';
 import { chime, ohOh, type SoundHandle } from '@/lib/sfx';
 import type { MemoryCard } from '@/lib/memory/types';
 
@@ -133,8 +133,8 @@ export default function SortPlay() {
   useEffect(() => {
     let live = true;
     try {
-      createSupabaseBrowserClient().from('settings').select('ohoh_path').eq('id', 1).single().then(
-        ({ data }) => { if (live && data) ohohUrl.current = mediaUrl(data.ohoh_path); },
+      getMyChildSettings().then(
+        (data) => { if (live && data) ohohUrl.current = mediaUrl(data.ohoh_path); },
         () => undefined,
       );
     } catch { /* no client: built-in sound */ }
@@ -274,8 +274,8 @@ export default function SortPlay() {
     let live = true;
     const ready = (name: string, url: string | null) => live && setPraise({ name, url });
     try {
-      createSupabaseBrowserClient().from('settings').select('child_name, complete_path').eq('id', 1).single()
-        .then(({ data }) => ready(data?.child_name ?? '', mediaUrl(data?.complete_path)), () => ready('', null));
+      getMyChildSettings()
+        .then((data) => ready(data?.child_name ?? '', mediaUrl(data?.complete_path)), () => ready('', null));
     } catch { ready('', null); }
     return () => { live = false; };
   }, [done]);

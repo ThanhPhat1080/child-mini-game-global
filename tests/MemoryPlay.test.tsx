@@ -18,9 +18,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/lib/memory/cards', () => ({ fetchActiveCards: h.fetchActiveCards, sayWord: h.sayWord, stopWord: h.stopWord }));
 vi.mock('@/lib/sfx', () => ({ flipTick: h.flipTick, chime: h.chime, applause: vi.fn(), speakKid: vi.fn(), playFile: vi.fn() }));
-vi.mock('@/lib/supabase/client', () => ({
-  createSupabaseBrowserClient: () => ({ from: () => ({ select: () => ({ eq: () => ({ single: () => h.settings() }) }) }) }),
-}));
+vi.mock('@/lib/settings', () => ({ getMyChildSettings: () => h.settings() }));
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p}` : null) }));
 vi.mock('@/lib/memory/deck', async (orig) => ({ ...(await orig<typeof import('@/lib/memory/deck')>()), drawDeck: h.drawDeck }));
 vi.mock('next/navigation', () => ({
@@ -63,7 +61,7 @@ async function ready(level = '12', pool = cards(15)) {
 beforeEach(() => {
   vi.useFakeTimers();
   for (const f of [h.fetchActiveCards, h.sayWord, h.stopWord, h.flipTick, h.chime, h.push, h.replace, h.drawDeck, h.settings]) f.mockReset();
-  h.settings.mockResolvedValue({ data: { child_name: 'Mi', complete_path: null } });
+  h.settings.mockResolvedValue({ child_name: 'Mi', complete_path: null });
   h.drawDeck.mockImplementation(fixedDeck);
   h.sayWord.mockImplementation((_card: MemoryCard, onEnd?: () => void) => onEnd?.()); // a word that finishes at once
   Object.defineProperty(window, 'matchMedia', { configurable: true, writable: true, value: undefined });

@@ -1,15 +1,14 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { applyScope } from '@/lib/review';
 import { mediaUrl } from '@/lib/media';
 import { speakKid } from '@/lib/sfx';
 import type { MemoryCard } from '@/lib/memory/types';
 
 /** Active cards only (the deck is built from these). Throws Error(message) when Supabase fails. */
 export async function fetchActiveCards(): Promise<MemoryCard[]> {
-  const { data, error } = await createSupabaseBrowserClient()
-    .from('memory_cards')
-    .select('id, word, image_path, audio_path, active')
-    .eq('active', true)
-    .order('created_at');
+  const { data, error } = await applyScope(
+    createSupabaseBrowserClient().from('memory_cards').select('id, word, image_path, audio_path, active').eq('active', true),
+  ).order('created_at');
   if (error) throw new Error(error.message);
   return (data ?? []) as MemoryCard[];
 }

@@ -15,7 +15,7 @@ import { MemoryDone } from '@/components/memory/MemoryDone';
 
 const setup = (over: Partial<React.ComponentProps<typeof MemoryDone>> = {}) => {
   const onAgain = vi.fn();
-  const r = render(<MemoryDone flips={14} childName="Hà My" completeUrl={null} onAgain={onAgain} levelsHref="/games/memory" {...over} />);
+  const r = render(<MemoryDone flips={14} childName="childPlayer" completeUrl={null} onAgain={onAgain} levelsHref="/games/memory" {...over} />);
   return { onAgain, ...r };
 };
 const again = () => screen.getByRole('button', { name: 'Play again' });
@@ -27,7 +27,7 @@ afterEach(cleanup);
 describe('MemoryDone (M7)', () => {
   it('greets the child by name', () => {
     setup();
-    expect(screen.getByRole('heading').textContent).toBe('You did it, Hà My!');
+    expect(screen.getByRole('heading').textContent).toBe('You did it, childPlayer!');
   });
 
   it('omits the name when empty', () => {
@@ -79,9 +79,9 @@ describe('MemoryDone (M7)', () => {
     const { rerender, onAgain } = setup();
     expect(h.applause).toHaveBeenCalledTimes(1);
     expect(h.speakKid).toHaveBeenCalledTimes(1);
-    expect(h.speakKid.mock.calls[0][0]).toBe('You did it, Hà My!');
+    expect(h.speakKid.mock.calls[0][0]).toBe('You did it, childPlayer!');
     expect(h.playFile).not.toHaveBeenCalled();
-    rerender(<MemoryDone flips={14} childName="Hà My" completeUrl={null} onAgain={onAgain} levelsHref="/games/memory" />);
+    rerender(<MemoryDone flips={14} childName="childPlayer" completeUrl={null} onAgain={onAgain} levelsHref="/games/memory" />);
     expect(h.applause).toHaveBeenCalledTimes(1);
     expect(h.speakKid).toHaveBeenCalledTimes(1);
   });

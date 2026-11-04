@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getMyChildSettings } from '@/lib/settings';
 import { mediaUrl } from '@/lib/media';
 import { SLOT_COLORS } from '@/lib/tokens';
 import { Stage } from '@/components/Stage';
@@ -65,9 +66,9 @@ export default function QuestionPage() {
   const [restored, setRestored] = useState(false);
 
   useEffect(() => {
-    createSupabaseBrowserClient().from('settings').select('hooray_path, ohoh_path').eq('id', 1).single().then(({ data }) => {
+    getMyChildSettings().then((data) => {
       if (data) setSounds({ hooray: mediaUrl(data.hooray_path), ohoh: mediaUrl(data.ohoh_path) });
-    });
+    }, () => undefined);
   }, []);
 
   useEffect(() => {

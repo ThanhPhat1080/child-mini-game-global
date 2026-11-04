@@ -7,6 +7,7 @@ process.env.STANDIN_PORT = String(STANDIN_PORT);
 
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/support/global-setup.ts',
   workers: 1,
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,
@@ -14,6 +15,7 @@ export default defineConfig({
   use: {
     baseURL: `http://127.0.0.1:${APP_PORT}`,
     trace: 'on-first-retry',
+    storageState: 'e2e/.auth/child.json', // signed in as the child; specs for other roles override it
   },
   projects: [
     {
@@ -40,6 +42,7 @@ export default defineConfig({
       env: {
         NEXT_PUBLIC_SUPABASE_URL: `http://127.0.0.1:${STANDIN_PORT}`,
         NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
+        SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
       },
       timeout: 300_000,
       reuseExistingServer: false,

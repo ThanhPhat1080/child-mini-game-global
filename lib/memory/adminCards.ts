@@ -2,10 +2,11 @@ import { randomId } from '@/lib/randomId';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { commitPendingMap, isPending, removeMedia } from '@/lib/media';
 import { isBucketPath, pathsToDelete } from '@/lib/mediaPaths';
+import { getMyUserId, type Visibility } from '@/lib/review';
 
-export type ECard = { id: string; isNew: boolean; word: string; image: string | null; audio: string | null; active: boolean; groupId: string | null };
+export type ECard = { id: string; isNew: boolean; word: string; image: string | null; audio: string | null; active: boolean; groupId: string | null; visibility?: Visibility };
 
-type Row = { id: string; word: string; image_path: string | null; audio_path: string | null; active: boolean; group_id: string | null };
+type Row = { id: string; word: string; image_path: string | null; audio_path: string | null; active: boolean; group_id: string | null; owner_id: string | null; visibility: Visibility };
 
 export const newCard = (): ECard => ({ id: randomId(), isNew: true, word: '', image: null, audio: null, active: true, groupId: null });
 
@@ -30,14 +31,15 @@ export function duplicateWords(cards: ECard[]): Set<string> {
 /** Bucket files a card points to (bundled art, links and unsaved picks are not ours to delete). */
 export const cardMediaPaths = (c: ECard): string[] => [c.image, c.audio].filter(isBucketPath);
 
-/** Every card, active or not (admin view), newest first. */
+/** The signed-in user's own cards, active or not (admin view), newest first. Other families' global cards are not editable here. */
 export async function loadCards(): Promise<ECard[]> {
   const { data, error } = await createSupabaseBrowserClient()
     .from('memory_cards')
-    .select('id, word, image_path, audio_path, active, group_id')
+    .select('id, word, image_path, audio_path, active, group_id, owner_id, visibility')
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
-  return ((data ?? []) as Row[]).map((r) => ({ id: r.id, isNew: false, word: r.word, image: r.image_path, audio: r.audio_path, active: r.active, groupId: r.group_id ?? null }));
+  const me = await getMyUserId();
+  return ((data ?? []) as Row[]).filter((r) => r.owner_id === me).map((r) => ({ id: r.id, isNew: false, word: r.word, image: r.image_path, audio: r.audio_path, active: r.active, groupId: r.group_id ?? null, visibility: r.visibility }));
 }
 
 /**
@@ -72,9 +74,11 @@ export async function saveCards(saved: ECard[], draft: ECard[]): Promise<{ error
     const { error } = await sb.from('memory_cards').delete().in('id', gone);
     if (error) return fail(error.message);
   }
-  if (final.length) {
+  // Rows under review or global are locked (V2, V3): they are not written here.
+  const writable = final.filter((c) => !c.visibility || c.visibility === 'private');
+  if (writable.length) {
     const { error } = await sb.from('memory_cards').upsert(
-      final.map((c) => ({ id: c.id, word: c.word.trim(), image_path: c.image, audio_path: c.audio, active: c.active, group_id: c.groupId })),
+      writable.map((c) => ({ id: c.id, word: c.word.trim(), image_path: c.image, audio_path: c.audio, active: c.active, group_id: c.groupId })),
       { onConflict: 'id' },
     );
     if (error) return fail(error.message);
@@ -108,11 +112,12 @@ export function pruneDeletedGroups(cards: ECard[], groups: EGroup[]): ECard[] {
   return cards.map((c) => (c.groupId && !ids.has(c.groupId) ? { ...c, groupId: null } : { ...c }));
 }
 
-/** Every group, oldest first (admin only). */
+/** The signed-in user's own groups, oldest first (admin only). A card keeps its group's owner. */
 export async function loadGroups(): Promise<EGroup[]> {
-  const { data, error } = await createSupabaseBrowserClient().from('card_groups').select('id, name').order('created_at');
+  const { data, error } = await createSupabaseBrowserClient().from('card_groups').select('id, name, owner_id').order('created_at');
   if (error) throw new Error(error.message);
-  return ((data ?? []) as { id: string; name: string }[]).map((r) => ({ id: r.id, isNew: false, name: r.name }));
+  const me = await getMyUserId();
+  return ((data ?? []) as { id: string; name: string; owner_id: string | null }[]).filter((r) => r.owner_id === me).map((r) => ({ id: r.id, isNew: false, name: r.name }));
 }
 
 /** Writes new and renamed groups. Call before saveCards so cards can point to them. */

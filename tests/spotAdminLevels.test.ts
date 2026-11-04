@@ -15,6 +15,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
+    auth: { getSession: () => Promise.resolve({ data: { session: { user: { id: 'me' } } } }) },
     from: h.from,
     storage: { from: () => ({ upload: h.upload, remove: h.remove, getPublicUrl: (p: string) => ({ data: { publicUrl: `https://cdn.test/${p}` } }) }) },
   }),
@@ -59,8 +60,8 @@ describe('newLevel / isLevelComplete', () => {
 
 describe('loadLevels', () => {
   it('reads every level ordered by created_at then sort_order and maps the columns', async () => {
-    h.selectResult = { data: [{ id: 'a', image_a_path: 'spot/a.png', image_b_path: 'spot/b.png', differences: three, active: false, sort_order: 1 }], error: null };
-    await expect(loadLevels()).resolves.toEqual([{ id: 'a', isNew: false, a: 'spot/a.png', b: 'spot/b.png', differences: three, active: false }]);
+    h.selectResult = { data: [{ id: 'a', image_a_path: 'spot/a.png', image_b_path: 'spot/b.png', differences: three, active: false, sort_order: 1, owner_id: 'me', visibility: 'private' }, { id: 'z', image_a_path: 'q', image_b_path: 'r', differences: three, active: true, sort_order: 2, owner_id: 'other', visibility: 'global' }], error: null };
+    await expect(loadLevels()).resolves.toEqual([{ id: 'a', isNew: false, a: 'spot/a.png', b: 'spot/b.png', differences: three, active: false, visibility: 'private' }]);
     expect(h.from).toHaveBeenCalledWith('spot_levels');
     expect(h.order).toHaveBeenNthCalledWith(1, 'created_at');
   });
@@ -77,8 +78,8 @@ describe('saveLevels', () => {
     expect(r).toEqual({ error: null, warning: null });
     expect(h.log).toEqual(['upload', 'upload', 'upsert']);
     const rows = h.upsert.mock.calls[0][0];
-    expect(rows[0].image_a_path).toMatch(/^spot\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
-    expect(rows[0].image_b_path).toMatch(/^spot\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
+    expect(rows[0].image_a_path).toMatch(/^me\/spot\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
+    expect(rows[0].image_b_path).toMatch(/^me\/spot\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
     expect(rows.map((x: { sort_order: number }) => x.sort_order)).toEqual([0, 1]);
     expect(rows[0]).toMatchObject({ id: 'x', differences: three, active: true });
     expect(h.upsert.mock.calls[0][1]).toEqual({ onConflict: 'id' });
@@ -109,7 +110,7 @@ describe('saveLevels', () => {
     expect(r).toEqual({ error: 'db down', warning: null });
     const removed = h.remove.mock.calls[0][0] as string[];
     expect(removed).toHaveLength(1);
-    expect(removed[0]).toMatch(/^spot\/[A-Za-z0-9-]+-/);
+    expect(removed[0]).toMatch(/^me\/spot\/[A-Za-z0-9-]+-/);
     expect(removed).not.toContain('spot/old.png');
   });
 

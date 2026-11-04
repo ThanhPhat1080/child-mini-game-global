@@ -13,7 +13,7 @@ import { SortDone } from '@/components/sort/SortDone';
 
 const setup = (over: Partial<React.ComponentProps<typeof SortDone>> = {}) => {
   const onAgain = vi.fn();
-  const r = render(<SortDone wrong={3} childName="Hà My" completeUrl={null} onAgain={onAgain} gamesHref="/games" {...over} />);
+  const r = render(<SortDone wrong={3} childName="childPlayer" completeUrl={null} onAgain={onAgain} gamesHref="/games" {...over} />);
   return { onAgain, ...r };
 };
 const again = () => screen.getByRole('button', { name: 'Play again' });
@@ -29,7 +29,7 @@ afterEach(cleanup);
 describe('SortDone (R7)', () => {
   it('greets the child by name, or without one', () => {
     setup();
-    expect(screen.getByRole('heading').textContent).toBe('You did it, Hà My!');
+    expect(screen.getByRole('heading').textContent).toBe('You did it, childPlayer!');
     cleanup();
     setup({ childName: '' });
     expect(screen.getByRole('heading').textContent).toBe('You did it!');
@@ -67,11 +67,11 @@ describe('SortDone (R7)', () => {
 
   it('without a custom file plays applause and speaks once, also under StrictMode and after a rerender', () => {
     const onAgain = vi.fn();
-    const props = { wrong: 0, childName: 'Hà My', completeUrl: null, onAgain, gamesHref: '/games' };
+    const props = { wrong: 0, childName: 'childPlayer', completeUrl: null, onAgain, gamesHref: '/games' };
     const { rerender } = render(<StrictMode><SortDone {...props} /></StrictMode>);
     expect(h.applause).toHaveBeenCalledTimes(1);
     expect(h.speakKid).toHaveBeenCalledTimes(1);
-    expect(h.speakKid.mock.calls[0][0]).toBe('You did it, Hà My!');
+    expect(h.speakKid.mock.calls[0][0]).toBe('You did it, childPlayer!');
     rerender(<StrictMode><SortDone {...props} wrong={1} /></StrictMode>);
     expect(h.applause).toHaveBeenCalledTimes(1);
     expect(h.speakKid).toHaveBeenCalledTimes(1);
@@ -84,7 +84,7 @@ describe('SortDone (R7)', () => {
     const stop = vi.fn();
     sound().mockReturnValue({ stop, ms: 3000 });
     const onAgain = vi.fn();
-    render(<StrictMode><SortDone wrong={0} childName="Hà My" completeUrl={completeUrl} onAgain={onAgain} gamesHref="/games" /></StrictMode>);
+    render(<StrictMode><SortDone wrong={0} childName="childPlayer" completeUrl={completeUrl} onAgain={onAgain} gamesHref="/games" /></StrictMode>);
     expect(sound()).toHaveBeenCalledTimes(1);
     expect(stop).not.toHaveBeenCalled();
     fireEvent.click(again());

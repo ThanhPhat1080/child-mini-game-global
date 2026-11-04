@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { getState, reset, signInAsAdmin, type FindLevelRow } from './support/fixtures';
+import { getState, reset, signInAsAdmin, type FindLevelRow , ACCOUNTS } from './support/fixtures';
 
 const PICTURE = 'public/seed/spot/garden-a.svg';
 
@@ -74,7 +74,7 @@ test('(b) build a level: nothing is stored before Save, then the objects keep cl
   await expect(saved(page)).toBeVisible();
   const rows = await levelsOf();
   expect(rows).toHaveLength(1);
-  expect(rows[0].image_path).toMatch(/^find\/.+\.svg$/);
+  expect(rows[0].image_path).toMatch(/^[0-9a-f-]{36}\/find\/.+\.svg$/);
   expect(rows[0].objects).toHaveLength(2);
   expect(rows[0].objects[0]).toMatchObject({ word: 'apple', audio_path: null });
   expect(rows[0].objects[0].x).toBeCloseTo(0.25, 2);
@@ -90,7 +90,7 @@ test('(b) build a level: nothing is stored before Save, then the objects keep cl
   await article(page, 1).getByRole('button', { name: 'Expand level 1' }).click(); // a saved level starts collapsed
   await expect(page.getByLabel('Word for object 1', { exact: true })).toHaveValue('apple');
   await expect(page.getByLabel('Word for object 2', { exact: true })).toHaveValue('ball');
-  await expect(picture(page, 1)).toHaveAttribute('src', /\/storage\/v1\/object\/public\/media\/find\/.+\.svg$/);
+  await expect(picture(page, 1)).toHaveAttribute('src', /\/storage\/v1\/object\/public\/media\/[0-9a-f-]{36}\/find\/.+\.svg$/);
 });
 
 test('(c) a picture shared by two levels survives deleting one, and is removed when the last user is deleted', async ({ page }) => {
@@ -149,7 +149,7 @@ test('(c) a picture shared by two levels survives deleting one, and is removed w
 });
 
 test('(d) choosing a sound from the library stores its path on that object', async ({ page }) => {
-  await reset({ find_levels: [], storage: ['audio/x.mp3'] });
+  await reset({ find_levels: [], storage: [`${ACCOUNTS.parent.id}/audio/x.mp3`] });
   await openFind(page);
   await page.getByRole('button', { name: 'Add level' }).click();
   await pasteFindPicture(page, 1);
@@ -165,7 +165,7 @@ test('(d) choosing a sound from the library stores its path on that object', asy
   await save(page).click();
   await expect(saved(page)).toBeVisible();
   const [row] = await levelsOf();
-  expect(row.objects[0]).toMatchObject({ word: 'cat', audio_path: 'audio/x.mp3' });
+  expect(row.objects[0]).toMatchObject({ word: 'cat', audio_path: `${ACCOUNTS.parent.id}/audio/x.mp3` });
 });
 
 test('(e) the child plays the objects in the admin numbering after a move', async ({ page }) => {

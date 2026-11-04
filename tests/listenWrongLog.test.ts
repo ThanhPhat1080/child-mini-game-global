@@ -21,7 +21,7 @@ describe('wrong-picks log', () => {
       { id: 'b', word: 'ball', count: 1 },
     ]);
     expect(totalWrong(entries)).toBe(3);
-    expect(WRONG_KEY).toBe('hamy.listen.wrong');
+    expect(WRONG_KEY).toBe('childPlayer.listen.wrong');
     expect(JSON.parse(localStorage.getItem(WRONG_KEY) as string)).toEqual(entries);
   });
 

@@ -15,6 +15,7 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
+    auth: { getSession: () => Promise.resolve({ data: { session: { user: { id: 'me' } } } }) },
     from: h.from,
     storage: { from: () => ({ upload: h.upload, remove: h.remove, getPublicUrl: (p: string) => ({ data: { publicUrl: `https://cdn.test/${p}` } }) }) },
   }),
@@ -79,16 +80,16 @@ describe('cardMediaPaths', () => {
 describe('loadCards', () => {
   it('selects and maps group_id, keeping null as null', async () => {
     h.selectResult = { data: [
-      { id: 'a', word: 'cat', image_path: 'cards/a.png', audio_path: null, active: true, group_id: 'g1' },
-      { id: 'b', word: 'dog', image_path: 'cards/b.png', audio_path: null, active: true, group_id: null },
+      { id: 'a', word: 'cat', image_path: 'cards/a.png', audio_path: null, active: true, group_id: 'g1', owner_id: 'me', visibility: 'private' },
+      { id: 'b', word: 'dog', image_path: 'cards/b.png', audio_path: null, active: true, group_id: null, owner_id: 'me', visibility: 'private' },
     ], error: null };
     const cards = await loadCards();
     expect(cards.map((c) => c.groupId)).toEqual(['g1', null]);
     expect(h.select.mock.calls[0][0]).toContain('group_id');
   });
   it('reads all cards ordered by created_at and maps the columns', async () => {
-    h.selectResult = { data: [{ id: 'a', word: 'cat', image_path: 'cards/a.png', audio_path: null, active: false, group_id: null }], error: null };
-    await expect(loadCards()).resolves.toEqual([{ id: 'a', isNew: false, word: 'cat', image: 'cards/a.png', audio: null, active: false, groupId: null }]);
+    h.selectResult = { data: [{ id: 'a', word: 'cat', image_path: 'cards/a.png', audio_path: null, active: false, group_id: null, owner_id: 'me', visibility: 'private' }], error: null };
+    await expect(loadCards()).resolves.toEqual([{ id: 'a', isNew: false, word: 'cat', image: 'cards/a.png', audio: null, active: false, groupId: null, visibility: 'private' }]);
     expect(h.from).toHaveBeenCalledWith('memory_cards');
     expect(h.order).toHaveBeenCalledWith('created_at', { ascending: false });
   });
@@ -98,13 +99,34 @@ describe('loadCards', () => {
   });
 });
 
+describe('loadCards ownership (V1)', () => {
+  it("keeps only the signed-in user's own cards, so a global card of another family is never edited", async () => {
+    h.selectResult = { data: [
+      { id: 'a', word: 'cat', image_path: 'x.png', audio_path: null, active: true, group_id: null, owner_id: 'me', visibility: 'global' },
+      { id: 'b', word: 'dog', image_path: 'y.png', audio_path: null, active: true, group_id: null, owner_id: 'other', visibility: 'global' },
+    ], error: null };
+    expect((await loadCards()).map((c) => c.id)).toEqual(['a']);
+  });
+});
+
+describe('saveCards locked rows (V2, V3)', () => {
+  it('does not write cards under review or global, but writes private ones', async () => {
+    const mk = (id: string, visibility: 'private' | 'pending' | 'global') =>
+      ({ id, isNew: false, word: 'w' + id, image: 'cards/x.png', audio: null, active: true, groupId: null, visibility });
+    const all = [mk('p', 'private'), mk('q', 'pending'), mk('g', 'global')];
+    await saveCards(all, all);
+    const rows = h.upsert.mock.calls[0][0] as { id: string }[];
+    expect(rows.map((r) => r.id)).toEqual(['p']);
+  });
+});
+
 describe('commitPendingMap', () => {
   it('uploads each token into its folder and returns token -> path', async () => {
     const a = addPending(file('a.png'));
     const b = addPending(file('b.mp3', 'audio/mpeg'));
     const out = await commitPendingMap(new Map([[a, 'cards'], [b, 'card-voices']]));
-    expect(out.get(a)).toMatch(/^cards\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
-    expect(out.get(b)).toMatch(/^card-voices\/[A-Za-z0-9-]*-[0-9a-z]{13}\.mp3$/);
+    expect(out.get(a)).toMatch(/^me\/cards\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
+    expect(out.get(b)).toMatch(/^me\/card-voices\/[A-Za-z0-9-]*-[0-9a-z]{13}\.mp3$/);
   });
   it('removes what it uploaded and rethrows when one fails', async () => {
     h.upload.mockResolvedValueOnce({ error: null }).mockResolvedValueOnce({ error: { message: 'boom' } });
@@ -125,7 +147,7 @@ describe('saveCards', () => {
     expect(h.log).toEqual(['upload', 'upsert', 'remove']);
     expect(h.remove.mock.calls[0][0]).toEqual(['cards/old.png']);
     const row = h.upsert.mock.calls[0][0][0];
-    expect(row.image_path).toMatch(/^cards\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
+    expect(row.image_path).toMatch(/^me\/cards\/[A-Za-z0-9-]*-[0-9a-z]{13}\.png$/);
     expect(h.upsert.mock.calls[0][1]).toEqual({ onConflict: 'id' });
   });
 
@@ -185,7 +207,7 @@ describe('saveCards', () => {
     expect(h.remove).toHaveBeenCalledTimes(1);
     const removed = h.remove.mock.calls[0][0] as string[];
     expect(removed).toHaveLength(1);
-    expect(removed[0]).toMatch(/^cards\/[A-Za-z0-9-]+-/);
+    expect(removed[0]).toMatch(/^me\/cards\/[A-Za-z0-9-]+-/);
   });
 
   it('keeps old files when the table delete fails', async () => {

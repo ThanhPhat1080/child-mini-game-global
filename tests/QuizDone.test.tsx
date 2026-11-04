@@ -3,11 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/sfx', () => ({ applause: vi.fn(), speakKid: vi.fn(), playFile: vi.fn() }));
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p}` : null) }));
-vi.mock('@/lib/supabase/client', () => ({
-  createSupabaseBrowserClient: () => ({
-    from: () => ({ select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: { child_name: 'Mi', complete_path: null } }) }) }) }),
-  }),
-}));
+vi.mock('@/lib/settings', () => ({ getMyChildSettings: () => Promise.resolve({ child_name: 'Mi', complete_path: null }) }));
 vi.mock('next/navigation', () => ({ useParams: () => ({ setId: 's1' }), useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('next/link', () => ({
   default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a>,

@@ -14,7 +14,7 @@ import { preloadImages } from '@/lib/memory/preload';
 import { buildRounds, type Question } from '@/lib/listen/rounds';
 import { clearWrong, readWrong, recordWrong, type WrongEntry } from '@/lib/listen/wrongLog';
 import { mediaUrl } from '@/lib/media';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getMyChildSettings } from '@/lib/settings';
 import { ohOh, yay, type SoundHandle } from '@/lib/sfx';
 import { handleChoiceKey } from '@/lib/keynav';
 import type { MemoryCard } from '@/lib/memory/types';
@@ -131,8 +131,8 @@ export default function ListenPlay() {
   useEffect(() => {
     let live = true;
     try {
-      createSupabaseBrowserClient().from('settings').select('hooray_path, ohoh_path').eq('id', 1).single().then(
-        ({ data }) => { if (live && data) sounds.current = { hooray: mediaUrl(data.hooray_path), ohoh: mediaUrl(data.ohoh_path) }; },
+      getMyChildSettings().then(
+        (data) => { if (live && data) sounds.current = { hooray: mediaUrl(data.hooray_path), ohoh: mediaUrl(data.ohoh_path) }; },
         () => undefined,
       );
     } catch { /* no client: built-in sounds */ }
@@ -289,8 +289,8 @@ export default function ListenPlay() {
     let live = true;
     const ready = (name: string, url: string | null) => live && setPraise({ name, url });
     try {
-      createSupabaseBrowserClient().from('settings').select('child_name, complete_path').eq('id', 1).single()
-        .then(({ data }) => ready(data?.child_name ?? '', mediaUrl(data?.complete_path)), () => ready('', null));
+      getMyChildSettings()
+        .then((data) => ready(data?.child_name ?? '', mediaUrl(data?.complete_path)), () => ready('', null));
     } catch { ready('', null); }
     return () => { live = false; };
   }, [done]);

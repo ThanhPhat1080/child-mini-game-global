@@ -2,7 +2,7 @@
 
 import { useEffect, useReducer } from 'react';
 import { usePathname } from 'next/navigation';
-import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getMyChildSettings } from '@/lib/settings';
 import { mediaUrl } from '@/lib/media';
 import {
   hasMusic,
@@ -24,17 +24,13 @@ export function MusicButton() {
 
   useEffect(() => {
     restoreMusicPref();
-    createSupabaseBrowserClient()
-      .from('settings')
-      .select('music_path, music_volume')
-      .eq('id', 1)
-      .single()
-      .then(({ data }) => {
+    getMyChildSettings()
+      .then((data) => {
         if (!data) return;
         loadMusic(mediaUrl(data.music_path), data.music_volume);
         // The welcome screen waits for the "tap to enter" press (ADR-016).
         if (pathname !== '/') resumeMusic();
-      });
+      }, () => undefined);
   }, [pathname]);
 
   const playing = isMusicPlaying();

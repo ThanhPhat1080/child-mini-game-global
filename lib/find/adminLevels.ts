@@ -4,12 +4,13 @@ import { commitPendingMap, isPending, removeMedia } from '@/lib/media';
 import { isBucketPath, pathsToDelete } from '@/lib/mediaPaths';
 import { DEFAULT_R, MAX_OBJECTS, MAX_R, MIN_R, SMALL_R, checkObjects } from '@/lib/find/validate';
 import type { FindObject } from '@/lib/find/types';
+import { getMyUserId, type Visibility } from '@/lib/review';
 
 export type EObject = FindObject;
 
-export type ELevel = { id: string; isNew: boolean; image: string | null; objects: EObject[]; active: boolean };
+export type ELevel = { id: string; isNew: boolean; image: string | null; objects: EObject[]; active: boolean; visibility?: Visibility };
 
-type Row = { id: string; image_path: string; objects: EObject[]; active: boolean };
+type Row = { id: string; image_path: string; objects: EObject[]; active: boolean; owner_id: string | null; visibility: Visibility };
 
 export const newFindLevel = (): ELevel => ({ id: randomId(), isNew: true, image: null, objects: [], active: true });
 
@@ -55,20 +56,22 @@ export const smallCount = (l: ELevel): number => l.objects.filter((o) => o.r < S
 export const levelMediaPaths = (l: ELevel): string[] =>
   [l.image, ...l.objects.map((o) => o.audio_path)].filter(isBucketPath);
 
-/** Every level, active or not (admin view), in the order they were created. Saving writes that order as the play order. */
+/** The signed-in user's own levels, active or not (admin view), in the order they were created. Saving writes that order as the play order. */
 export async function loadFindLevels(): Promise<ELevel[]> {
   const { data, error } = await createSupabaseBrowserClient()
     .from('find_levels')
-    .select('id, image_path, objects, active, sort_order')
+    .select('id, image_path, objects, active, sort_order, owner_id, visibility')
     .order('created_at')
     .order('sort_order');
   if (error) throw new Error(error.message);
-  return ((data ?? []) as Row[]).map((r) => ({
+  const me = await getMyUserId();
+  return ((data ?? []) as Row[]).filter((r) => r.owner_id === me).map((r) => ({
     id: r.id,
     isNew: false,
     image: r.image_path,
     objects: Array.isArray(r.objects) ? r.objects : [],
     active: r.active,
+    visibility: r.visibility,
   }));
 }
 
@@ -108,9 +111,11 @@ export async function saveFindLevels(saved: ELevel[], draft: ELevel[]): Promise<
     const { error } = await sb.from('find_levels').delete().in('id', gone);
     if (error) return fail(error.message);
   }
-  if (final.length) {
+  // Rows under review or global are locked (V2, V3): they are not written here.
+  const writable = final.map((l, i) => ({ l, i })).filter(({ l }) => !l.visibility || l.visibility === 'private');
+  if (writable.length) {
     const { error } = await sb.from('find_levels').upsert(
-      final.map((l, i) => ({ id: l.id, image_path: l.image, objects: l.objects, active: l.active, sort_order: i })),
+      writable.map(({ l, i }) => ({ id: l.id, image_path: l.image, objects: l.objects, active: l.active, sort_order: i })),
       { onConflict: 'id' },
     );
     if (error) return fail(error.message);

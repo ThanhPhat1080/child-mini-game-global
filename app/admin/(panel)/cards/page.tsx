@@ -1,5 +1,8 @@
 'use client';
 
+import { ContentTabs } from '@/components/admin/ContentTabs';
+import { GlobalContent } from '@/components/admin/GlobalContent';
+import { useContentScope } from '@/lib/review';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   deleteGroups, duplicateWords, isCardComplete, loadCards, loadGroups, newCard, newGroup, pruneDeletedGroups, saveCards, saveGroups, validateGroupName,
@@ -19,12 +22,14 @@ import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { GroupsPanel } from '@/components/admin/GroupsPanel';
 import { CardPanel, poolHealth } from '@/components/admin/CardPanel';
 import s from '@/components/admin/admin-ui.module.css';
+import type { Visibility } from '@/lib/review';
 
 /** The database refuses a second group with the same name (unique index on lower(btrim(name))). */
 const groupSaveError = (e: string) => (/duplicate|23505/i.test(e) ? 'A group with that name already exists.' : e);
 
 /** Memory Match card pool (A11) with pool health (A13) and Sort It groups (A17, A18). Nothing is uploaded or written until Save (T15). */
 export default function CardsPage() {
+  const { scope, setScope } = useContentScope();
   const [saved, setSaved] = useState<ECard[] | null>(null);
   const [draft, setDraft] = useState<ECard[] | null>(null);
   const [savedGroups, setSavedGroups] = useState<EGroup[] | null>(null);
@@ -86,6 +91,10 @@ export default function CardsPage() {
   for (const c of draft) if (c.groupId) usage.set(c.groupId, (usage.get(c.groupId) ?? 0) + 1);
 
   const touch = () => { closeToast(); setError(null); };
+  const setVisibility = (id: string, v: Visibility) => {
+    const f = <T extends { id: string }>(xs: T[] | null) => (xs ? xs.map((x) => (x.id === id ? { ...x, visibility: v } : x)) : xs);
+    setSaved(f); setDraft(f);
+  };
   const edit = (id: string, patch: Partial<ECard>) => { touch(); setDraft(draft.map((c) => (c.id === id ? { ...c, ...patch } : c))); };
   const say = (id: string, text: string | null) => setMsgs((m) => { const n = { ...m }; if (text) n[id] = text; else delete n[id]; return n; });
 
@@ -177,8 +186,18 @@ export default function CardsPage() {
   else if (incomplete) status = `${incomplete} ${incomplete === 1 ? 'card needs' : 'cards need'} a picture and a word before you can save.`;
   else if (dirty) status = 'Unsaved changes. Press Save to keep them.';
 
+  if (scope === 'global') {
+    return (
+      <>
+        <ContentTabs scope={scope} onChange={setScope} />
+        <GlobalContent table="memory_cards" />
+      </>
+    );
+  }
+
   return (
     <>
+      <ContentTabs scope={scope} onChange={setScope} />
       <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#FBF4E9', padding: '12px 0', margin: '-12px 0', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, boxShadow: '0 8px 8px -8px rgba(90,64,56,0.18)' }}>
         <div style={{ flex: '1 1 320px', minWidth: 0 }}>
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Memory cards</h1>
@@ -213,6 +232,7 @@ export default function CardsPage() {
             onSvg={(code) => applySvg(c.id, code)}
             onPlay={() => sayWord({ word: c.word.trim(), audio_path: c.audio })}
             onAskDelete={() => setConfirm(i)}
+            onVisibility={(v) => setVisibility(c.id, v)}
           />
         ))}
         <button type="button" onClick={add} className={`${s.btn} ${s.dash}`} style={{ minHeight: 200, borderRadius: 18, border: '2px dashed #D9C6B2', background: 'transparent', color: '#5A4038', fontSize: 16, fontWeight: 700, fontFamily: 'Nunito, sans-serif', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>

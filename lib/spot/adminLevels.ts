@@ -4,10 +4,11 @@ import { commitPendingMap, isPending, removeMedia } from '@/lib/media';
 import { isBucketPath, pathsToDelete } from '@/lib/mediaPaths';
 import { checkDifferences } from '@/lib/spot/validate';
 import type { Difference } from '@/lib/spot/types';
+import { getMyUserId, type Visibility } from '@/lib/review';
 
-export type ELevel = { id: string; isNew: boolean; a: string | null; b: string | null; differences: Difference[]; active: boolean };
+export type ELevel = { id: string; isNew: boolean; a: string | null; b: string | null; differences: Difference[]; active: boolean; visibility?: Visibility };
 
-type Row = { id: string; image_a_path: string; image_b_path: string; differences: Difference[]; active: boolean };
+type Row = { id: string; image_a_path: string; image_b_path: string; differences: Difference[]; active: boolean; owner_id: string | null; visibility: Visibility };
 
 export const newLevel = (): ELevel => ({ id: randomId(), isNew: true, a: null, b: null, differences: [], active: true });
 
@@ -18,15 +19,16 @@ export function isLevelComplete(l: ELevel): boolean {
 /** Bucket files a level points to (bundled art, links and unsaved picks are not ours to delete). */
 export const levelMediaPaths = (l: ELevel): string[] => [l.a, l.b].filter(isBucketPath);
 
-/** Every level, active or not (admin view), in the order they were created. Saving writes that order as the play order. */
+/** The signed-in user's own levels, active or not (admin view), in the order they were created. Saving writes that order as the play order. */
 export async function loadLevels(): Promise<ELevel[]> {
   const { data, error } = await createSupabaseBrowserClient()
     .from('spot_levels')
-    .select('id, image_a_path, image_b_path, differences, active, sort_order')
+    .select('id, image_a_path, image_b_path, differences, active, sort_order, owner_id, visibility')
     .order('created_at')
     .order('sort_order');
   if (error) throw new Error(error.message);
-  return ((data ?? []) as Row[]).map((r) => ({ id: r.id, isNew: false, a: r.image_a_path, b: r.image_b_path, differences: r.differences, active: r.active }));
+  const me = await getMyUserId();
+  return ((data ?? []) as Row[]).filter((r) => r.owner_id === me).map((r) => ({ id: r.id, isNew: false, a: r.image_a_path, b: r.image_b_path, differences: r.differences, active: r.active, visibility: r.visibility }));
 }
 
 /**
@@ -61,9 +63,11 @@ export async function saveLevels(saved: ELevel[], draft: ELevel[]): Promise<{ er
     const { error } = await sb.from('spot_levels').delete().in('id', gone);
     if (error) return fail(error.message);
   }
-  if (final.length) {
+  // Rows under review or global are locked (V2, V3): they are not written here.
+  const writable = final.map((l, i) => ({ l, i })).filter(({ l }) => !l.visibility || l.visibility === 'private');
+  if (writable.length) {
     const { error } = await sb.from('spot_levels').upsert(
-      final.map((l, i) => ({ id: l.id, image_a_path: l.a, image_b_path: l.b, differences: l.differences, active: l.active, sort_order: i })),
+      writable.map(({ l, i }) => ({ id: l.id, image_a_path: l.a, image_b_path: l.b, differences: l.differences, active: l.active, sort_order: i })),
       { onConflict: 'id' },
     );
     if (error) return fail(error.message);

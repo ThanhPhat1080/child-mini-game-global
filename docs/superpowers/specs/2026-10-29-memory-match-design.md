@@ -3,7 +3,7 @@
 Status: **approved by the PO (brainstorm 2026-10-29); implemented on branch claude/phase2/memory-match**. Phase 2 only adds games (ADR-029). This spec covers the game list registry and the "Memory Match" game. Spot the Differences gets its own spec later.
 
 ## 1. Goal
-Hà My (4-5, cannot read) flips cards to find matching pairs, and hears the English word of every pair she finds. Secondary goal: learn English words by hearing them, over and over, without pressure.
+A child (4-5, cannot read) flips cards to find matching pairs, and hears the English word of every pair they find. Secondary goal: learn English words by hearing them, over and over, without pressure.
 
 Success:
 1. She plays a full level (12, 16, 20, 24 or 30 cards) from the game list to the end with nobody reading to her.
