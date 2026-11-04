@@ -42,20 +42,22 @@ Optionally protect `develop` the same way, minus the approval requirement.
 Then Settings -> General -> Default branch -> `develop`, so new PRs default to it.
 
 ## Vercel
-- Project: a NEW Vercel project (not the original `hamy`), linked to `ThanhPhat1080/child-mini-game-global`. Fill in the project/team IDs here once created.
+- Project: a NEW Vercel project (not the original `hamy`), linked to `ThanhPhat1080/child-mini-game-global`. Team `rock-and-roll` (`team_qw0M5lBhhbrXr4DV9NL0J0ij`), project `child-mini-game-global` (`prj_FgOSoPaQxIc92WFDzSUQ5gSALRQP`).
 - Production branch is `main`; every other branch gets a Preview deployment.
 - Env vars (Production, Preview, Development): `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and the server-only `SUPABASE_SERVICE_ROLE_KEY` (account creation, `app/api/*`). Nothing else may use `NEXT_PUBLIC_`; mark the service role key as sensitive and never expose it to the browser.
 - Install is `npm ci`: keep `package-lock.json` in sync (run `npm install` after changing dependencies and commit the lockfile).
 - Production URL: TBD (set after the new Vercel project exists).
 - Deployment Protection (Vercel login) blocks the child from opening the page. Turn it off for the child-facing domain.
 
-## Supabase (NEW project, separate from the original; ref TBD)
+## Supabase (NEW project, separate from the original; ref `ippeairzjdpsjdjkxypt`, https://ippeairzjdpsjdjkxypt.supabase.co)
 Authentication -> URL Configuration:
 - Site URL: the Production URL above (or the custom domain).
 - Redirect URLs: `<production URL>/**`, `http://localhost:3000/**`, and for previews `https://*-<new-team-slug>.vercel.app/**`.
 - Auth -> Email: set up custom SMTP (the built-in sender is rate limited and only for the team) and keep "Confirm email" on, because parents sign up themselves.
 - Auth -> Providers -> Email: minimum password length 8.
 Schema changes go through `supabase/migrations/*.sql` only (see `CLAUDE.md`).
+
+**Applied 2026-11-05 (project `ippeairzjdpsjdjkxypt`):** all 25 files in `supabase/migrations/` were applied through the Supabase MCP `apply_migration`, so the project's migration history holds the same SQL under MCP timestamps (20261104220405 onward), not the file versions. Do not run `supabase db push` against this project without first running `supabase migration repair` for them, or it will try to apply every file again. New migrations: apply with `apply_migration` and keep the file in the repo.
 
 ### Phase 3 first deployment runbook (owner steps)
 1. Create the new Supabase project; note its ref and the Vercel project/team ids and record them in this file.
