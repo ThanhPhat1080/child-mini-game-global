@@ -51,11 +51,13 @@ describe('Child sign-in page (U9)', () => {
 });
 
 describe('play area sign-in (FS1-FS4)', () => {
-  it('says this is the play area and to play along', () => {
+  it('shows the ABC Play brand, the greeting and the Parent Email field', () => {
     render(<PlaySignIn />);
-    expect(screen.getByRole('heading', { name: 'Grown-ups, sign in' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: "Let's play together" })).toBeTruthy();
     expect(screen.getByText('Sign in and play along with your child.')).toBeTruthy();
-    expect(screen.getByText('Play area')).toBeTruthy();
+    expect(screen.getByText('ABC Play')).toBeTruthy();
+    expect(screen.queryByText('Play area')).toBeNull();
+    expect(screen.getByLabelText('Parent Email')).toBeTruthy();
   });
   it('links to sign-up from the play area', () => {
     render(<PlaySignIn />);

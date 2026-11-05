@@ -47,22 +47,16 @@ export default function PlaySignIn() {
       <Pic src="/images/prince.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroRight}`} />
       <div className={play.col}>
         <div className={play.brandRow}>
-          <span className={styles.brand} style={{ fontSize: 28 }}>childPlayer</span>
-          <span className={play.tag}>
-            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M6 11h4M8 9v4M15 12h.01M18 10h.01" />
-              <path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258A4 4 0 0 0 17.32 5z" />
-            </svg>
-            Play area
-          </span>
+          <Pic src="/seed/fish.svg" alt="" width={44} height={44} className={play.logo} />
+          <span className={styles.brand} style={{ fontSize: 28 }}>ABC Play</span>
         </div>
         <form className={styles.card} onSubmit={onSubmit} noValidate>
           <div>
-            <h1>Grown-ups, sign in</h1>
+            <h1>Let's play together</h1>
             <p className={styles.sub}>Sign in and play along with your child.</p>
           </div>
           <div className={styles.fieldGroup}>
-            <label htmlFor="ps-email">Email</label>
+            <label htmlFor="ps-email">Parent Email</label>
             <input id="ps-email" className={styles.input} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           </div>
           <div className={styles.fieldGroup}>
@@ -88,7 +82,7 @@ export default function PlaySignIn() {
         </div>
         {help && (
           <div id="play-help" className={play.helpPanel}>
-            <p>childPlayer is a calm game space for young children. You set up the games, then play along with your child.</p>
+            <p>ABC Play is a calm game space for young children. You set up the games, then play along with your child.</p>
             <ol>
               <li>Create an account with your email.</li>
               <li>Open the link we email you to confirm it.</li>
