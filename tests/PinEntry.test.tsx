@@ -106,10 +106,10 @@ describe('PIN popup (FP6-FP8)', () => {
   it('is a dialog titled with the child name, with the matching hero', () => {
     setup();
     expect(screen.getByRole('dialog', { name: 'Enter your PIN, My!' })).toBeTruthy();
-    expect(document.querySelector('img[src*="princess.png"]')).toBeTruthy();
+    expect(document.querySelector('img[src*="princess.webp"]')).toBeTruthy();
     cleanup();
     render(<PinEntry child={{ ...child, gender: 'male' }} onCorrect={onCorrect} onCancel={onCancel} />);
-    expect(document.querySelector('img[src*="prince.png"]')).toBeTruthy();
+    expect(document.querySelector('img[src*="prince.webp"]')).toBeTruthy();
   });
   it('shows * and never the real character', () => {
     setup();

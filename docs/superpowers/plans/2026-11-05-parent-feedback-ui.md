@@ -43,11 +43,11 @@
 
 ## Task 0: Prepare the branch
 
-**Files:** `docs/superpowers/specs/2026-11-05-parent-feedback-ui-design.md`, this plan, `public/images/prince.png`
+**Files:** `docs/superpowers/specs/2026-11-05-parent-feedback-ui-design.md`, this plan, `public/images/prince.webp`
 
 - [ ] **Step 1: Check the starting point**
 
-Run: `git fetch origin; git status --short; git log --oneline -1 claude/children-table; ls public/images/prince.png docs/superpowers/plans/2026-11-05-parent-feedback-ui.md`
+Run: `git fetch origin; git status --short; git log --oneline -1 claude/children-table; ls public/images/prince.webp docs/superpowers/plans/2026-11-05-parent-feedback-ui.md`
 Expected: both files exist. If they are missing (a fresh worktree does not copy untracked files), stop and ask the owner to commit them or run in the original folder.
 
 - [ ] **Step 2: Create the first branch from the children table branch**
@@ -63,7 +63,7 @@ If git refuses because of local changes, stop and report. Do not stash or discar
 Do not add `public/images/prince.jpg`.
 
 ```bash
-git add docs/superpowers/specs/2026-11-05-parent-feedback-ui-design.md docs/superpowers/plans/2026-11-05-parent-feedback-ui.md public/images/prince.png
+git add docs/superpowers/specs/2026-11-05-parent-feedback-ui-design.md docs/superpowers/plans/2026-11-05-parent-feedback-ui.md public/images/prince.webp
 git commit -m "docs: parent feedback UI spec and plan, prince art"
 ```
 
@@ -415,8 +415,8 @@ Structure, top to bottom:
 ```tsx
 <div className={play.wrap}>
   <SkyScene />
-  <Pic src="/images/princess.png" alt="" width={520} height={655} className={`${play.hero} ${play.heroLeft}`} />
-  <Pic src="/images/prince.png" alt="" width={520} height={655} className={`${play.hero} ${play.heroRight}`} />
+  <Pic src="/images/princess.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroLeft}`} />
+  <Pic src="/images/prince.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroRight}`} />
   <div className={play.col}>
     <div className={play.brandRow}>
       <span className={styles.brand} style={{ fontSize: 28 }}>childPlayer</span>
@@ -611,7 +611,7 @@ export type ActiveChild =
   | { status: 'ready'; settings: ChildSettings; name: string; avatarUrl: string | null; gender: Gender };
 export function useActiveChild(): ActiveChild;
 // lib/childTheme.ts
-GENDER_THEME[g].hero: '/images/prince.png' | '/images/princess.png'
+GENDER_THEME[g].hero: '/images/prince.webp' | '/images/princess.webp'
 GENDER_THEME[g].heroAlt: string
 export const BOY_WELCOME_VARS: Record<'--w-enter' | '--w-enter-shadow' | '--w-enter-halo' | '--w-name' | '--w-bars', string>;
 ```
@@ -656,7 +656,7 @@ describe('useActiveChild (FP1)', () => {
 
 In `tests/settings.test.ts`, add `gender: 'female'` to `kid` and update any `toEqual` on the `getMyChildSettings` result to include it.
 
-In `tests/childTheme.test.ts`, add to the male `toEqual`: `hero: '/images/prince.png', heroAlt: 'Chibi prince with a crown and cape'`. Add to the female one: `hero: '/images/princess.png', heroAlt: 'Chibi princess with a magic wand'`.
+In `tests/childTheme.test.ts`, add to the male `toEqual`: `hero: '/images/prince.webp', heroAlt: 'Chibi prince with a crown and cape'`. Add to the female one: `hero: '/images/princess.webp', heroAlt: 'Chibi princess with a magic wand'`.
 
 - [ ] **Step 2: Run them to see them fail**
 
@@ -886,10 +886,10 @@ describe('PIN popup (FP6-FP8)', () => {
   it('is a dialog titled with the child name, with the matching hero', () => {
     setup();
     expect(screen.getByRole('dialog', { name: 'Enter your PIN, My!' })).toBeTruthy();
-    expect(document.querySelector('img[src*="princess.png"]')).toBeTruthy();
+    expect(document.querySelector('img[src*="princess.webp"]')).toBeTruthy();
     cleanup();
     render(<PinEntry child={{ ...child, gender: 'male' }} onCorrect={onCorrect} onCancel={onCancel} />);
-    expect(document.querySelector('img[src*="prince.png"]')).toBeTruthy();
+    expect(document.querySelector('img[src*="prince.webp"]')).toBeTruthy();
   });
   it('shows * and never the real character', () => {
     setup();
