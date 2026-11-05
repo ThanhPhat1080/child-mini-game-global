@@ -1,7 +1,7 @@
 /** A door with an arrow leaving through it: the sign-out check's picture (the parent is leaving their account). */
 export default function ExitDoorIcon() {
   return (
-    <svg aria-hidden="true" width="96" height="96" viewBox="0 0 96 96" fill="none" stroke="#7A5C50" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" width="112" height="112" viewBox="0 0 96 96" fill="none" stroke="#7A5C50" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 20 L42 23 V73 L18 76 Z" fill="#F4C2C8" stroke="none" />
       <path d="M46 16 H14 V80 H46" />
       <circle cx="36" cy="48" r="2.4" fill="#7A5C50" stroke="none" />
