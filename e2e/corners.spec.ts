@@ -79,3 +79,20 @@ test('the picker card and PIN look (FP5, FP7)', async ({ page }) => {
   await page.getByLabel('PIN character 1').pressSequentially(CHILD.pin[0]);
   await expect(page.getByLabel('PIN character 1')).toHaveValue('*');
 });
+
+test('sign-out on /play and Leave game on /games are the same button, bottom-left (FP11)', async ({ page }) => {
+  await page.goto('/play');
+  const signOut = page.getByRole('button', { name: 'Sign out (grown-ups)' });
+  await expect(signOut).toBeVisible();
+  const a = await signOut.boundingBox();
+  await page.goto('/games');
+  const leave = page.getByRole('button', { name: 'Leave game' });
+  await expect(leave).toBeVisible();
+  const b = await leave.boundingBox();
+  expect(a!.width).toBeCloseTo(b!.width, 0);
+  expect(a!.height).toBeCloseTo(b!.height, 0);
+  expect(a!.x).toBeCloseTo(b!.x, 0);
+  expect(a!.y).toBeCloseTo(b!.y, 0);
+  expect(a!.x).toBeLessThan(960); // left half of the screen
+});
+

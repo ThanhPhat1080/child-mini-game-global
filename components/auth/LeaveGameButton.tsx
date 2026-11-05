@@ -62,9 +62,11 @@ export default function LeaveGameButton() {
     <>
       <button ref={btn} type="button" className={auth.leave} aria-label="Leave game" onClick={() => setOpen(true)}>
         <svg aria-hidden="true" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#7A5C50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4" />
-          <path d="M16 8l4 4-4 4" />
-          <path d="M20 12H10" />
+          <g transform="matrix(-1 0 0 1 24 0)">
+            <path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4" />
+            <path d="M16 8l4 4-4 4" />
+            <path d="M20 12H10" />
+          </g>
         </svg>
       </button>
       {open && (
@@ -92,9 +94,11 @@ export default function LeaveGameButton() {
               </button>
               <button ref={leaveChoice} type="button" className={`hm-tap ${play.leaveBtn}`} onClick={leave}>
                 <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4" />
-                  <path d="M16 8l4 4-4 4" />
-                  <path d="M20 12H10" />
+                  <g transform="matrix(-1 0 0 1 24 0)">
+                    <path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4" />
+                    <path d="M16 8l4 4-4 4" />
+                    <path d="M20 12H10" />
+                  </g>
                 </svg>
                 Leave
               </button>

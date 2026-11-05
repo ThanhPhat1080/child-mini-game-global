@@ -29,11 +29,13 @@ export default function LogoutButton() {
 
   return (
     <>
-      <button type="button" className={styles.logout} aria-label="Sign out (grown-ups)" onClick={() => setOpen(true)}>
-        <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7A5C50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4" />
-          <path d="M16 8l4 4-4 4" />
-          <path d="M20 12H10" />
+      <button type="button" className={styles.leave} aria-label="Sign out (grown-ups)" onClick={() => setOpen(true)}>
+        <svg aria-hidden="true" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#7A5C50" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <g transform="matrix(-1 0 0 1 24 0)">
+            <path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4" />
+            <path d="M16 8l4 4-4 4" />
+            <path d="M20 12H10" />
+          </g>
         </svg>
       </button>
       <AdultCheck open={open} onPass={onPass} onCancel={() => setOpen(false)} />
