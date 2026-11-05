@@ -8,7 +8,7 @@ export default function FarewellPopup() {
     <div className={play.overlay} role="status">
       <div className={styles.farewell}>
         <div className={styles.bubble}>See you later!</div>
-        <Pic src="/images/princess.png" alt="" width={360} height={455} className={styles.farewellPic} />
+        <Pic src="/images/princess.webp" alt="" width={360} height={455} className={styles.farewellPic} />
       </div>
     </div>
   );

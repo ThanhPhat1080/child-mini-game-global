@@ -1,14 +1,14 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({ rpc: vi.fn() }));
-vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ rpc: h.rpc }) }));
+const h = vi.hoisted(() => ({ rpc: vi.fn(), getSession: vi.fn() }));
+vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ rpc: h.rpc, auth: { getSession: h.getSession } }) }));
 
 import { ContentTabs } from '@/components/admin/ContentTabs';
 import { EditLock } from '@/components/admin/EditLock';
 import { ShareToggle } from '@/components/admin/ShareToggle';
 import { VisibilityBadge } from '@/components/admin/VisibilityBadge';
-import { applyScope, isLocked, requestEdit, shareItem } from '@/lib/review';
+import { familyOrGlobal, isLocked, ownerFirst, playerId, requestEdit, shareItem } from '@/lib/review';
 
 beforeEach(() => {
   h.rpc.mockReset().mockResolvedValue({ error: null });
@@ -91,12 +91,26 @@ describe('review UI (N3, N4, V1-V4)', () => {
     expect(onChange).toHaveBeenCalledWith('global');
   });
 
-  it('applyScope: mine = private and pending, global = global only', () => {
-    const q = { in: vi.fn(() => q), eq: vi.fn(() => q) };
-    applyScope(q, 'mine');
-    expect(q.in).toHaveBeenCalledWith('visibility', ['private', 'pending']);
-    applyScope(q, 'global');
-    expect(q.eq).toHaveBeenCalledWith('visibility', 'global');
+  it('ownerFirst: the family\'s rows come first, then the rest, each in the given order', () => {
+    const rows = [{ id: 'g1', owner_id: 'x' }, { id: 'm1', owner_id: 'me' }, { id: 'g2', owner_id: null }, { id: 'm2', owner_id: 'me' }];
+    expect(ownerFirst(rows, 'me').map((r) => r.id)).toEqual(['m1', 'm2', 'g1', 'g2']);
+    expect(ownerFirst(rows, null).map((r) => r.id)).toEqual(['g1', 'm1', 'g2', 'm2']);
+  });
+
+  it('familyOrGlobal keeps the family\'s rows and global rows only (FG2)', () => {
+    const q = { or: vi.fn(() => 'narrowed') };
+    expect(familyOrGlobal(q, 'me')).toBe('narrowed');
+    expect(q.or).toHaveBeenCalledWith('owner_id.eq.me,visibility.eq.global');
+    const untouched = { or: vi.fn() };
+    expect(familyOrGlobal(untouched, null)).toBe(untouched);
+    expect(untouched.or).not.toHaveBeenCalled();
+  });
+
+  it('playerId reads the session user and falls back to null', async () => {
+    h.getSession.mockResolvedValue({ data: { session: { user: { id: 'me' } } } });
+    expect(await playerId()).toBe('me');
+    h.getSession.mockRejectedValue(new Error('x'));
+    expect(await playerId()).toBeNull();
   });
 
   it('shareItem and requestEdit throw the database message', async () => {

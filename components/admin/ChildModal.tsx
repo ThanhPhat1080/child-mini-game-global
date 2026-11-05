@@ -36,6 +36,11 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
   const [age, setAge] = useState<AgeBand>(child?.age_band ?? '2-5');
   const [savedAvatar, setSavedAvatar] = useState<string | null>(child?.avatar_path ?? null);
   const [avatarDraft, setAvatarDraft] = useState<string | null>(null);
+  // the two "you did it" pictures (A and B)
+  const [savedCelA, setSavedCelA] = useState<string | null>(child?.celebrate_a_path ?? null);
+  const [celADraft, setCelADraft] = useState<string | null>(null);
+  const [savedCelB, setSavedCelB] = useState<string | null>(child?.celebrate_b_path ?? null);
+  const [celBDraft, setCelBDraft] = useState<string | null>(null);
   const [savedGreeting, setSavedGreeting] = useState<string | null>(null);
   const [greetingDraft, setGreetingDraft] = useState<string | null>(null);
   const [settingsReady, setSettingsReady] = useState(mode === 'create');
@@ -51,6 +56,8 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
   useMediaRenamed(useCallback((from: string, to: string) => {
     setSavedAvatar((v) => replacePath(v, from, to)); setAvatarDraft((v) => replacePath(v, from, to));
     setSavedGreeting((v) => replacePath(v, from, to)); setGreetingDraft((v) => replacePath(v, from, to));
+    setSavedCelA((v) => replacePath(v, from, to)); setCelADraft((v) => replacePath(v, from, to));
+    setSavedCelB((v) => replacePath(v, from, to)); setCelBDraft((v) => replacePath(v, from, to));
   }, []));
 
   // edit mode: the saved welcome sound, so Save knows which file it replaces
@@ -92,6 +99,8 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
   }
 
   const avatarShown = avatarDraft ?? savedAvatar;
+  const celAShown = celADraft ?? savedCelA;
+  const celBShown = celBDraft ?? savedCelB;
   const greetingShown = greetingDraft ?? savedGreeting;
 
   function togglePlay() {
@@ -108,7 +117,7 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
 
   async function save() {
     setFormError(null);
-    const input: NewChild = { child_name: loginName, display_name: displayName, avatar_path: avatarShown, gender, age_band: age, pin };
+    const input: NewChild = { child_name: loginName, display_name: displayName, avatar_path: avatarShown, celebrate_a_path: celAShown, celebrate_b_path: celBShown, gender, age_band: age, pin };
     const found = validateChild(input, mode);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
@@ -144,6 +153,8 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
     if (!res.ok) { setFormError('Could not save the child. Try again.'); return; }
     const replaced: string[] = [];
     if (avatarDraft && savedAvatar && savedAvatar !== avatarDraft) replaced.push(savedAvatar);
+    if (celADraft && savedCelA && savedCelA !== celADraft) replaced.push(savedCelA);
+    if (celBDraft && savedCelB && savedCelB !== celBDraft) replaced.push(savedCelB);
     let soundFailed = false;
     if (greetingDraft && greetingDraft !== savedGreeting) {
       try {
@@ -169,7 +180,7 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
         aria-labelledby={titleId}
         tabIndex={-1}
         className={s.modal}
-        style={{ background: theme.modalBg, color: theme.text }}
+        style={{ background: theme.modalBg, color: theme.text, border: `4px solid ${theme.accent}` }}
         onKeyDown={onKeyDown}
       >
         <ModalClose onClick={requestClose} disabled={busy} />
@@ -227,6 +238,25 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
             </span>
             <LibraryButton kind="image" label="avatar" onChoose={setAvatarDraft} />
             {avatarDraft && <span style={{ fontSize: 13 }}>Applied when you press Save.</span>}
+          </div>
+        </div>
+
+        <div className={s.modalField}>
+          <span className={s.modalLabel}>Celebration pictures</span>
+          <span style={{ fontSize: 13 }}>Two pictures of {displayName.trim() || 'your child'}. They sway on the screen after a game is finished.</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+            {([
+              ['A', celAShown, setCelADraft, celADraft],
+              ['B', celBShown, setCelBDraft, celBDraft],
+            ] as const).map(([k, shown, setDraft, draft]) => (
+              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span className={s.childAvatar} style={{ borderColor: theme.accent }}>
+                  {mediaUrl(shown) ? <Pic src={mediaUrl(shown) ?? ''} alt={`Celebration picture ${k}`} className={s.childAvatarImg} /> : <span aria-hidden="true" style={{ fontSize: 22 }}>{k}</span>}
+                </span>
+                <LibraryButton kind="image" label={`celebration picture ${k}`} onChoose={setDraft} />
+                {draft && <span style={{ fontSize: 13 }}>Applied when you press Save.</span>}
+              </div>
+            ))}
           </div>
         </div>
 

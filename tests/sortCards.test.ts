@@ -8,7 +8,7 @@ const h = vi.hoisted(() => ({
   from: vi.fn(),
 }))
 
-vi.mock('@/lib/review', () => ({ applyScope: (q: unknown) => q }));
+vi.mock('@/lib/review', () => ({ playerId: async () => null, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r }));
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({ from: h.from }),
 }))
@@ -30,7 +30,7 @@ describe('fetchSortCards', () => {
     h.result = { data: rows, error: null }
     await expect(fetchSortCards()).resolves.toEqual(rows)
     expect(h.from).toHaveBeenCalledWith('memory_cards')
-    expect(h.select).toHaveBeenCalledWith('id, word, image_path, audio_path, active, group_id')
+    expect(h.select).toHaveBeenCalledWith('id, word, image_path, audio_path, active, group_id, owner_id')
     expect(h.eq).toHaveBeenCalledWith('active', true)
     expect(h.order).toHaveBeenCalledWith('created_at')
   })

@@ -35,7 +35,7 @@ export const isLocked = (visibility: Visibility | undefined, ownerId: string | n
 
 const KEY = 'childPlayer:scope';
 
-/** The remembered scope. A convenience only: storage may be blocked, then it is "mine". */
+/** The remembered scope of the parent admin tabs. A convenience only: storage may be blocked, then it is "mine". */
 export function getStoredScope(): Scope {
   try {
     return localStorage.getItem(KEY) === 'global' ? 'global' : 'mine';
@@ -54,10 +54,23 @@ export function useContentScope(): { scope: Scope; setScope: (s: Scope) => void 
   return { scope, setScope };
 }
 
-type Narrowable = { in(c: string, v: string[]): unknown; eq(c: string, v: string): unknown };
+/** The signed-in parent's id for the play screens, or null when there is no session or it cannot be read. */
+export async function playerId(): Promise<string | null> {
+  try { return await getMyUserId(); } catch { return null; }
+}
 
-/** Narrows a child's content query to one scope: "mine" = private and pending, "global" = approved. */
-export function applyScope<Q>(query: Q, scope: Scope = getStoredScope()): Q {
-  const q = query as unknown as Narrowable;
-  return (scope === 'global' ? q.eq('visibility', 'global') : q.in('visibility', ['private', 'pending'])) as Q;
+/**
+ * FG2: a child's list shows the signed-in parent's own rows (any visibility) and global rows, nothing else.
+ * RLS alone is not enough: a Super Admin can read every family's rows. Call it before `.order()`.
+ */
+export function familyOrGlobal<Q>(query: Q, me: string | null): Q {
+  if (!me) return query;
+  return (query as unknown as { or(filter: string): unknown }).or(`owner_id.eq.${me},visibility.eq.global`) as Q;
+}
+
+/** FG4: the family's rows first, then the rest; each part keeps its order. */
+export function ownerFirst<T extends object>(rows: T[], me: string | null): T[] {
+  if (!me) return rows;
+  const mine = (r: T) => (r as { owner_id?: string | null }).owner_id === me;
+  return [...rows.filter(mine), ...rows.filter((r) => !mine(r))];
 }

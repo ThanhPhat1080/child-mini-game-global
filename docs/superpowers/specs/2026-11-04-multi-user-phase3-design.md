@@ -100,7 +100,7 @@ Banning one parent hides all their content immediately (V6). The labels are stor
 - **N3** Parent content area has two tabs: "Mine" (editable) and "Global" (read-only, lock badge).
 - **N4** Editor shows a status badge (`Private`, `Under review`, `Global`), the "Share with all children" toggle, and a storage meter ("12 / 50 MB").
 - **N5** Super Admin: pending queue (approve / reject with reason), parent list (ban, unban, quota), child list, all-content browser with unpublish and delete, creation of parents, children and Super Admins.
-- **N6** Child app: same games and Calm & Slow look, plus the logout button with adult check and a content switch between "My family" and "Global". Nothing editable.
+- **N6** Child app: same games and Calm & Slow look, plus the logout button with adult check. There is no content switch: the family's own content is played first, then global content (FB2). Nothing editable.
 - **N7** Child-facing text stays admin-written (rule unchanged); new adult-facing screens use Nunito and may contain text.
 - **N8** Existing "Preview as child" keeps working for parents, scoped to the chosen child.
 - **N9** Ban dialog (Super Admin): reason select (section 5.1), optional note, confirm. Messages inbox for `support_messages` with read/resolved state. Banned-parent screen and sign-up carousel as in U15 and U16.

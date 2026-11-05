@@ -78,11 +78,13 @@ describe('ChildModal (KU3-KU8)', () => {
     const title = screen.getByRole('heading');
     expect(screen.getByRole('button', { name: 'Boy' }).getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Girl' }));
-    expect(dlg.getAttribute('style')).toContain('rgb(252, 239, 240)'); // modalBg (FA2)
+    expect(dlg.getAttribute('style')).toContain('rgb(255, 247, 220)'); // pale yellow stays
+    expect(dlg.getAttribute('style')).toContain('rgb(229, 154, 161)'); // pink border
     expect(title.getAttribute('style')).toContain('rgb(154, 69, 80)');
     expect(screen.getByRole('button', { name: 'Girl' }).getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Boy' }));
-    expect(dlg.getAttribute('style')).toContain('rgb(238, 244, 249)'); // modalBg (FA2)
+    expect(dlg.getAttribute('style')).toContain('rgb(255, 247, 220)'); // pale yellow stays
+    expect(dlg.getAttribute('style')).toContain('rgb(143, 179, 209)'); // blue border
     expect(title.getAttribute('style')).toContain('rgb(63, 98, 133)');
     expect(screen.getByRole('button', { name: 'Girl' }).getAttribute('aria-pressed')).toBe('false');
   });
@@ -116,7 +118,7 @@ describe('ChildModal (KU3-KU8)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Choose welcome sound' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(saved));
-    expect(h.createChild).toHaveBeenCalledWith({ child_name: 'lan', display_name: 'Lan', avatar_path: 'img/new.png', gender: 'male', age_band: '2-5', pin: 'ab12' });
+    expect(h.createChild).toHaveBeenCalledWith({ child_name: 'lan', display_name: 'Lan', avatar_path: 'img/new.png', celebrate_a_path: null, celebrate_b_path: null, gender: 'male', age_band: '2-5', pin: 'ab12' });
     expect(h.updateChildSettings).toHaveBeenCalledWith('c9', { greeting_path: 'snd/new.mp3' });
     expect(onClose).toHaveBeenCalled();
   });
@@ -134,6 +136,19 @@ describe('ChildModal (KU3-KU8)', () => {
     expect(onNotice).toHaveBeenCalledWith('warning', expect.stringContaining('welcome sound'));
   });
 
+  it('edit saves the two celebration pictures and frees the ones they replace', async () => {
+    const onSaved = vi.fn(); const onClose = vi.fn();
+    const withPics: Child = { ...kid, celebrate_a_path: 'img/cel-a-old.png', celebrate_b_path: 'img/cel-b-old.png' };
+    render(<ChildModal mode="edit" child={withPics} onClose={onClose} onSaved={onSaved} />);
+    await waitFor(() => expect(h.getChildSettings).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: 'Choose celebration picture A' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Choose celebration picture B' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
+    expect(h.updateChild).toHaveBeenCalledWith('c1', expect.objectContaining({ celebrate_a_path: 'img/new.png', celebrate_b_path: 'img/new.png' }));
+    expect(h.removeMedia).toHaveBeenCalledWith(['img/cel-a-old.png', 'img/cel-b-old.png']);
+  });
+
   it('edit saves fields, welcome sound, and frees the replaced avatar', async () => {
     const onSaved = vi.fn(); const onClose = vi.fn();
     render(<ChildModal mode="edit" child={kid} onClose={onClose} onSaved={onSaved} />);
@@ -143,7 +158,7 @@ describe('ChildModal (KU3-KU8)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Choose welcome sound' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onSaved).toHaveBeenCalled());
-    expect(h.updateChild).toHaveBeenCalledWith('c1', { display_name: 'Mimi', avatar_path: 'img/new.png', gender: 'female', age_band: '5-10', pin: 'ab12' });
+    expect(h.updateChild).toHaveBeenCalledWith('c1', { display_name: 'Mimi', avatar_path: 'img/new.png', celebrate_a_path: null, celebrate_b_path: null, gender: 'female', age_band: '5-10', pin: 'ab12' });
     expect(h.updateChildSettings).toHaveBeenCalledWith('c1', { greeting_path: 'snd/new.mp3' });
     expect(h.removeMedia).toHaveBeenCalledWith(['img/old.png', 'snd/old.mp3']);
     expect(onClose).toHaveBeenCalled();

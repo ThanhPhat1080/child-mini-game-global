@@ -106,3 +106,16 @@ describe('parseLevel', () => {
     expect(parseLevel('')).toBeNull()
   })
 })
+
+describe('drawDeck family first (FG5)', () => {
+  const mk = (id: string, family: boolean): MemoryCard => ({ id, word: id, image_path: 'i', audio_path: null, active: true, family })
+  it('uses the family cards before any global card', () => {
+    const cards = [mk('g1', false), mk('g2', false), mk('f1', true), mk('g3', false), mk('f2', true), mk('g4', false), mk('g5', false), mk('g6', false)]
+    for (let seed = 1; seed <= 20; seed++) {
+      const ids = new Set(drawDeck(cards, 12, mulberry32(seed)).map((t) => t.card.id))
+      expect(ids.has('f1')).toBe(true)
+      expect(ids.has('f2')).toBe(true)
+      expect(ids.size).toBe(6)
+    }
+  })
+})

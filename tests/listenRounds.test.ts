@@ -104,3 +104,14 @@ describe('buildRounds', () => {
     expect(buildRounds(makeCards(31), mulberry32(6), 4)).toHaveLength(4)
   })
 })
+
+describe('buildRounds family first (FG5)', () => {
+  it('asks about the family cards before global ones', () => {
+    const mk = (id: string, family: boolean): MemoryCard => ({ id, word: id, image_path: 'i', audio_path: null, active: true, family })
+    const cards = [mk('g1', false), mk('g2', false), mk('f1', true), mk('g3', false), mk('f2', true), mk('g4', false)]
+    for (let seed = 1; seed <= 10; seed++) {
+      const qs = buildRounds(cards, mulberry32(seed), 2)!
+      expect(qs.map((q) => q.answer.id).sort()).toEqual(['f1', 'f2'])
+    }
+  })
+})

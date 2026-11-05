@@ -1,10 +1,13 @@
 export type Gender = 'male' | 'female';
 export type AgeBand = '2-5' | '5-10';
 
-/** Card and modal colors by gender (KT1). Text is darker than the pastel background for contrast. */
+/** Every child card, form and dialog sits on the same pale yellow; gender only changes the text and the border (KT1). */
+export const CHILD_SURFACE = '#FFF7DC';
+
+/** Text is darker than the pastel border for contrast. */
 export const GENDER_THEME: Record<Gender, { bg: string; text: string; accent: string; modalBg: string; hero: string; heroAlt: string; icon: '♂' | '♀'; label: 'Boy' | 'Girl' }> = {
-  male: { bg: '#DCE8F1', text: '#3F6285', accent: '#8FB3D1', modalBg: '#EEF4F9', hero: '/images/prince.png', heroAlt: 'Chibi prince with a crown and cape', icon: '♂', label: 'Boy' },
-  female: { bg: '#F8DCDF', text: '#9A4550', accent: '#E59AA1', modalBg: '#FCEFF0', hero: '/images/princess.png', heroAlt: 'Chibi princess with a magic wand', icon: '♀', label: 'Girl' },
+  male: { bg: CHILD_SURFACE, text: '#3F6285', accent: '#8FB3D1', modalBg: CHILD_SURFACE, hero: '/images/prince.webp', heroAlt: 'Chibi prince with a crown and cape', icon: '♂', label: 'Boy' },
+  female: { bg: CHILD_SURFACE, text: '#9A4550', accent: '#E59AA1', modalBg: CHILD_SURFACE, hero: '/images/princess.webp', heroAlt: 'Chibi princess with a magic wand', icon: '♀', label: 'Girl' },
 };
 
 /** Welcome-screen colors for a boy (FP9): the girl's pink comes from the stylesheet, these replace it. */
