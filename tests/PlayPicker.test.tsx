@@ -173,12 +173,12 @@ describe('Play picker (K7-K12, KU9-KU12)', () => {
       expect(h.clear).not.toHaveBeenCalled();
     });
 
-    it('the right sum signs out, clears the cookie and goes to /admin/sign-in', async () => {
+    it('the right sum signs out, clears the cookie and goes to /play/sign-in', async () => {
       vi.spyOn(Math, 'random').mockReturnValue(0);
       await ready();
       open();
       answer('12');
-      await waitFor(() => expect(h.push).toHaveBeenCalledWith('/admin/sign-in'));
+      await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play/sign-in'));
       expect(h.signOut).toHaveBeenCalledTimes(1);
       expect(h.clear).toHaveBeenCalledTimes(1);
     });

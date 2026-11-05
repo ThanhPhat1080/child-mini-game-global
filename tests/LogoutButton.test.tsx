@@ -32,12 +32,12 @@ describe('LogoutButton (U10)', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
-  it('correct answer signs out, clears the child and goes back to /admin/sign-in', async () => {
+  it('correct answer signs out, clears the child and goes back to /play/sign-in', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0);
     render(<LogoutButton />);
     open();
     answer('12');
-    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/admin/sign-in'));
+    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play/sign-in'));
     expect(h.signOut).toHaveBeenCalledTimes(1);
     expect(h.clear).toHaveBeenCalledTimes(1);
     expect(h.refresh).toHaveBeenCalled();

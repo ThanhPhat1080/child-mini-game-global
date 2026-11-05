@@ -56,7 +56,7 @@ export default function SignInPage() {
 
         <form className={styles.card} onSubmit={onSubmit}>
           <div>
-            <h1>Parent sign-in</h1>
+            <h1>Parent Admin sign-in</h1>
             <p className={styles.sub}>Manage greeting, music and quiz content.</p>
           </div>
           <div className={styles.fieldGroup}>
@@ -72,6 +72,7 @@ export default function SignInPage() {
         </form>
 
         <p className={styles.foot}><Link href="/sign-up">Create a parent account</Link></p>
+        <p className={styles.foot}>Want to play? <Link href="/play/sign-in">Go to the play area</Link></p>
         <p className={styles.foot}>Parents and Super Admins · Supabase Auth</p>
       </div>
     </div>

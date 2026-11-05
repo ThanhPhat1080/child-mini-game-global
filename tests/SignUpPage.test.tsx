@@ -17,7 +17,10 @@ beforeEach(() => {
   h.signUp.mockReset();
   h.signUp.mockResolvedValue({ data: {}, error: null });
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.history.pushState({}, '', '/sign-up');
+});
 
 function fill(email = 'mum@example.com', password = 'longenough1') {
   fireEvent.change(screen.getByLabelText(/email/i), { target: { value: email } });
@@ -127,5 +130,18 @@ describe('Sign-up page (U7, U16)', () => {
     fill();
     await acceptPolicy();
     expect(await screen.findByText(/too weak/i)).toBeTruthy();
+  });
+});
+
+describe('sign-up from the play area (FS6)', () => {
+  it('from=play sends every sign-in path to the play area', async () => {
+    window.history.pushState({}, '', '/sign-up?from=play');
+    render(<SignUpPage />);
+    expect(await screen.findByText('childPlayer')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /sign in/i }).getAttribute('href')).toBe('/play/sign-in');
+    fill();
+    await acceptPolicy();
+    expect((await screen.findAllByRole('link', { name: /sign in/i }))[0].getAttribute('href')).toBe('/play/sign-in');
+    expect(h.signUp.mock.calls[0][0].options.emailRedirectTo).toBe(`${location.origin}/play/sign-in`);
   });
 });

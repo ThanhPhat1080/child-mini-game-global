@@ -73,7 +73,7 @@ test('signing out of the play device needs the adult check', async ({ page }) =>
   const [a, b] = q.split('=')[0].split('+').map((x) => Number(x.trim()));
   await page.getByLabel('Answer').fill(String(a + b));
   await page.getByRole('button', { name: 'OK' }).click();
-  await expect(page).toHaveURL(/\/admin\/sign-in$/);
+  await expect(page).toHaveURL(/\/play\/sign-in$/);
 });
 
 test('share, approve, ban: the whole review loop', async ({ browser }) => {

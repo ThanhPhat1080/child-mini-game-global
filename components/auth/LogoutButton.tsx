@@ -7,7 +7,7 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import AdultCheck from './AdultCheck';
 import styles from './auth.module.css';
 
-/** Quiet corner button for grown-ups (U10). After the adult check: sign out, forget the active child, back to the sign-in page. */
+/** Quiet corner button for grown-ups (U10). After the adult check: sign out, forget the active child, back to the play sign-in page (FS7). */
 export default function LogoutButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -23,7 +23,7 @@ export default function LogoutButton() {
     }
     if (failed) return; // still signed in: stay on the page
     clearActiveChild();
-    router.push('/admin/sign-in');
+    router.push('/play/sign-in');
     router.refresh();
   }
 
