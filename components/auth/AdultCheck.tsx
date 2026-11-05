@@ -102,7 +102,7 @@ function CheckDialog({ onPass, onCancel, random, title, icon, hint, centered, su
       >
         <ModalClose onClick={onCancel} />
         {icon}
-        <h2 id="adult-title" style={{ margin: 0, fontSize: 20 }}>{title}</h2>
+        <h2 id="adult-title" style={{ margin: 0, fontSize: centered ? 32 : 20 }}>{title}</h2>
         {hint && <p className={styles.hint}>{hint}</p>}
         <form onSubmit={onSubmit} className={styles.adultForm} noValidate style={centered ? { width: '100%' } : undefined}>
           <p className={styles.adultQ} data-testid="adult-question">{nums[0]} + {nums[1]} = ?</p>
