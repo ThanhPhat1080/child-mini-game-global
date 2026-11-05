@@ -18,7 +18,7 @@ vi.mock('@/lib/childSession', () => ({ getActiveChildId: () => h.activeId() }));
 import { getChildSettings, getMyChildSettings, updateChildSettings } from '@/lib/settings';
 
 const row = { child_id: 'c1', music_volume: 30 };
-const kid = { display_name: 'Mia', avatar_path: 'img/a.png' };
+const kid = { display_name: 'Mia', avatar_path: 'img/a.png', gender: 'female' };
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -31,7 +31,7 @@ beforeEach(() => {
 
 describe('child settings (U4)', () => {
   it('getMyChildSettings merges display_name and avatar_path from children', async () => {
-    await expect(getMyChildSettings()).resolves.toEqual({ ...row, child_name: 'Mia', avatar_path: 'img/a.png' });
+    await expect(getMyChildSettings()).resolves.toEqual({ ...row, child_name: 'Mia', avatar_path: 'img/a.png', gender: 'female' });
     expect(h.from).toHaveBeenCalledWith('child_settings');
     expect(h.from).toHaveBeenCalledWith('children');
     expect(h.eq).toHaveBeenCalledWith('child_id', 'c1');

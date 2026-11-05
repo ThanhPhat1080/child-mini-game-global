@@ -1,5 +1,6 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { getActiveChildId } from '@/lib/childSession';
+import type { Gender } from '@/lib/childTheme';
 
 /** `child_settings` columns: sounds and music, one row per child. */
 export type ChildSettingsRow = {
@@ -13,7 +14,7 @@ export type ChildSettingsRow = {
 };
 
 /** What play pages read: the settings row plus the child's display name and avatar from `children`. */
-export type ChildSettings = ChildSettingsRow & { child_name: string | null; avatar_path: string | null };
+export type ChildSettings = ChildSettingsRow & { child_name: string | null; avatar_path: string | null; gender: Gender };
 
 type Client = ReturnType<typeof createSupabaseBrowserClient>;
 
@@ -23,12 +24,12 @@ export async function getMyChildSettings(client: Client = createSupabaseBrowserC
   if (!id) return null;
   const [settings, kid] = await Promise.all([
     getChildSettings(id, client),
-    client.from('children').select('display_name, avatar_path').eq('id', id).maybeSingle(),
+    client.from('children').select('display_name, avatar_path, gender').eq('id', id).maybeSingle(),
   ]);
   if (kid.error) throw new Error(kid.error.message);
   if (!settings || !kid.data) return null;
-  const k = kid.data as { display_name: string; avatar_path: string | null };
-  return { ...settings, child_name: k.display_name, avatar_path: k.avatar_path };
+  const k = kid.data as { display_name: string; avatar_path: string | null; gender: Gender };
+  return { ...settings, child_name: k.display_name, avatar_path: k.avatar_path, gender: k.gender };
 }
 
 export async function getChildSettings(
