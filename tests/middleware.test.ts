@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { fakeFrom } from './support/fakeSupabase';
 
-type Who = 'signedOut' | 'child' | 'parent' | 'bannedParent' | 'superAdmin' | 'noProfile';
+type Who = 'signedOut' | 'parent' | 'bannedParent' | 'superAdmin' | 'noProfile';
 
 const h = vi.hoisted(() => ({
   who: 'signedOut' as string,
@@ -12,10 +12,9 @@ const h = vi.hoisted(() => ({
 }));
 
 const profiles: Record<string, object> = {
-  child: { user_id: 'c1', role: 'child', parent_id: 'p1', banned: false },
-  parent: { user_id: 'p1', role: 'parent', parent_id: null, banned: false },
-  bannedParent: { user_id: 'p2', role: 'parent', parent_id: null, banned: true },
-  superAdmin: { user_id: 's1', role: 'super_admin', parent_id: null, banned: false },
+  parent: { user_id: 'p1', role: 'parent', banned: false },
+  bannedParent: { user_id: 'p2', role: 'parent', banned: true },
+  superAdmin: { user_id: 's1', role: 'super_admin', banned: false },
 };
 
 vi.mock('@supabase/ssr', () => ({
@@ -54,16 +53,16 @@ const NEXT = 'next';
 const ADMIN_IN = '/admin/sign-in';
 const PLAY_IN = '/play/sign-in';
 
-// path, signedOut, child, parent, bannedParent, superAdmin, noProfile
-const table: [string, string, string, string, string, string, string][] = [
-  ['/', PLAY_IN, NEXT, NEXT, NEXT, NEXT, PLAY_IN],
-  ['/games', PLAY_IN, NEXT, NEXT, NEXT, NEXT, PLAY_IN],
-  ['/games/quiz/abc', PLAY_IN, NEXT, NEXT, NEXT, NEXT, PLAY_IN],
-  ['/admin', ADMIN_IN, '/admin/forbidden', NEXT, '/admin/suspended', NEXT, ADMIN_IN],
-  ['/admin/settings', ADMIN_IN, '/admin/forbidden', NEXT, '/admin/suspended', NEXT, ADMIN_IN],
-  ['/admin/sets/1', ADMIN_IN, '/admin/forbidden', NEXT, '/admin/suspended', NEXT, ADMIN_IN],
+// path, signedOut, parent, bannedParent, superAdmin, noProfile
+const table: [string, string, string, string, string, string][] = [
+  ['/', PLAY_IN, NEXT, NEXT, NEXT, PLAY_IN],
+  ['/games', PLAY_IN, NEXT, NEXT, NEXT, PLAY_IN],
+  ['/games/quiz/abc', PLAY_IN, NEXT, NEXT, NEXT, PLAY_IN],
+  ['/admin', ADMIN_IN, NEXT, '/admin/suspended', NEXT, ADMIN_IN],
+  ['/admin/settings', ADMIN_IN, NEXT, '/admin/suspended', NEXT, ADMIN_IN],
+  ['/admin/sets/1', ADMIN_IN, NEXT, '/admin/suspended', NEXT, ADMIN_IN],
 ];
-const whos: Who[] = ['signedOut', 'child', 'parent', 'bannedParent', 'superAdmin', 'noProfile'];
+const whos: Who[] = ['signedOut', 'parent', 'bannedParent', 'superAdmin', 'noProfile'];
 
 describe('middleware route protection (U11, U12, U13)', () => {
   for (const [path, ...expected] of table) {
@@ -83,9 +82,9 @@ describe('middleware route protection (U11, U12, U13)', () => {
 
   it('keeps refreshed session cookies on a redirect', async () => {
     h.refreshCookie = true;
-    h.who = 'child';
+    h.who = 'signedOut';
     const res = await middleware(new NextRequest(new URL('/admin/settings', 'http://app.test')));
-    expect(new URL(res.headers.get('location')!).pathname).toBe('/admin/forbidden');
+    expect(new URL(res.headers.get('location')!).pathname).toBe('/admin/sign-in');
     expect(res.cookies.get('sb-token')?.value).toBe('fresh');
   });
 

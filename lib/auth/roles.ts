@@ -1,13 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** Roles of spec U1. */
-export type Role = 'super_admin' | 'parent' | 'child';
+export type Role = 'super_admin' | 'parent';
 
 /** The columns of `public.profiles` the app reads (U1). */
 export type Profile = {
   user_id: string;
   role: Role;
-  parent_id: string | null;
   display_name: string | null;
   banned: boolean;
   ban_reason_code: string | null;
@@ -16,10 +15,10 @@ export type Profile = {
   quota_bytes: number;
 };
 
-export const ROLES: readonly Role[] = ['super_admin', 'parent', 'child'];
+export const ROLES: readonly Role[] = ['super_admin', 'parent'];
 
 const PROFILE_COLUMNS =
-  'user_id, role, parent_id, display_name, banned, ban_reason_code, ban_note, banned_at, quota_bytes';
+  'user_id, role, display_name, banned, ban_reason_code, ban_note, banned_at, quota_bytes';
 
 /**
  * The signed-in user's own profile, or null when signed out, when the row is missing or when the read
@@ -43,6 +42,5 @@ export async function getMyProfile(client: SupabaseClient): Promise<Profile | nu
 export function adminAccess(p: Profile | null): 'ok' | 'signin' | 'forbidden' | 'banned' {
   if (!p) return 'signin';
   if (p.role === 'super_admin') return 'ok';
-  if (p.role === 'parent') return p.banned ? 'banned' : 'ok';
-  return 'forbidden';
+  return p.banned ? 'banned' : 'ok';
 }

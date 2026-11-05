@@ -5,9 +5,6 @@ import type { SupabaseClient } from '@supabase/supabase-js';
  * service-role client; nothing here returns raw Supabase errors to the caller.
  */
 
-import { MAX_CHILDREN } from '@/lib/auth/limits';
-
-export { MAX_CHILDREN };
 export const MIN_PASSWORD = 8;
 export const MAX_DISPLAY_NAME = 40;
 /** bcrypt (GoTrue) only uses the first 72 bytes of a password; longer ones are rejected, not truncated. */
@@ -15,7 +12,6 @@ export const MAX_PASSWORD_BYTES = 72;
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const CONTROL = /[\u0000-\u001f\u007f-\u009f]/;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type AccountInput = { email: string; password: string; displayName: string };
 
@@ -24,8 +20,6 @@ export type AccountError =
   | 'unauthenticated'
   | 'forbidden'
   | 'invalid_body'
-  | 'invalid_parent'
-  | 'child_limit'
   | 'email_taken'
   | 'failed';
 
@@ -33,8 +27,6 @@ const STATUS: Record<AccountError, number> = {
   unauthenticated: 401,
   forbidden: 403,
   invalid_body: 400,
-  invalid_parent: 400,
-  child_limit: 409,
   email_taken: 409,
   failed: 500,
 };
@@ -65,26 +57,6 @@ export function parseAccountInput(body: Record<string, unknown>): AccountInput |
   return { email: cleanEmail, password, displayName: name };
 }
 
-export function isUuid(v: unknown): v is string {
-  return typeof v === 'string' && UUID.test(v);
-}
-
-/** True when `parentId` names an existing parent profile. */
-export async function isParent(service: SupabaseClient, parentId: string): Promise<boolean> {
-  const { data, error } = await service.from('profiles').select('user_id, role').eq('user_id', parentId).maybeSingle();
-  return !error && (data as { role?: string } | null)?.role === 'parent';
-}
-
-/** Null on read failure. */
-export async function countChildren(service: SupabaseClient, parentId: string): Promise<number | null> {
-  const { count, error } = await service
-    .from('profiles')
-    .select('user_id', { count: 'exact', head: true })
-    .eq('parent_id', parentId)
-    .eq('role', 'child');
-  return error || count == null ? null : count;
-}
-
 type MaybeError =
   | { code?: string; message?: string; status?: number; details?: string; hint?: string }
   | null
@@ -103,26 +75,6 @@ function emailTaken(e: MaybeError): boolean {
 function weakPassword(e: MaybeError): boolean {
   if (!e) return false;
   return e.code === 'weak_password' || ((e.status === 400 || e.status === 422) && /password/i.test(e.message ?? ''));
-}
-
-/**
- * CONTRACT with the profiles guard trigger in supabase/migrations/20261104000000_profiles_roles.sql
- * (owned by the DB task): it raises SQLSTATE 23514 with a message that starts with one of these tokens.
- * Keep the two lists in sync. A token counts when the code is 23514 and message, details or hint starts
- * with it, or when the message contains it anywhere. Anything else is an unknown failure (500, rollback).
- */
-const GUARD_TOKENS: [RegExp, RegExp, AccountError][] = [
-  [/^too_many_children\b/, /too_many_children/, 'child_limit'],
-  [/^child_needs_parent\b/, /child_needs_parent/, 'invalid_parent'],
-];
-
-function updateError(e: MaybeError): AccountError {
-  const fields = [e?.message, e?.details, e?.hint].filter((f): f is string => typeof f === 'string');
-  for (const [prefix, anywhere, code] of GUARD_TOKENS) {
-    if (e?.code === '23514' && fields.some((f) => prefix.test(f.trim()))) return code;
-    if (anywhere.test(e?.message ?? '')) return code;
-  }
-  return 'failed';
 }
 
 /**
@@ -155,17 +107,15 @@ export async function provisionAccount(
     return { ok: false, error: 'failed' };
   }
 
-  let failure: AccountError;
   try {
     const { data, error } = await service.from('profiles').update(finalProfile).eq('user_id', userId).select('user_id');
     if (!error && Array.isArray(data) && data.length === 1) return { ok: true, userId };
-    failure = error ? updateError(error) : 'failed';
   } catch {
-    failure = 'failed';
+    // fall through to the rollback
   }
 
   await rollback(service, userId);
-  return { ok: false, error: failure };
+  return { ok: false, error: 'failed' };
 }
 
 async function rollback(service: SupabaseClient, userId: string) {

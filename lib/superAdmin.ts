@@ -103,8 +103,7 @@ export const listPending = (client?: Client) => listContent('pending', client);
 // ---- people ----
 export type PersonRow = {
   userId: string;
-  role: 'parent' | 'child' | 'super_admin';
-  parentId: string | null;
+  role: 'parent' | 'super_admin';
   name: string;
   banned: boolean;
   banReasonCode: string | null;
@@ -114,21 +113,44 @@ export type PersonRow = {
 };
 
 type ProfileRaw = {
-  user_id: string; role: PersonRow['role']; parent_id: string | null; display_name: string | null; banned: boolean;
+  user_id: string; role: PersonRow['role']; display_name: string | null; banned: boolean;
   ban_reason_code: string | null; ban_note: string | null; banned_at: string | null; quota_bytes: number | string;
 };
 
 export async function listPeople(role: PersonRow['role'], client: Client = createSupabaseBrowserClient()): Promise<PersonRow[]> {
   const { data, error } = await client
     .from('profiles')
-    .select('user_id, role, parent_id, display_name, banned, ban_reason_code, ban_note, banned_at, quota_bytes')
+    .select('user_id, role, display_name, banned, ban_reason_code, ban_note, banned_at, quota_bytes')
     .eq('role', role)
     .order('created_at');
   if (error) throw new Error(error.message);
   return ((data ?? []) as ProfileRaw[]).map((p) => ({
-    userId: p.user_id, role: p.role, parentId: p.parent_id, name: p.display_name ?? '', banned: p.banned,
+    userId: p.user_id, role: p.role, name: p.display_name ?? '', banned: p.banned,
     banReasonCode: p.ban_reason_code, banNote: p.ban_note, bannedAt: p.banned_at, quotaBytes: Number(p.quota_bytes),
   }));
+}
+
+// ---- children (N5, K13) ----
+export type AdminChild = { id: string; display_name: string; child_name: string; parent_id: string; parent_name: string | null };
+
+/** Every child with the parent's name. Two queries; if the names fail to load the list still shows, unnamed. */
+export async function listAllChildren(client: Client = createSupabaseBrowserClient()): Promise<AdminChild[]> {
+  const { data, error } = await client.from('children').select('id, display_name, child_name, parent_id').order('created_at');
+  if (error) throw new Error('Could not load the children.');
+  const kids = (data ?? []) as Omit<AdminChild, 'parent_name'>[];
+  const ids = [...new Set(kids.map((k) => k.parent_id))];
+  const names = new Map<string, string | null>();
+  if (ids.length > 0) {
+    const res = await client.from('profiles').select('user_id, display_name').in('user_id', ids);
+    if (!res.error) for (const p of (res.data ?? []) as { user_id: string; display_name: string | null }[]) names.set(p.user_id, p.display_name);
+  }
+  return kids.map((k) => ({ id: k.id, display_name: k.display_name, child_name: k.child_name, parent_id: k.parent_id, parent_name: names.get(k.parent_id) ?? null }));
+}
+
+/** Removes a child through the Super Admin delete policy. */
+export async function removeChild(id: string, client: Client = createSupabaseBrowserClient()): Promise<void> {
+  const { error } = await client.from('children').delete().eq('id', id);
+  if (error) throw new Error('Could not remove the child.');
 }
 
 /** Bytes stored by each given owner (Q4). */
@@ -141,14 +163,12 @@ export async function storageUsedBy(ids: string[], client: Client = createSupaba
   return out;
 }
 
-export type CreatedRole = 'parent' | 'child' | 'super_admin';
-export type NewAccount = { role: CreatedRole; email: string; password: string; displayName: string; parentId?: string };
+export type CreatedRole = 'parent' | 'super_admin';
+export type NewAccount = { role: CreatedRole; email: string; password: string; displayName: string };
 
 const CREATE_ERRORS: Record<string, string> = {
   email_taken: 'That email is already used.',
-  child_limit: 'That parent already has 5 children.',
   invalid_body: 'Check the email, a password of at least 8 characters and a name.',
-  invalid_parent: 'Pick a parent.',
   forbidden: 'Only a Super Admin can create accounts.',
   unauthenticated: 'Please sign in again.',
 };
