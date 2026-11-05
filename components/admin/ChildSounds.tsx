@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getChildSettings, updateChildSettings, type ChildSettings } from '@/lib/settings';
+import { getChildSettings, updateChildSettings, type ChildSettingsRow } from '@/lib/settings';
 import { mediaUrl, removeMedia } from '@/lib/media';
 import { applause, ohOh, speakKid, yay, type SoundHandle } from '@/lib/sfx';
 import styles from '@/app/admin/admin.module.css';
@@ -11,12 +11,11 @@ import { replacePath } from '@/lib/mediaPaths';
 import { RevertButton, SaveButton } from '@/components/admin/SaveButtons';
 import { LibraryButton } from '@/components/admin/LibraryButton';
 import { PlayButton } from '@/components/admin/PlayButton';
-import { Pic } from '@/components/Pic';
 
-type Row = ChildSettings;
-type AudioKind = 'greeting' | 'music' | 'hooray' | 'ohoh' | 'complete';
+type Row = ChildSettingsRow;
+type AudioKind = 'music' | 'hooray' | 'ohoh' | 'complete';
 
-const COLUMN: Record<AudioKind, keyof Row> = { greeting: 'greeting_path', music: 'music_path', hooray: 'hooray_path', ohoh: 'ohoh_path', complete: 'complete_path' };
+const COLUMN: Record<AudioKind, keyof Row> = { music: 'music_path', hooray: 'hooray_path', ohoh: 'ohoh_path', complete: 'complete_path' };
 /** A sound choice not saved yet: a bucket path from the library, or null (back to the built-in sound). */
 type SoundDraft = Partial<Record<AudioKind, string | null>>;
 
@@ -24,23 +23,19 @@ const baseName = (p: string | null) => (p ? p.split('/').pop() ?? p : null);
 /** Play-state key of one sound setting. Keyed by setting, not by file: two settings may share one file. */
 const fileKey = (k: AudioKind) => `file:${k}`;
 
-/** One child's name, avatar and sounds (N2). Every choice is a preview until "Save"; "Revert" drops it (A25, A26). */
-export function ChildForm({ childId, onClose, onSaved }: { childId: string; onClose: () => void; onSaved?: (s: Row) => void }) {
+/** One child's music, volume and feedback sounds (N2). Every choice is a preview until "Save"; "Revert" drops it (A25, A26). */
+export function ChildSounds({ childId }: { childId: string }) {
   const [row, setRow] = useState<Row | null>(null);
-  const [childName, setChildName] = useState('');
   const [volume, setVolume] = useState(30);
-  /** An avatar chosen from the library, not saved yet (A24). */
-  const [avatarDraft, setAvatarDraft] = useState<string | null>(null);
   const [soundDraft, setSoundDraft] = useState<SoundDraft>({});
   const { toast, show: showToast, close: closeToast } = useToast();
   // a file renamed in the library: the row and the choices not saved yet follow it
   useMediaRenamed(useCallback((from: string, to: string) => {
-    setRow((v) => replacePath(v, from, to)); setAvatarDraft((v) => replacePath(v, from, to)); setSoundDraft((v) => replacePath(v, from, to));
+    setRow((v) => replacePath(v, from, to)); setSoundDraft((v) => replacePath(v, from, to));
   }, []));
   const [saving, setSaving] = useState(false);
   const preview = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState<string | null>(null);
-
 
   /** What the row shows and plays: the draft if there is one, else the saved file. */
   const shown = (k: AudioKind): string | null => (k in soundDraft ? soundDraft[k] ?? null : (row?.[COLUMN[k]] as string | null | undefined) ?? null);
@@ -50,7 +45,6 @@ export function ChildForm({ childId, onClose, onSaved }: { childId: string; onCl
       (r) => {
         if (!r) return showToast('error', 'Could not load settings');
         setRow(r);
-        setChildName(r.child_name ?? '');
         setVolume(r.music_volume);
       },
       (e: Error) => showToast('error', e.message || 'Could not load settings'),
@@ -70,12 +64,8 @@ export function ChildForm({ childId, onClose, onSaved }: { childId: string; onCl
   }
 
   async function doSave() {
-    const patch: Partial<Row> = { child_name: childName.trim(), music_volume: volume };
+    const patch: Partial<Row> = { music_volume: volume };
     const replaced: string[] = []; // files no setting uses any more, removed after a successful save
-    if (avatarDraft) {
-      patch.avatar_path = avatarDraft;
-      if (row?.avatar_path && row.avatar_path !== avatarDraft) replaced.push(row.avatar_path);
-    }
     for (const k of Object.keys(soundDraft) as AudioKind[]) {
       const path = soundDraft[k] ?? null;
       (patch as Record<string, unknown>)[COLUMN[k]] = path;
@@ -87,12 +77,8 @@ export function ChildForm({ childId, onClose, onSaved }: { childId: string; onCl
     } catch (e) {
       return showToast('error', (e as Error).message);
     }
-    const next = row ? { ...row, ...patch } : row;
-    setRow(next);
-    if (next) onSaved?.(next);
-    setAvatarDraft(null);
+    setRow(row ? { ...row, ...patch } : row);
     setSoundDraft({});
-   
     stopPreview();
     const failed = await removeMedia(replaced);
     if (failed) showToast('warning', 'Saved, but an old file could not be removed from storage.'); else showToast('success', 'Saved');
@@ -101,17 +87,14 @@ export function ChildForm({ childId, onClose, onSaved }: { childId: string; onCl
   /** Drops unsaved edits and goes back to the last saved values. */
   function revert() {
     if (!row) return;
-    setChildName(row.child_name ?? '');
     setVolume(row.music_volume);
-    setAvatarDraft(null);
     setSoundDraft({});
-   
     stopPreview();
     showToast('success', 'Changes reverted.');
   }
 
   const soundChanged = (Object.keys(soundDraft) as AudioKind[]).some((k) => (soundDraft[k] ?? null) !== ((row?.[COLUMN[k]] as string | null | undefined) ?? null));
-  const dirty = !!row && (childName.trim() !== (row.child_name ?? '') || volume !== row.music_volume || (!!avatarDraft && avatarDraft !== row.avatar_path) || soundChanged);
+  const dirty = !!row && (volume !== row.music_volume || soundChanged);
 
   /** A sound chosen from the library: a preview until Save. */
   function chooseSound(kind: AudioKind, path: string) {
@@ -146,7 +129,7 @@ export function ChildForm({ childId, onClose, onSaved }: { childId: string; onCl
     else if (kind === 'ohoh') h = ohOh();
     else {
       h = applause(3);
-      speakKid(`You did it${row?.child_name ? `, ${row.child_name}` : ''}!`, { pitch: 1.9, rate: 0.9 });
+      speakKid('You did it!', { pitch: 1.9, rate: 0.9 });
     }
     if (!h) return;
     builtIn.current = h;
@@ -192,58 +175,18 @@ export function ChildForm({ childId, onClose, onSaved }: { childId: string; onCl
     );
   }
 
-  const avatarShown = avatarDraft ?? row?.avatar_path ?? null;
-
   return (
     <div>
       <div className={styles.head}>
         <div>
-          <h2>{row?.child_name || 'Child'}</h2>
-          <p className={styles.sub}>What this child sees and hears on the Welcome screen.</p>
+          <h2>Music and feedback sounds</h2>
+          <p className={styles.sub}>Music and feedback sounds on the child screens.</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button type="button" className={styles.ghost} onClick={onClose}>Close</button>
           <RevertButton saving={saving} dirty={dirty} onClick={revert} />
           <SaveButton saving={saving} enabled={dirty} onClick={save} />
         </div>
       </div>
-
-      <section className={`${styles.section} ${styles.profile}`}>
-        <div className={styles.avatar}>
-          {mediaUrl(avatarShown) ? (
-            <Pic src={mediaUrl(avatarShown) ?? ''} alt="Avatar" className={styles.avatarImg} />
-          ) : (
-            <svg aria-hidden="true" width="54" height="38" viewBox="0 0 60 42" fill="#F6E2A6" stroke="#B08A48" strokeWidth="2" strokeLinejoin="round"><path d="M4 38 L8 10 L20 24 L30 4 L40 24 L52 10 L56 38 Z" /></svg>
-          )}
-        </div>
-        <div className={styles.profileBody}>
-          <div className={styles.fieldGroup}>
-            <label htmlFor={`cn-${childId}`}>Child&apos;s name</label>
-            <input id={`cn-${childId}`} className={`${styles.input} ${styles.nameInput}`} type="text" value={childName} onChange={(e) => setChildName(e.target.value)} />
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-            <LibraryButton kind="image" label="avatar" onChoose={(path) => { setAvatarDraft(path); showToast('success', 'Avatar chosen. Press Save to apply it.'); }} />
-            <span className={styles.note}>Applied when you press Save.</span>
-          </div>
-        </div>
-      </section>
-
-      <section className={styles.section}>
-        <div>
-          <h2>Greeting voice</h2>
-          <p>Plays once after the child taps to enter.</p>
-        </div>
-        <div className={styles.row}>
-          {shown('greeting') && (
-            <PlayButton playing={playing === fileKey('greeting')} label={playing === fileKey('greeting') ? 'Pause greeting' : 'Play greeting'} onClick={() => toggle('greeting')} />
-          )}
-          <div className={styles.rowText}>
-            <div className={styles.rowTitle}>{baseName(shown('greeting')) ?? 'No greeting yet'}</div>
-            <div className={styles.rowMeta}>Audio file, MP3 or similar</div>
-          </div>
-          {soundActions('greeting', 'greeting', false)}
-        </div>
-      </section>
 
       <section className={styles.section}>
         <div className={styles.head} style={{ alignItems: 'flex-end' }}>
@@ -263,8 +206,8 @@ export function ChildForm({ childId, onClose, onSaved }: { childId: string; onCl
           </div>
         </div>
         <div className={styles.volume}>
-          <label htmlFor="vol" className={styles.label}>Music volume</label>
-          <input id="vol" type="range" min={0} max={100} value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
+          <label htmlFor={`vol-${childId}`} className={styles.label}>Music volume</label>
+          <input id={`vol-${childId}`} type="range" min={0} max={100} value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
           <span className={styles.note}>{volume}% · kept low on purpose</span>
         </div>
       </section>
