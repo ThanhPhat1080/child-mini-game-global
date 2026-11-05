@@ -8,6 +8,7 @@ import { BOY_WELCOME_VARS, GENDER_THEME } from '@/lib/childTheme';
 import { useActiveChild } from '@/lib/useActiveChild';
 import { Stage } from '@/components/Stage';
 import { MusicButton } from '@/components/MusicButton';
+import LeaveGameButton from '@/components/auth/LeaveGameButton';
 import styles from './welcome.module.css';
 import { Pic } from '@/components/Pic';
 
@@ -67,6 +68,7 @@ export default function Welcome() {
         )}
 
         <MusicButton />
+        <LeaveGameButton />
 
         {!known ? null : !entered ? (
           <div className={`${styles.center} ${styles.enterWrap}`}>

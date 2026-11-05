@@ -4,7 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const h = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock('@/lib/settings', () => ({ getMyChildSettings: h.get }));
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p}` : null) }));
-vi.mock('@/lib/audio', () => ({ playOnce: vi.fn(), startMusic: vi.fn() }));
+vi.mock('@/lib/audio', () => ({ playOnce: vi.fn(), startMusic: vi.fn(), stopMusic: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 vi.mock('@/components/MusicButton', () => ({ MusicButton: () => null }));
 vi.mock('next/link', () => ({
   default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a>,

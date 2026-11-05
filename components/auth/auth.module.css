@@ -22,3 +22,6 @@
 .logout:hover, .logout:focus-visible { opacity: 1; }
 .logout:focus-visible { outline: 3px solid #c77d85; outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .shake { animation: none; } .logout { transition: none; } }
+.leave { position: absolute; z-index: 10; left: 56px; bottom: 48px; width: 104px; height: 104px; border-radius: 52px; border: none; background: #fff; box-shadow: 0 6px 0 #eadcc8; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.leave:hover { filter: brightness(1.03); }
+.leave:focus-visible { outline: 6px solid #c77d85; outline-offset: 4px; }

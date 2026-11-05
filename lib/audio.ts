@@ -92,6 +92,14 @@ export function restoreMusicPref(): void {
   notify();
 }
 
+/** Stops the track and forgets it (FP13). The viewer's music choice is kept. */
+export function stopMusic(): void {
+  music?.pause();
+  music = null;
+  currentUrl = null;
+  notify();
+}
+
 export function isMusicWanted(): boolean {
   return wanted;
 }
