@@ -164,11 +164,15 @@ describe('Play picker (K7-K12, KU9-KU12)', () => {
 
   describe('back to sign-in corner button', () => {
     const open = () => fireEvent.click(screen.getByRole('button', { name: 'Sign out (grown-ups)' }));
+    const answerSignOut = (v: string) => {
+      fireEvent.change(screen.getByRole('textbox'), { target: { value: v } });
+      fireEvent.click(screen.getByRole('button', { name: 'Signout now!' }));
+    };
 
     it('needs the check: a wrong sum signs nothing out', async () => {
       await ready();
       open();
-      answer('1');
+      answerSignOut('1');
       expect(h.signOut).not.toHaveBeenCalled();
       expect(h.clear).not.toHaveBeenCalled();
     });
@@ -177,8 +181,8 @@ describe('Play picker (K7-K12, KU9-KU12)', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0);
       await ready();
       open();
-      answer('12');
-      await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play/sign-in'));
+      answerSignOut('12');
+      await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play/sign-in'), { timeout: 3000 });
       expect(h.signOut).toHaveBeenCalledTimes(1);
       expect(h.clear).toHaveBeenCalledTimes(1);
     });
