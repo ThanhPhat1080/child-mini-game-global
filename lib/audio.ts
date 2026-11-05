@@ -69,7 +69,7 @@ export function resumeMusic(): void {
   if (wanted) playMusic();
 }
 
-/** The bottom-left button: sets the viewer's choice and plays or pauses right away. */
+/** The bottom-right button: sets the viewer's choice and plays or pauses right away. */
 export function setMusicWanted(value: boolean): void {
   wanted = value;
   try {

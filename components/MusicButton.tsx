@@ -15,7 +15,7 @@ import {
 } from '@/lib/audio';
 import styles from './MusicButton.module.css';
 
-/** Play / pause button for the background music, bottom-left on every child screen. */
+/** Play / pause button for the background music, bottom-right on every child screen. */
 export function MusicButton() {
   const pathname = usePathname();
   const [, rerender] = useReducer((n: number) => n + 1, 0);

@@ -7,7 +7,7 @@ import { Pic } from '@/components/Pic';
 
 export type FindRipple = { x: number; y: number; key: number };
 
-const MAX_W = 1280; // the picture column: 1920 minus the word list (left 40 + 480 wide + gap) and the right margin
+const MAX_W = 1184; // the picture column: 1920 minus the word list (left 40 + 480 wide + gap) and room for the music button at the right
 const MAX_H = 900;
 /** Pictures are cropped to a square in the admin (ADR-032); the board sizes from the real picture once it loads. */
 const DEFAULT_ASPECT = 1;

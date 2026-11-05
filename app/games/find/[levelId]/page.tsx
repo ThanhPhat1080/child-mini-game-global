@@ -200,7 +200,7 @@ export default function FindPlay() {
               <FindWordList objects={level.objects} current={found.length >= level.objects.length ? -1 : index} found={found} onSay={sayAt} />
             </FindScrollColumn>
             {/* The picture fills the rest of the stage (F2): FindBoard sizes it from the picture's aspect, capped at 1500 x 900. */}
-            <div style={{ position: 'absolute', left: 560, right: 56, top: 110, bottom: 56, zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ position: 'absolute', left: 560, right: 176, top: 110, bottom: 56, zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <FindBoard url={pictureUrl} objects={level.objects} found={found} ripple={ripple} reduced={reduced} onTap={onTap} />
             </div>
           </>
