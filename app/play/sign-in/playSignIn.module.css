@@ -1,0 +1,14 @@
+.wrap { position: relative; min-height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 48px 16px; box-sizing: border-box; background: linear-gradient(#dce8f1, #fbf4e9 70%); font-family: 'Nunito', sans-serif; color: #4a3830; }
+.col { position: relative; z-index: 1; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 18px; }
+.brandRow { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 16px; background: #fff; color: #3f6285; font-weight: 700; font-size: 14px; }
+.signupRow { display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; font-size: 15px; }
+.helpBtn { width: 30px; height: 30px; border-radius: 15px; border: 1.5px solid #8fb3d1; background: #fff; color: #3f6285; font: 700 16px 'Nunito', sans-serif; cursor: pointer; }
+.helpBtn:focus-visible { outline: 3px solid #c77d85; outline-offset: 2px; }
+.helpPanel { background: #fff; border-radius: 16px; padding: 16px 20px; font-size: 14px; line-height: 1.5; }
+.helpPanel p { margin: 0 0 8px; }
+.helpPanel ol { margin: 0; padding-left: 20px; }
+.hero { position: absolute; bottom: 0; width: clamp(160px, 22vw, 420px); height: auto; pointer-events: none; }
+.heroLeft { left: 2vw; }
+.heroRight { right: 2vw; }
+@media (max-width: 900px) { .hero { display: none; } }
