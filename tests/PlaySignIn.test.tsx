@@ -21,10 +21,10 @@ function submit() {
 }
 
 describe('Child sign-in page (U9)', () => {
-  it('signs in and goes to /games', async () => {
+  it('signs in and goes to /play', async () => {
     render(<PlaySignIn />);
     submit();
-    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/games'));
+    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play'));
     expect(h.signIn).toHaveBeenCalledWith({ email: 'mum@example.com', password: 'longenough1' });
     expect(h.refresh).toHaveBeenCalled();
   });

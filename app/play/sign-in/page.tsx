@@ -26,7 +26,7 @@ export default function PlaySignIn() {
         setError(err.code === 'invalid_credentials' || /invalid login/i.test(err.message ?? '') ? FRIENDLY : GENERIC);
         return;
       }
-      router.push('/games');
+      router.push('/play');
       router.refresh();
     } catch {
       setError(GENERIC);

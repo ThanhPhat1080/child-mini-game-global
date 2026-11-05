@@ -51,6 +51,9 @@ export function fakeFrom(resolve: (q: QueryState) => QueryResult | Promise<Query
         q.filters.push([col, val]);
         return b;
       },
+      order() {
+        return b;
+      },
       maybeSingle() {
         q.single = true;
         return run();

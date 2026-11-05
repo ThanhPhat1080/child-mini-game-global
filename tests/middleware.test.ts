@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   who: 'signedOut' as string,
   setAll: null as null | ((c: { name: string; value: string; options: object }[]) => void),
   refreshCookie: false,
+  childIds: ['11111111-1111-4111-8111-111111111111'] as string[],
 }));
 
 const profiles: Record<string, object> = {
@@ -20,7 +21,13 @@ const profiles: Record<string, object> = {
 vi.mock('@supabase/ssr', () => ({
   createServerClient: (_url: string, _key: string, opts: { cookies: { setAll: typeof h.setAll } }) => {
     h.setAll = opts.cookies.setAll;
-    const { from } = fakeFrom(() => ({ data: profiles[h.who] ?? null }));
+    const { from } = fakeFrom((q) => {
+      if (q.table === 'children') {
+        const id = q.filters.find(([c]) => c === 'id')?.[1] as string;
+        return { data: h.childIds.includes(id) ? { id } : null };
+      }
+      return { data: profiles[h.who] ?? null };
+    });
     return {
       auth: {
         getUser: vi.fn(async () => {
@@ -35,16 +42,20 @@ vi.mock('@supabase/ssr', () => ({
 
 import { config, middleware } from '@/middleware';
 
+const CHILD = '11111111-1111-4111-8111-111111111111';
+
 beforeEach(() => {
   h.who = 'signedOut';
   h.refreshCookie = false;
+  h.childIds = [CHILD];
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://sb.test';
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon';
 });
 
-async function visit(path: string, who: Who) {
+async function visit(path: string, who: Who, cookie: string | null = `cp_child=${CHILD}`) {
   h.who = who;
-  const res = await middleware(new NextRequest(new URL(path, 'http://app.test')));
+  const headers = cookie ? { cookie } : undefined;
+  const res = await middleware(new NextRequest(new URL(path, 'http://app.test'), { headers }));
   const loc = res.headers.get('location');
   return loc ? new URL(loc).pathname : 'next';
 }
@@ -52,6 +63,7 @@ async function visit(path: string, who: Who) {
 const NEXT = 'next';
 const ADMIN_IN = '/admin/sign-in';
 const PLAY_IN = '/play/sign-in';
+const PICKER = '/play';
 
 // path, signedOut, parent, bannedParent, superAdmin, noProfile
 const table: [string, string, string, string, string, string][] = [
@@ -79,6 +91,48 @@ describe('middleware route protection (U11, U12, U13)', () => {
       for (const who of whos) expect(await visit(path, who)).toBe(NEXT);
     });
   }
+
+  describe('active child cookie (K9)', () => {
+    for (const path of ['/', '/games', '/games/quiz/abc']) {
+      it(`${path}: a profile without the cookie goes to /play`, async () => {
+        expect(await visit(path, 'parent', null)).toBe(PICKER);
+      });
+      it(`${path}: a cookie that is not a UUID goes to /play`, async () => {
+        expect(await visit(path, 'parent', 'cp_child=nope')).toBe(PICKER);
+      });
+      it(`${path}: the cookie of a deleted child (no row) goes to /play`, async () => {
+        h.childIds = [];
+        expect(await visit(path, 'parent')).toBe(PICKER);
+      });
+      it(`${path}: a valid cookie passes`, async () => {
+        expect(await visit(path, 'parent')).toBe(NEXT);
+      });
+      it(`${path}: signed out still goes to /play/sign-in, with or without the cookie`, async () => {
+        expect(await visit(path, 'signedOut', null)).toBe(PLAY_IN);
+        expect(await visit(path, 'signedOut')).toBe(PLAY_IN);
+      });
+    }
+
+    it('/play is never redirected', async () => {
+      for (const who of whos) {
+        expect(await visit('/play', who, null)).toBe(NEXT);
+        expect(await visit('/play', who, 'cp_child=nope')).toBe(NEXT);
+      }
+    });
+
+    it('/admin does not look at the cookie', async () => {
+      expect(await visit('/admin/settings', 'parent', null)).toBe(NEXT);
+      expect(await visit('/admin', 'parent', 'cp_child=nope')).toBe(NEXT);
+    });
+
+    it('keeps refreshed session cookies on the /play redirect', async () => {
+      h.refreshCookie = true;
+      h.who = 'parent';
+      const res = await middleware(new NextRequest(new URL('/games', 'http://app.test')));
+      expect(new URL(res.headers.get('location')!).pathname).toBe(PICKER);
+      expect(res.cookies.get('sb-token')?.value).toBe('fresh');
+    });
+  });
 
   it('keeps refreshed session cookies on a redirect', async () => {
     h.refreshCookie = true;

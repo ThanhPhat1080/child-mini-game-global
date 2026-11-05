@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { clearActiveChild } from '@/lib/childSession';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import AdultCheck from './AdultCheck';
 import styles from './auth.module.css';
 
-/** Quiet corner button for grown-ups (U10). Signs out only after the adult check passes. */
+/** Quiet corner button for grown-ups (U10). After the adult check: sign out, forget the active child, back to the sign-in page. */
 export default function LogoutButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -21,7 +22,8 @@ export default function LogoutButton() {
       failed = true;
     }
     if (failed) return; // still signed in: stay on the page
-    router.push('/play/sign-in');
+    clearActiveChild();
+    router.push('/admin/sign-in');
     router.refresh();
   }
 
