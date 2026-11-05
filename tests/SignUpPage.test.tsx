@@ -137,7 +137,7 @@ describe('sign-up from the play area (FS6)', () => {
   it('from=play sends every sign-in path to the play area', async () => {
     window.history.pushState({}, '', '/sign-up?from=play');
     render(<SignUpPage />);
-    expect(await screen.findByText('childPlayer')).toBeTruthy();
+    expect(await screen.findByText('ABC Play')).toBeTruthy();
     expect(screen.getByRole('link', { name: /sign in/i }).getAttribute('href')).toBe('/play/sign-in');
     fill();
     await acceptPolicy();

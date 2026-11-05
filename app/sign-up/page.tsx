@@ -90,7 +90,7 @@ export default function SignUpPage() {
     <div className={`${styles.page} ${styles.signWrap}`}>
       <div className={styles.signCol}>
         <div className={styles.signBrand}>
-          <span className={styles.brand} style={{ fontSize: 28 }}>{signInPath === '/play/sign-in' ? 'childPlayer' : 'Parent Admin'}</span>
+          <span className={styles.brand} style={{ fontSize: 28 }}>{signInPath === '/play/sign-in' ? 'ABC Play' : 'Parent Admin'}</span>
         </div>
 
         {done ? (
