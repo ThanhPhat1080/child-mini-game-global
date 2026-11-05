@@ -61,7 +61,7 @@ test('stand-in storage round-trips an upload with its content type', async ({ pa
 });
 
 test('the stand-in rejects filters it does not support', async () => {
-  const res = await fetch(`${STANDIN}/rest/v1/memory_cards?or=(active.eq.true)`);
+  const res = await fetch(`${STANDIN}/rest/v1/memory_cards?and=(active.eq.true)`);
   expect(res.status).toBe(501);
   const del = await fetch(`${STANDIN}/rest/v1/memory_cards`, { method: 'DELETE' });
   expect(del.status).toBe(400);
