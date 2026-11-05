@@ -224,7 +224,7 @@ export function SetEditor({ setId }: { setId: string }) {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', justifyContent: 'flex-end' }}>
               <span style={{ padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 700, background: chip.bg, color: chip.fg }}>{chip.text}</span>
               {canPreview ? (
-                <Link href={`/games/quiz/${d.id}`} target="_blank" rel="noopener noreferrer" className={s.ghost} style={{ height: 44, padding: '0 18px', borderRadius: 12, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8, boxSizing: 'border-box' }}>
+                <Link href={`/games/quiz/${d.id}?preview=1`} target="_blank" rel="noopener noreferrer" className={s.ghost} style={{ height: 44, padding: '0 18px', borderRadius: 12, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8, boxSizing: 'border-box' }}>
                   <Eye />Preview as child
                 </Link>
               ) : (

@@ -50,8 +50,6 @@ function stopVoice() {
 export default function QuestionPage() {
   const { setId } = useParams<{ setId: string }>();
   const router = useRouter();
-  const routerRef = useRef(router);
-  routerRef.current = router;
   const [count, setCount] = useState(3);
   const [qs, setQs] = useState<Question[] | null>(null);
   const [q, setQ] = useState(0);
@@ -74,28 +72,15 @@ export default function QuestionPage() {
   }, []);
 
   useEffect(() => {
-    let alive = true;
-    const client = createSupabaseBrowserClient();
-    // A parent session can read its own drafts, so only a published set may be played (K10); anything else is a missing set.
-    const guard = Promise.resolve(client.from('quiz_sets').select('id, status').eq('id', setId).maybeSingle());
-    guard
-      .then(async ({ data: set }) => {
-        if (!alive) return;
-        if (!set || (set as { status: string }).status !== 'published') {
-          routerRef.current.replace('/games/quiz');
-          return;
-        }
-        const { data } = await client
-          .from('questions')
-          .select('id, position, prompt_text, prompt_image_path, prompt_audio_path, read_answers, hide_answer_text, answers(slot, image_path, text, is_correct)')
-          .eq('set_id', setId)
-          .order('position');
-        if (!alive) return;
+    createSupabaseBrowserClient()
+      .from('questions')
+      .select('id, position, prompt_text, prompt_image_path, prompt_audio_path, read_answers, hide_answer_text, answers(slot, image_path, text, is_correct)')
+      .eq('set_id', setId)
+      .order('position')
+      .then(({ data }) => {
         const rows = ((data as unknown as Question[]) ?? []).map((r) => ({ ...r, answers: [...r.answers].sort((a, b) => a.slot - b.slot) }));
         setQs(rows.filter((r) => (!!r.prompt_text?.trim() || !!r.prompt_audio_path) && r.answers.length >= 2 && r.answers.every((a) => hasAnswerContent(a.image_path, a.text)) && r.answers.filter((a) => a.is_correct).length === 1));
-      })
-      .catch(() => undefined);
-    return () => { alive = false; };
+      });
   }, [setId]);
 
   const cur = qs?.[q];

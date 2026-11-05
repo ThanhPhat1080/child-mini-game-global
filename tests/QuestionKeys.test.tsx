@@ -5,11 +5,9 @@ const h = vi.hoisted(() => ({ questions: [] as unknown[], yay: vi.fn(), ohOh: vi
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
-    from: (table: string) => ({
+    from: () => ({
       select: () => ({
-        eq: () => (table === 'quiz_sets'
-          ? { maybeSingle: () => Promise.resolve({ data: { id: 's1', status: 'published' } }) }
-          : { order: () => Promise.resolve({ data: h.questions }) }),
+        eq: () => ({ order: () => Promise.resolve({ data: h.questions }) }),
       }),
     }),
   }),

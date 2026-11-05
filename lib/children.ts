@@ -49,8 +49,11 @@ function mapError(e: PgError): ChildError {
   return 'failed';
 }
 
-export async function listMyChildren(client: Client = createSupabaseBrowserClient()): Promise<Child[]> {
-  const { data, error } = await client.from('children').select(COLUMNS).order('created_at');
+/** `parentId` limits the list to one parent's children (a Super Admin can read every family's rows through RLS). */
+export async function listMyChildren(client: Client = createSupabaseBrowserClient(), parentId?: string): Promise<Child[]> {
+  let q = client.from('children').select(COLUMNS);
+  if (parentId) q = q.eq('parent_id', parentId);
+  const { data, error } = await q.order('created_at');
   if (error) throw new Error(error.message);
   return (data ?? []) as Child[];
 }

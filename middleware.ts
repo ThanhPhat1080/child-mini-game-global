@@ -50,7 +50,7 @@ export async function middleware(request: NextRequest) {
     const access = adminAccess(profile);
     target = access === 'ok' ? null : ADMIN_TARGET[access];
   } else {
-    target = !profile ? PLAY_SIGN_IN : (await hasActiveChild(request, supabase)) ? null : PICKER;
+    target = !profile ? PLAY_SIGN_IN : (request.nextUrl.searchParams.get('preview') === '1' || (await hasActiveChild(request, supabase, profile.user_id))) ? null : PICKER;
   }
   if (!target) return response;
 
@@ -63,11 +63,11 @@ export async function middleware(request: NextRequest) {
   return redirect;
 }
 
-/** The `cp_child` cookie is a UUID and RLS lets this session select that child (a deleted child's id finds nothing). */
-async function hasActiveChild(request: NextRequest, supabase: SupabaseClient): Promise<boolean> {
+/** The `cp_child` cookie is a UUID naming one of this parent's own children (a deleted or foreign child's id finds nothing). */
+async function hasActiveChild(request: NextRequest, supabase: SupabaseClient, parentId: string): Promise<boolean> {
   const id = request.cookies.get(ACTIVE_CHILD_COOKIE)?.value;
   if (!id || !UUID.test(id)) return false;
-  const { data, error } = await supabase.from('children').select('id').eq('id', id).maybeSingle();
+  const { data, error } = await supabase.from('children').select('id').eq('id', id).eq('parent_id', parentId).maybeSingle();
   return !error && !!data;
 }
 

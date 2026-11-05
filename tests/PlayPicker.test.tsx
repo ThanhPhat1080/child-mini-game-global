@@ -61,6 +61,14 @@ describe('Play picker (K7-K12, KU9-KU12)', () => {
     expect(girl.textContent).toContain('K'); // initial fallback
   });
 
+  it('lists only the signed-in parent, never other families (Super Admin)', async () => {
+    h.session.mockResolvedValue({ data: { session: { user: { id: 'admin1' } } } });
+    h.list.mockResolvedValue([kid(1), kid(2, { parent_id: 'other' })]);
+    await ready();
+    expect(cardNames()).toEqual(['Parent configuration']);
+    expect(h.list).toHaveBeenCalledWith(undefined, 'admin1');
+  });
+
   it('still shows Parent Configuration with zero children', async () => {
     h.list.mockResolvedValue([]);
     await ready();

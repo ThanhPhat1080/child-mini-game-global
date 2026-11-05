@@ -29,11 +29,12 @@ export default function Play() {
   const load = useCallback(async () => {
     setFailed(false);
     try {
-      if (!(await getMyUserId())) {
+      const me = await getMyUserId();
+      if (!me) {
         router.replace('/play/sign-in');
         return;
       }
-      setKids(await listMyChildren());
+      setKids((await listMyChildren(undefined, me)).filter((c) => c.parent_id === me));
     } catch {
       setFailed(true);
     }

@@ -9,6 +9,7 @@ const h = vi.hoisted(() => ({
   who: 'signedOut' as string,
   setAll: null as null | ((c: { name: string; value: string; options: object }[]) => void),
   refreshCookie: false,
+  childParent: null as string | null,
   childIds: ['11111111-1111-4111-8111-111111111111'] as string[],
 }));
 
@@ -24,7 +25,8 @@ vi.mock('@supabase/ssr', () => ({
     const { from } = fakeFrom((q) => {
       if (q.table === 'children') {
         const id = q.filters.find(([c]) => c === 'id')?.[1] as string;
-        return { data: h.childIds.includes(id) ? { id } : null };
+        const parent = q.filters.find(([c]) => c === 'parent_id')?.[1];
+        return { data: h.childIds.includes(id) && (parent === undefined || parent === (h.childParent ?? (profiles[h.who] as { user_id?: string } | undefined)?.user_id)) ? { id } : null };
       }
       return { data: profiles[h.who] ?? null };
     });
@@ -48,6 +50,7 @@ beforeEach(() => {
   h.who = 'signedOut';
   h.refreshCookie = false;
   h.childIds = [CHILD];
+  h.childParent = null;
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://sb.test';
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon';
 });
@@ -112,6 +115,21 @@ describe('middleware route protection (U11, U12, U13)', () => {
         expect(await visit(path, 'signedOut')).toBe(PLAY_IN);
       });
     }
+
+    it("the cookie of another parent's child goes to /play", async () => {
+      h.childParent = 'someone-else';
+      expect(await visit('/games', 'parent')).toBe(PICKER);
+    });
+
+    it('?preview=1 with a profile passes without the cookie', async () => {
+      expect(await visit('/games/quiz/x?preview=1', 'parent', null)).toBe(NEXT);
+      expect(await visit('/games/quiz/x', 'parent', null)).toBe(PICKER);
+    });
+
+    it('?preview=1 with no profile still goes to /play/sign-in', async () => {
+      expect(await visit('/games/quiz/x?preview=1', 'signedOut', null)).toBe(PLAY_IN);
+      expect(await visit('/games/quiz/x?preview=1', 'noProfile', null)).toBe(PLAY_IN);
+    });
 
     it('/play is never redirected', async () => {
       for (const who of whos) {
