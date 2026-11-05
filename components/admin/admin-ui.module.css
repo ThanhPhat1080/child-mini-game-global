@@ -33,3 +33,11 @@
 @keyframes fishBob { 0%, 100% { transform: translateY(2px) rotate(-3deg); } 50% { transform: translateY(-6px) rotate(3deg); } }
 @keyframes ripple { 0% { transform: scale(0.35); opacity: 0.7; } 100% { transform: scale(1); opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .loadingFish { animation: none; } .loadingRipple { animation: none; opacity: 0.35; } .loadingRipple:nth-of-type(2) { transform: scale(0.7); } .loadingRipple:nth-of-type(3) { transform: scale(0.45); } }
+
+/* Mine / Global content tabs */
+.tabs { display: flex; gap: 4px; border-bottom: 2px solid #EADCC8; }
+.tab { appearance: none; -webkit-appearance: none; margin: 0 0 -2px; padding: 10px 22px 9px; border: none; border-bottom: 3px solid transparent; border-radius: 10px 10px 0 0; background: transparent; color: #7A6458; font-family: Nunito, sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+.tab:hover { background: #f6eadc; color: #5A4038; }
+.tabActive, .tabActive:hover { background: #F8DCDF; color: #5A4038; border-bottom-color: #c77d85; }
+.tab:focus-visible { outline: 3px solid #c77d85; outline-offset: -3px; }
+@media (prefers-reduced-motion: reduce) { .tab { transition: none; } }
