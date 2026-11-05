@@ -11,7 +11,7 @@ export type MediaSource =
 export const MEDIA_SOURCES: MediaSource[] = [
   { table: 'child_settings', column: 'greeting_path', kind: 'audio' },
   { table: 'child_settings', column: 'music_path', kind: 'audio' },
-  { table: 'child_settings', column: 'avatar_path', kind: 'image' },
+  { table: 'children', column: 'avatar_path', kind: 'image' },
   { table: 'child_settings', column: 'hooray_path', kind: 'audio' },
   { table: 'child_settings', column: 'ohoh_path', kind: 'audio' },
   { table: 'child_settings', column: 'complete_path', kind: 'audio' },
