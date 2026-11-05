@@ -1,20 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { clearActiveChild } from '@/lib/childSession';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import AdultCheck from './AdultCheck';
 import ExitDoorIcon from './ExitDoorIcon';
+import FarewellPopup from './FarewellPopup';
 import styles from './auth.module.css';
 
-/** Quiet corner button for grown-ups (U10). After the adult check: sign out, forget the active child, back to the play sign-in page (FS7). */
+/** The farewell stays this long before the parent is signed out (FP14). */
+const FAREWELL_MS = 2000;
+
+/** Quiet corner button for grown-ups (U10). After the adult check: a farewell for 2 s, then sign out, forget the active child, back to the play sign-in page (FS7). */
 export default function LogoutButton() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [farewell, setFarewell] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
-  async function onPass() {
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  function onPass() {
     setOpen(false);
+    setFarewell(true);
+    timer.current = setTimeout(() => void signOutNow(), FAREWELL_MS);
+  }
+
+  async function signOutNow() {
     let failed = false;
     try {
       const { error } = await createSupabaseBrowserClient().auth.signOut();
@@ -22,7 +35,10 @@ export default function LogoutButton() {
     } catch {
       failed = true;
     }
-    if (failed) return; // still signed in: stay on the page
+    if (failed) {
+      setFarewell(false); // still signed in: back to the page
+      return;
+    }
     clearActiveChild();
     router.push('/play/sign-in');
     router.refresh();
@@ -39,7 +55,8 @@ export default function LogoutButton() {
           </g>
         </svg>
       </button>
-      <AdultCheck open={open} onPass={onPass} onCancel={() => setOpen(false)} title="Sign out now?" hint="Finish the sum below to sign out." icon={<ExitDoorIcon />} centered />
+      <AdultCheck open={open} onPass={onPass} onCancel={() => setOpen(false)} title="Sign out now?" hint="Finish the sum below to sign out." icon={<ExitDoorIcon />} centered submitLabel="Signout now!" />
+      {farewell && <FarewellPopup />}
     </>
   );
 }

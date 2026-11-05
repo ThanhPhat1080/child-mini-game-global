@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({ signOut: vi.fn(), push: vi.fn(), refresh: vi.fn(), clear: vi.fn() }));
@@ -19,7 +19,7 @@ afterEach(cleanup);
 const open = () => fireEvent.click(screen.getByRole('button', { name: 'Sign out (grown-ups)' }));
 const answer = (v: string) => {
   fireEvent.change(screen.getByRole('textbox'), { target: { value: v } });
-  fireEvent.click(screen.getByRole('button', { name: /^ok$/i }));
+  fireEvent.click(screen.getByRole('button', { name: 'Signout now!' }));
 };
 
 describe('LogoutButton (U10)', () => {
@@ -46,10 +46,26 @@ describe('LogoutButton (U10)', () => {
     render(<LogoutButton />);
     open();
     answer('12');
-    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play/sign-in'));
+    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play/sign-in'), { timeout: 3000 });
     expect(h.signOut).toHaveBeenCalledTimes(1);
     expect(h.clear).toHaveBeenCalledTimes(1);
     expect(h.refresh).toHaveBeenCalled();
+    vi.restoreAllMocks();
+  });
+
+  it('after the right sum a farewell shows with See you later! and the sign-out waits 2 s', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    render(<LogoutButton />);
+    open();
+    answer('12');
+    expect(screen.getByRole('status').textContent).toContain('See you later!');
+    expect(h.signOut).not.toHaveBeenCalled();
+    await act(async () => { vi.advanceTimersByTime(1999); });
+    expect(h.signOut).not.toHaveBeenCalled();
+    await act(async () => { vi.advanceTimersByTime(1); });
+    expect(h.signOut).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -59,7 +75,7 @@ describe('LogoutButton (U10)', () => {
     render(<LogoutButton />);
     open();
     answer('12');
-    await waitFor(() => expect(h.signOut).toHaveBeenCalled());
+    await waitFor(() => expect(h.signOut).toHaveBeenCalled(), { timeout: 3000 });
     await Promise.resolve();
     expect(h.push).not.toHaveBeenCalled();
     expect(h.clear).not.toHaveBeenCalled();

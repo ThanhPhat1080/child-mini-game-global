@@ -72,7 +72,8 @@ test('signing out of the play device needs the adult check', async ({ page }) =>
   const q = await page.getByTestId('adult-question').innerText();
   const [a, b] = q.split('=')[0].split('+').map((x) => Number(x.trim()));
   await page.getByLabel('Answer').fill(String(a + b));
-  await page.getByRole('button', { name: 'OK' }).click();
+  await page.getByRole('button', { name: 'Signout now!' }).click();
+  await expect(page.getByRole('status').filter({ hasText: 'See you later!' })).toBeVisible();
   await expect(page).toHaveURL(/\/play\/sign-in$/);
 });
 

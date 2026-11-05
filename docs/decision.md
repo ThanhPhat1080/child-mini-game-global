@@ -235,6 +235,6 @@
 ### ADR-036: Fixed English text on three child screens, for the accompanying grown-up
 
 - **Status:** Accepted (2026-11-05). Narrow exception to "no child-facing text is hard-coded".
-- **Decision:** `/play` ("Who are you?"), the PIN popup ("Enter your PIN, <name>!") and the Leave game popup ("Leave game?", "Stay", "Leave") may show fixed English text. It is for the grown-up playing along. Each screen stays usable without reading, through pictures, avatars and icons. Wrong-PIN feedback stays without text. Other child screens keep the old rule.
+- **Decision:** `/play` ("Who are you?"), the PIN popup ("Enter your PIN, <name>!"), the Leave game popup ("Leave game?", "Stay", "Leave") and the parent sign-out check ("Sign out now?", "Finish the sum below to sign out.", "Signout now!") and farewell ("See you later!") may show fixed English text. It is for the grown-up playing along. Each screen stays usable without reading, through pictures, avatars and icons. Wrong-PIN feedback stays without text. Other child screens keep the old rule.
 - **Also:** leaving a child's session has no "a + b" check, because the PIN guards coming back. Parent sign-out and Parent configuration keep the check.
 

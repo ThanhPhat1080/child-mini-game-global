@@ -23,3 +23,10 @@
 .leave { position: absolute; z-index: 10; left: 56px; bottom: 48px; width: 104px; height: 104px; border-radius: 52px; border: none; background: #fff; box-shadow: 0 6px 0 #eadcc8; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
 .leave:hover { filter: brightness(1.03); }
 .leave:focus-visible { outline: 6px solid #c77d85; outline-offset: 4px; }
+.farewell { display: flex; flex-direction: column; align-items: center; animation: farewellIn .4s ease-out; }
+.bubble { position: relative; margin-bottom: 44px; padding: 18px 40px; border-radius: 40px; background: #fff; box-shadow: 0 6px 0 #eadcc8; color: #4a3830; font-family: 'Nunito', sans-serif; font-size: 44px; font-weight: 700; }
+.bubble::after { content: ''; position: absolute; left: 50%; bottom: -22px; transform: translateX(-50%); border: 22px solid transparent; border-top-color: #fff; border-bottom: 0; }
+.farewellPic { width: 360px; height: 455px; object-fit: contain; }
+@keyframes farewellIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .farewell { animation: none; } }
+
