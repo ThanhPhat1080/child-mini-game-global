@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { clearActiveChild } from '@/lib/childSession';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { Pic } from '@/components/Pic';
 import AdultCheck from './AdultCheck';
+import ExitDoorIcon from './ExitDoorIcon';
 import styles from './auth.module.css';
 
 /** Quiet corner button for grown-ups (U10). After the adult check: sign out, forget the active child, back to the play sign-in page (FS7). */
@@ -39,7 +39,7 @@ export default function LogoutButton() {
           </g>
         </svg>
       </button>
-      <AdultCheck open={open} onPass={onPass} onCancel={() => setOpen(false)} title="Leave now?" icon={<Pic src="/seed/house.svg" alt="" width={96} height={96} />} />
+      <AdultCheck open={open} onPass={onPass} onCancel={() => setOpen(false)} title="Leave now?" icon={<ExitDoorIcon />} />
     </>
   );
 }
