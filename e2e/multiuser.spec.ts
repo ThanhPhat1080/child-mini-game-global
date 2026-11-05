@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { ACCOUNTS, getState, makeCards, reset, SIGNED_OUT, signInAsAdmin, signInAsChild, signInAsSuper } from './support/fixtures';
+import { ACCOUNTS, getState, makeCards, pickChild, reset, SIGNED_OUT, signInAsAdmin, signInAsSuper, signInOnDevice } from './support/fixtures';
 
 // Wiring only (T4, T5): who may do what is proven by the real-Postgres suite (npm run test:rls).
 
@@ -28,35 +28,52 @@ test('a parent signs up through the policy carousel', async ({ browser }) => {
   expect(profiles.some((p) => p.role === 'parent' && p.display_name === null)).toBe(true);
 });
 
-test('a parent adds a child and the child signs in and stays signed in after a reload', async ({ browser }) => {
+test('a parent adds a child; the child picks the card, types the PIN and stays in after a reload', async ({ browser }) => {
   const parent = await signedOut(browser);
   await signInAsAdmin(parent);
-  await parent.getByRole('button', { name: /add (a )?child/i }).click();
-  await parent.getByLabel(/name/i).fill('Mia');
-  await parent.getByLabel(/email/i).fill('mia@test.local');
-  await parent.getByLabel(/password/i).fill('miapassword1');
-  await parent.getByRole('button', { name: /^(add|create|save)/i }).last().click();
-  await expect.poll(async () => (await getState()).profiles.some((p) => p.role === 'child' && p.display_name === 'Mia')).toBe(true);
+  await parent.getByRole('button', { name: /add child/i }).first().click();
+  const modal = parent.getByRole('dialog');
+  await modal.getByRole('button', { name: /Girl/ }).click();
+  await modal.getByLabel('Display name').fill('Mia');
+  await modal.getByLabel('Login name').fill('Mia');
+  await modal.getByLabel('PIN', { exact: true }).fill('ab12');
+  await modal.getByRole('button', { name: '2-5' }).click();
+  await modal.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect.poll(async () => (await getState()).children.some((c) => c.display_name === 'Mia')).toBe(true);
 
-  const child = await signedOut(browser);
-  await signInAsChild(child, { email: 'mia@test.local', password: 'miapassword1' });
-  await child.reload();
-  await expect(child).toHaveURL(/\/games$/);
+  // the same parent session on the play device: pick Mia, type the PIN
+  await signInOnDevice(parent);
+  await pickChild(parent, 'Mia', 'ab12');
+  await parent.reload();
+  await expect(parent).toHaveURL(/\/games$/);
 });
 
-test('logging out of the child device needs the adult check', async ({ page }) => {
+test('Parent Configuration needs the adult check', async ({ page }) => {
+  await page.goto('/play');
+  await page.getByRole('button', { name: 'Parent configuration' }).click();
+  const q = await page.getByTestId('adult-question').innerText();
+  const [a, b] = q.split('=')[0].split('+').map((x) => Number(x.trim()));
+  await page.getByLabel('Answer').fill(String(a + b));
+  await page.getByRole('button', { name: 'OK' }).click();
+  await expect(page).toHaveURL(/\/admin/);
+});
+
+test('deleting the active child sends the device back to the picker', async ({ page }) => {
   await page.goto('/games');
+  await expect(page).toHaveURL(/\/games$/);
+  await reset({ children: [] });
+  await page.goto('/games');
+  await expect(page).toHaveURL(/\/play$/);
+});
+
+test('signing out of the play device needs the adult check', async ({ page }) => {
+  await page.goto('/play');
   await page.getByRole('button', { name: 'Sign out (grown-ups)' }).click();
   const q = await page.getByTestId('adult-question').innerText();
   const [a, b] = q.split('=')[0].split('+').map((x) => Number(x.trim()));
   await page.getByLabel('Answer').fill(String(a + b));
   await page.getByRole('button', { name: 'OK' }).click();
-  await expect(page).toHaveURL(/\/play\/sign-in$/);
-});
-
-test('a child opening /admin sees the no-permission page', async ({ page }) => {
-  await page.goto('/admin');
-  await expect(page).toHaveURL(/\/admin\/forbidden$/);
+  await expect(page).toHaveURL(/\/admin\/sign-in$/);
 });
 
 test('share, approve, ban: the whole review loop', async ({ browser }) => {
@@ -81,7 +98,8 @@ test('share, approve, ban: the whole review loop', async ({ browser }) => {
 
   // The child sees it under Everyone.
   const child = await signedOut(browser);
-  await signInAsChild(child);
+  await signInOnDevice(child);
+  await pickChild(child);
   await child.getByRole('button', { name: /everyone/i }).click();
   await expect.poll(() => child.evaluate(() => localStorage.getItem('childPlayer:scope'))).toBe('global');
 

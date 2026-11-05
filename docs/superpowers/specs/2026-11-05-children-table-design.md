@@ -1,6 +1,6 @@
 # Children as a plain table (no child accounts) design
 
-Date: 2026-11-05. Status: draft for owner review. Repo: `child-mini-game-global`.
+Date: 2026-11-05. Status: Accepted. Repo: `child-mini-game-global`.
 
 Requirement IDs: `K1..` (children data and access), `KU1..` (UI), `KT1..` (tests). Cite them in commits. Layout work for `/admin` and the question editor is a separate spec (see section 9).
 

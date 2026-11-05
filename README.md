@@ -11,7 +11,7 @@ cp .env.example .env.local   # fill in the Supabase URL and anon key; SUPABASE_S
 npm run dev
 ```
 
-Child device: `/play/sign-in`, then `/games`. Parents and Super Admins: `/admin/sign-in` (parents can create an account at `/sign-up`).
+Play device: the parent signs in at `/play/sign-in`, picks a child and types the PIN at `/play`, then `/games`. Parents and Super Admins: `/admin/sign-in` (parents can create an account at `/sign-up`).
 
 ## Checks
 
@@ -24,7 +24,7 @@ Child device: `/play/sign-in`, then `/games`. Parents and Super Admins: `/admin/
 
 ## Roles
 
-`super_admin` reviews shared content, bans parents and manages quotas; `parent` owns content and up to 5 children; `child` plays on a signed-in device. See `docs/decision.md` (ADR-033) and `docs/superpowers/specs/2026-11-04-multi-user-phase3-design.md`.
+`super_admin` reviews shared content, bans parents and manages quotas; `parent` owns content and up to 5 children (rows in `children`, each with a PIN; the child plays on the parent's signed-in device). See `docs/decision.md` (ADR-033, ADR-035) and `docs/superpowers/specs/2026-11-04-multi-user-phase3-design.md`.
 
 ## Deploy
 

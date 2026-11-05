@@ -112,7 +112,7 @@ test('a draft (inactive) level can be previewed as the child while signed in', a
   await openSpot(page);
   await expect(page.getByLabel('Level 1 on')).not.toBeChecked();
   const [popup] = await Promise.all([context.waitForEvent('page'), page.getByRole('link', { name: 'Preview as child' }).click()]);
-  await expect(popup).toHaveURL(new RegExp(`/games/spot/${draft.id}$`));
+  await expect(popup).toHaveURL(new RegExp(`/games/spot/${draft.id}\\?preview=1$`));
   await expect(popup.getByRole('img').first()).toBeVisible();
 });
 
