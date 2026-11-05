@@ -17,7 +17,7 @@ Success means: each requirement below passes its acceptance check, and the exist
 | Fixed text on child screens | Allowed as an exception, in English, for the accompanying grown-up, in three places only. Recorded as ADR-036. |
 | Sign-out button on child screens | Leaves to `/play` with no "a + b" check. The parent stays signed in; the PIN is needed to come back. |
 | Where that button appears | `/` and `/games` only. Level lists and games keep their back buttons. |
-| Prince art | `public/images/prince.webp`, made from the owner's image (section 11). |
+| Prince art | `public/images/prince.png`, made from the owner's image (section 11). |
 | Overall approach | Small shared pieces (`ModalClose`, `useActiveChild`, extended `GENDER_THEME`), four PRs. No rewrite of the dialogs. |
 | Card games (Memory, Listen, Sort) | Family cards first; global cards only fill what is missing. |
 | "Blue" in feedback item 4 | Sky blue, matching the existing boy colors. |
@@ -73,7 +73,7 @@ PIN popup (`PinEntry`):
 
 `/` for the active child:
 
-- **FP9** Female: no visual change. Male: `prince.webp` replaces the princess, and the "tap to enter" button, the name and the sound bars use sky-blue tones, defined as tokens beside `GENDER_THEME`. The green "Start game" button stays for both.
+- **FP9** Female: no visual change. Male: `prince.png` replaces the princess, and the "tap to enter" button, the name and the sound bars use sky-blue tones, defined as tokens beside `GENDER_THEME`. The green "Start game" button stays for both.
 
 Corner buttons:
 
@@ -119,4 +119,4 @@ The work needs the children table code, so branches start from `claude/children-
 
 ## 11. Assets
 
-`public/images/prince.webp` is ready: 520x655, transparent background, made from the owner's `public/images/prince.jpg` (360x360 source, so it is softer than `princess.webp`). The welcome screen masks the image's lower and side edges, so the feet may fade out. A sharper source can replace the file later with no code change.
+`public/images/prince.png` is ready: 520x655, transparent background, made from the owner's `public/images/prince.jpg` (360x360 source, so it is softer than `princess.png`). The welcome screen masks the image's lower and side edges, so the feet may fade out. A sharper source can replace the file later with no code change.
