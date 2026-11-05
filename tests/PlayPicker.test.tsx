@@ -143,11 +143,11 @@ describe('Play picker (K7-K12, KU9-KU12)', () => {
       expect(screen.getByTestId('adult-question')).toBeTruthy();
     });
 
-    it('the right sum goes to /admin and sets no cookie', async () => {
+    it('the right two-digit sum goes to /admin and sets no cookie', async () => {
       vi.spyOn(Math, 'random').mockReturnValue(0);
       await ready();
       fireEvent.click(screen.getByRole('button', { name: 'Parent configuration' }));
-      answer('12');
+      answer('20');
       expect(h.push).toHaveBeenCalledWith('/admin');
       expect(h.setActive).not.toHaveBeenCalled();
       expect(h.clear).not.toHaveBeenCalled();

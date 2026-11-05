@@ -8,6 +8,7 @@ import { setActiveChild } from '@/lib/childSession';
 import { handleChoiceKey, isPressKey } from '@/lib/keynav';
 import { Stage } from '@/components/Stage';
 import AdultCheck from '@/components/auth/AdultCheck';
+import StopHandIcon from '@/components/auth/StopHandIcon';
 import LogoutButton from '@/components/auth/LogoutButton';
 import ChildPickCard from '@/components/play/ChildPickCard';
 import ParentConfigCard from '@/components/play/ParentConfigCard';
@@ -104,7 +105,7 @@ export default function Play() {
       )}
       <LogoutButton />
       {picked && <PinEntry child={picked} onCorrect={() => onCorrect(picked)} onCancel={() => setPicked(null)} />}
-      <AdultCheck open={check} onPass={() => { setCheck(false); router.push('/admin'); }} onCancel={() => setCheck(false)} />
+      <AdultCheck open={check} title="Grown-ups only" hint="Solve the sum to open Parent configuration." icon={<StopHandIcon />} centered twoDigit submitLabel="OK" onPass={() => { setCheck(false); router.push('/admin'); }} onCancel={() => setCheck(false)} />
     </Stage>
   );
 }

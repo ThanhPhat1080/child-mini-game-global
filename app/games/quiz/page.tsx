@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { applyScope } from '@/lib/review';
+import { familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
 import { Stage } from '@/components/Stage';
 import { Hills } from '@/components/Hills';
 import { BackButton } from '@/components/BackButton';
@@ -40,15 +40,16 @@ export default function QuizSets() {
   const n = sets?.length ?? 0;
 
   useEffect(() => {
-    applyScope(
-      createSupabaseBrowserClient()
-        .from('quiz_sets')
-        .select('id, title, subtitle, heading_color, cover_path, questions(prompt_text, prompt_audio_path, answers(image_path, text, is_correct))')
-        .eq('status', 'published'),
-    )
-      .order('position')
-      .then(({ data }) => {
-        const rows = ((data as unknown as Row[]) ?? []).map((r) => ({ ...r, count: r.questions.filter(isComplete).length })).filter((r) => r.count > 0);
+    playerId()
+      .then(async (me) => {
+        const { data } = await familyOrGlobal(
+          createSupabaseBrowserClient()
+            .from('quiz_sets')
+            .select('id, title, subtitle, heading_color, cover_path, owner_id, questions(prompt_text, prompt_audio_path, answers(image_path, text, is_correct))')
+            .eq('status', 'published'),
+          me,
+        ).order('position');
+        const rows = ownerFirst((data as unknown as Row[]) ?? [], me).map((r) => ({ ...r, count: r.questions.filter(isComplete).length })).filter((r) => r.count > 0);
         setSets(rows);
         const d: Record<string, boolean> = {};
         try { rows.forEach((r) => { if (localStorage.getItem(`childPlayer:done:${r.id}`)) d[r.id] = true; }); } catch { /* storage blocked */ }

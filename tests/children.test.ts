@@ -47,7 +47,7 @@ describe('createChild', () => {
     const { client, calls } = fake({ data: row, error: null });
     const r = await createChild({ ...base, child_name: '\t La   n ' }, client);
     expect(r).toEqual({ ok: true, child: row });
-    expect(calls.insert[0][0]).toEqual({ ...base, child_name: 'La n' });
+    expect(calls.insert[0][0]).toEqual({ ...base, celebrate_a_path: null, celebrate_b_path: null, child_name: 'La n' });
     expect(calls.insert[0][0]).not.toHaveProperty('parent_id');
   });
   it('maps 23505 to name_taken', async () => {

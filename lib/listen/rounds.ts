@@ -33,7 +33,8 @@ export function buildRounds(
   }
   if (pool.length < 3) return null
 
-  const answers = shuffle(pool, rng).slice(0, Math.min(max, pool.length))
+  // the family's own cards are asked first (FG5); wrong choices may come from the whole pool
+  const answers = [...shuffle(pool.filter((c) => c.family), rng), ...shuffle(pool.filter((c) => !c.family), rng)].slice(0, Math.min(max, pool.length))
   return answers.map((answer) => {
     const others = shuffle(
       pool.filter((c) => c.id !== answer.id),

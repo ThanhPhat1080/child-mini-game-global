@@ -7,18 +7,21 @@ export type Child = {
   child_name: string;
   display_name: string;
   avatar_path: string | null;
+  /** Two pictures for the "you did it" screen, uploaded by the parent. */
+  celebrate_a_path?: string | null;
+  celebrate_b_path?: string | null;
   gender: Gender;
   age_band: AgeBand;
   pin: string;
 };
-export type NewChild = Pick<Child, 'child_name' | 'display_name' | 'avatar_path' | 'gender' | 'age_band' | 'pin'>;
+export type NewChild = Pick<Child, 'child_name' | 'display_name' | 'avatar_path' | 'gender' | 'age_band' | 'pin'> & Pick<Child, 'celebrate_a_path' | 'celebrate_b_path'>;
 export type ChildError = 'name_taken' | 'child_limit' | 'failed';
 
 type Client = ReturnType<typeof createSupabaseBrowserClient>;
 
 const MAX_NAME = 40;
 const PIN = /^[A-Za-z0-9]{4}$/;
-const COLUMNS = 'id, parent_id, child_name, display_name, avatar_path, gender, age_band, pin';
+const COLUMNS = 'id, parent_id, child_name, display_name, avatar_path, celebrate_a_path, celebrate_b_path, gender, age_band, pin';
 
 /** Trim and collapse any run of whitespace (tabs, newlines too) to one space. Matches the DB unique index. */
 export function normalizeChildName(name: string): string {
@@ -68,6 +71,8 @@ export async function createChild(
       child_name: normalizeChildName(input.child_name),
       display_name: input.display_name.trim(),
       avatar_path: input.avatar_path,
+      celebrate_a_path: input.celebrate_a_path ?? null,
+      celebrate_b_path: input.celebrate_b_path ?? null,
       gender: input.gender,
       age_band: input.age_band,
       pin: input.pin,

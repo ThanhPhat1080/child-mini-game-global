@@ -161,11 +161,29 @@ function splitIn(v) {
 class Unsupported extends Error {}
 const OPS = new Set(['eq', 'neq', 'in', 'is', 'gt', 'gte', 'lt', 'lte']);
 
+/** One `column.op.value` test, as used inside `or=(...)`. */
+function leaf(expr) {
+  const [col, op, ...rest] = expr.split('.');
+  const val = rest.join('.');
+  return (row) => {
+    const x = row[col];
+    if (op === 'eq') return same(x, val);
+    if (op === 'neq') return !same(x, val);
+    if (op === 'is') return val === 'null' ? x == null : same(x, val);
+    throw new Unsupported(`stand-in: unsupported operator "${op}" inside or()`);
+  };
+}
+
 function matcher(params) {
   const tests = [];
   for (const [key, raw] of params) {
     if (RESERVED.has(key)) continue;
-    if (key === 'or' || key === 'and') throw new Unsupported(`stand-in: unsupported filter "${key}"`);
+    if (key === 'or') {
+      const alts = raw.replace(/^\(|\)$/g, '').split(',').map(leaf);
+      tests.push((row) => alts.some((t) => t(row)));
+      continue;
+    }
+    if (key === 'and') throw new Unsupported(`stand-in: unsupported filter "${key}"`);
     const dot = raw.indexOf('.');
     if (dot < 0) throw new Unsupported(`stand-in: cannot parse filter ${key}=${raw}`);
     let op = raw.slice(0, dot);

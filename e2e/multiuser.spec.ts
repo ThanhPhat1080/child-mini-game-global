@@ -97,12 +97,10 @@ test('share, approve, ban: the whole review loop', async ({ browser }) => {
   await sa.getByRole('button', { name: /^Approve/ }).first().click();
   await expect.poll(async () => (await getState()).memory_cards.filter((c) => c.visibility === 'global').length).toBe(1);
 
-  // The child sees it under Everyone.
+  // The child plays: own content first, then global, with no switch on the games page.
   const child = await signedOut(browser);
   await signInOnDevice(child);
   await pickChild(child);
-  await child.getByRole('button', { name: /everyone/i }).click();
-  await expect.poll(() => child.evaluate(() => localStorage.getItem('childPlayer:scope'))).toBe('global');
 
   // The Super Admin bans the parent with a reason: the parent is sent to the suspended page, the child still plays.
   await sa.goto('/admin/parents');

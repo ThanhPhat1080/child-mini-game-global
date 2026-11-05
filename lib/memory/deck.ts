@@ -30,7 +30,8 @@ export function drawDeck(
   const active = cards.filter((c) => c.active)
   const pairs = pairsOf(level)
   if (active.length < pairs) throw new Error('not enough cards')
-  const chosen = shuffle(active, rng).slice(0, pairs)
+  // the family's own cards first (FG5), global cards fill the rest
+  const chosen = [...shuffle(active.filter((c) => c.family), rng), ...shuffle(active.filter((c) => !c.family), rng)].slice(0, pairs)
   const tiles = chosen.flatMap((card) => [
     { key: `${card.id}:0`, card },
     { key: `${card.id}:1`, card },

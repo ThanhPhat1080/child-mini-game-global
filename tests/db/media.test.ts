@@ -119,7 +119,8 @@ describe('media folders, quota and delete guard (Q1-Q6)', () => {
         [JSON.stringify([{ audio_path: `${a}/obj.mp3` }, {}]), a],
       );
       await superQuery(`update public.children set avatar_path = $2 where id = $1`, [child, `${a}/avatar.png`]);
-      for (const p of [own, `${a}/own.mp3`, `${a}/obj.mp3`, `${a}/avatar.png`]) {
+      await superQuery(`update public.children set celebrate_a_path = $2, celebrate_b_path = $3 where id = $1`, [child, `${a}/cel-a.png`, `${a}/cel-b.png`]);
+      for (const p of [own, `${a}/own.mp3`, `${a}/obj.mp3`, `${a}/avatar.png`, `${a}/cel-a.png`, `${a}/cel-b.png`]) {
         expect((await as(b).query<{ r: boolean }>(`select public.media_in_use($1) r`, [p]))[0].r).toBe(true);
       }
       expect((await as(b).query<{ r: boolean }>(`select public.media_in_use($1) r`, [`${a}/free.png`]))[0].r).toBe(false);

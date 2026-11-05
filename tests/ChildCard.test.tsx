@@ -19,13 +19,14 @@ describe('ChildCard (KU1, KU2)', () => {
     expect(screen.getByText('♂')).toBeTruthy();
     const card = screen.getByTestId('child-card');
     expect(card.style.background).not.toBe('');
-    expect(card.getAttribute('style')).toContain('rgb(220, 232, 241)');
+    expect(card.getAttribute('style')).toContain('rgb(255, 247, 220)'); // same pale yellow for both
+    expect(card.getAttribute('style')).toContain('rgb(143, 179, 209)'); // blue border
   });
   it('shows a girl with female colors', () => {
     render(<ChildCard child={base} onEdit={() => {}} onRemove={() => {}} />);
     expect(screen.getByText('♀')).toBeTruthy();
-    expect(screen.getByTestId('child-card').getAttribute('style')).toContain('rgb(248, 220, 223)');
-    expect(GENDER_THEME.female.bg).toBe('#F8DCDF');
+    expect(screen.getByTestId('child-card').getAttribute('style')).toContain('rgb(229, 154, 161)'); // pink border
+    expect(GENDER_THEME.female.bg).toBe(GENDER_THEME.male.bg);
   });
   it('edit and remove buttons have names and tooltips, and call back', () => {
     const onEdit = vi.fn(); const onRemove = vi.fn();

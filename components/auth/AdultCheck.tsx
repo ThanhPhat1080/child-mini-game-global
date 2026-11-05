@@ -6,25 +6,33 @@ import styles from './auth.module.css';
 import type { ReactNode } from 'react';
 import { ModalClose } from '@/components/ModalClose';
 
-type Props = { open: boolean; onPass(): void; onCancel(): void; random?: () => number; title?: string; icon?: ReactNode; hint?: string; centered?: boolean; submitLabel?: string };
+type Props = { open: boolean; onPass(): void; onCancel(): void; random?: () => number; title?: string; icon?: ReactNode; hint?: string; centered?: boolean; submitLabel?: string; twoDigit?: boolean };
 
 /** The centered (sign-out) check uses bigger buttons for a grown-up reading across the room. */
 const bigBtn = { height: 64, padding: '0 36px', fontSize: 26 } as const;
 
-/** Two integers in 6..9, so the sum is 12..18: out of reach for a 4-5 year old. */
-function pick(random: () => number): [number, number] {
+/**
+ * Two integers in 6..9, so the sum is 12..18: out of reach for a 4-5 year old.
+ * `twoDigit` (the way into the admin area) uses two two-digit numbers whose sum stays at 99 or less.
+ */
+function pick(random: () => number, twoDigit = false): [number, number] {
+  if (twoDigit) {
+    const a = 10 + Math.min(79, Math.floor(random() * 80)); // 10..89
+    const b = 10 + Math.min(99 - a - 10, Math.floor(random() * (99 - a - 9))); // 10..99-a
+    return [a, b];
+  }
   const n = () => 6 + Math.min(3, Math.floor(random() * 4));
   return [n(), n()];
 }
 
 /** Grown-up check (U10): "a + b = ?". Mounted only while open, so state resets on every open. */
-export default function AdultCheck({ open, onPass, onCancel, random = Math.random, title = 'Grown-ups only', icon, hint, centered = false, submitLabel = 'OK' }: Props) {
+export default function AdultCheck({ open, onPass, onCancel, random = Math.random, title = 'Grown-ups only', icon, hint, centered = false, submitLabel = 'OK', twoDigit = false }: Props) {
   if (!open) return null;
-  return <CheckDialog onPass={onPass} onCancel={onCancel} random={random} title={title} icon={icon} hint={hint} centered={centered} submitLabel={submitLabel} />;
+  return <CheckDialog onPass={onPass} onCancel={onCancel} random={random} title={title} icon={icon} hint={hint} centered={centered} submitLabel={submitLabel} twoDigit={twoDigit} />;
 }
 
-function CheckDialog({ onPass, onCancel, random, title, icon, hint, centered, submitLabel }: Omit<Props, 'open'> & { random: () => number; title: string; centered: boolean; submitLabel: string }) {
-  const [nums, setNums] = useState<[number, number]>(() => pick(random));
+function CheckDialog({ onPass, onCancel, random, title, icon, hint, centered, submitLabel, twoDigit }: Omit<Props, 'open'> & { random: () => number; title: string; centered: boolean; submitLabel: string; twoDigit: boolean }) {
+  const [nums, setNums] = useState<[number, number]>(() => pick(random, twoDigit));
   const [value, setValue] = useState('');
   const [wrong, setWrong] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -88,7 +96,7 @@ function CheckDialog({ onPass, onCancel, random, title, icon, hint, centered, su
     }
     setWrong(true);
     setValue('');
-    setNums(pick(random));
+    setNums(pick(random, twoDigit));
     inputRef.current?.focus();
   }
 
