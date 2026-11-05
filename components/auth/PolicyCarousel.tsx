@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { POLICY_SLIDES } from '@/lib/policy/slides';
 import admin from '@/app/admin/admin.module.css';
 import styles from './auth.module.css';
+import { ModalClose } from '@/components/ModalClose';
 
 type Props = { open: boolean; onClose(): void; onAccept(): void };
 
@@ -103,7 +104,7 @@ function CarouselDialog({ onClose, onAccept }: Omit<Props, 'open'>) {
       >
         <div className={styles.top}>
           <h2 id="policy-title">Content rules · Quy định nội dung</h2>
-          <button type="button" className={admin.ghost} onClick={onClose}>Close</button>
+          <ModalClose onClick={onClose} />
         </div>
 
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -131,10 +132,10 @@ function CarouselDialog({ onClose, onAccept }: Omit<Props, 'open'>) {
         </p>
 
         <div className={styles.nav}>
-          <button type="button" className={admin.ghost} disabled={index === 0} onClick={() => go(index - 1)}>Back</button>
+          <button type="button" className={`${admin.ghost} ${admin.modalBtn}`} disabled={index === 0} onClick={() => go(index - 1)}>Back</button>
           <div className={styles.navEnd}>
-            <button type="button" className={admin.ghost} disabled={index === LAST} onClick={() => go(index + 1)}>Next</button>
-            <button type="button" className={admin.primary} disabled={!lastShown} onClick={onAccept}>Register</button>
+            <button type="button" className={`${admin.ghost} ${admin.modalBtn}`} disabled={index === LAST} onClick={() => go(index + 1)}>Next</button>
+            <button type="button" className={`${admin.primary} ${admin.modalBtn}`} disabled={!lastShown} onClick={onAccept}>Register</button>
           </div>
         </div>
       </div>

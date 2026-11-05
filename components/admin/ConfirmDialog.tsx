@@ -1,12 +1,14 @@
 'use client';
 
 import s from './admin-ui.module.css';
+import { ModalClose } from '@/components/ModalClose';
 
 /** Delete confirmation dialog from the prototype. */
 export function ConfirmDialog({ title, body, button, busy, onCancel, onConfirm }: { title: string; body: string; button: string; busy?: boolean; onCancel: () => void; onConfirm: () => void }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(74,56,48,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box', zIndex: 50 }}>
-      <div role="alertdialog" aria-modal="true" aria-labelledby="dtitle" aria-describedby="dbody" style={{ background: '#fff', borderRadius: 20, padding: 28, maxWidth: 440, width: '100%', boxShadow: '0 20px 60px rgba(74,56,48,0.3)', display: 'flex', flexDirection: 'column', gap: 14, fontFamily: 'Nunito, sans-serif', color: '#4A3830' }}>
+      <div role="alertdialog" aria-modal="true" aria-labelledby="dtitle" aria-describedby="dbody" style={{ position: 'relative', background: '#fff', borderRadius: 20, padding: 28, maxWidth: 440, width: '100%', boxShadow: '0 20px 60px rgba(74,56,48,0.3)', display: 'flex', flexDirection: 'column', gap: 14, fontFamily: 'Nunito, sans-serif', color: '#4A3830' }}>
+        <ModalClose onClick={onCancel} disabled={busy} />
         <span style={{ width: 48, height: 48, borderRadius: 24, background: '#FBEDEE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#A8484F" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M6 6l1 14h10l1-14" /><path d="M10 11v5M14 11v5" /></svg>
         </span>

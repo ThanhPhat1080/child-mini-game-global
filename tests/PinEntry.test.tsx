@@ -101,3 +101,49 @@ describe('PinEntry (K10, KU10)', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('PIN popup (FP6-FP8)', () => {
+  it('is a dialog titled with the child name, with the matching hero', () => {
+    setup();
+    expect(screen.getByRole('dialog', { name: 'Enter your PIN, My!' })).toBeTruthy();
+    expect(document.querySelector('img[src*="princess.webp"]')).toBeTruthy();
+    cleanup();
+    render(<PinEntry child={{ ...child, gender: 'male' }} onCorrect={onCorrect} onCancel={onCancel} />);
+    expect(document.querySelector('img[src*="prince.webp"]')).toBeTruthy();
+  });
+  it('shows * and never the real character', () => {
+    setup();
+    fireEvent.change(boxes()[0], { target: { value: 'a' } });
+    expect(boxes()[0].value).toBe('*');
+    expect(document.body.innerHTML).not.toContain('value="a"');
+  });
+  it('a caret before the mask still reads the new character', () => {
+    setup();
+    type('a');
+    fireEvent.change(boxes()[0], { target: { value: 'B*' } });
+    expect(boxes()[0].value).toBe('*');
+    fireEvent.change(boxes()[1], { target: { value: 'B' } });
+    fireEvent.change(boxes()[2], { target: { value: '3' } });
+    fireEvent.change(boxes()[3], { target: { value: 'z' } });
+    expect(onCorrect).not.toHaveBeenCalled(); // box 1 now holds B, so the PIN is BB3z
+  });
+  it('typing a literal * does not clear or change a filled box', () => {
+    setup();
+    type('a');
+    fireEvent.change(boxes()[0], { target: { value: '**' } });
+    fireEvent.change(boxes()[1], { target: { value: 'B' } });
+    fireEvent.change(boxes()[2], { target: { value: '3' } });
+    fireEvent.change(boxes()[3], { target: { value: 'z' } });
+    expect(onCorrect).toHaveBeenCalledTimes(1); // box 1 still holds a
+  });
+  it('closes by X and by a click outside, not by a click inside', () => {
+    const { container } = setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    fireEvent.mouseDown(screen.getByRole('dialog'));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    fireEvent.mouseDown(container.querySelector('[data-pin-overlay]') as Element);
+    expect(onCancel).toHaveBeenCalledTimes(2);
+  });
+});
+

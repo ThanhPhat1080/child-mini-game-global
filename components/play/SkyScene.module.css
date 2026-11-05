@@ -1,0 +1,7 @@
+.drift { animation: drift 18s ease-in-out infinite alternate; }
+.bob { animation: bob 7s ease-in-out infinite; }
+.twinkle { animation: twinkle 3.4s ease-in-out infinite; }
+@keyframes drift { from { transform: translateX(0); } to { transform: translateX(60px); } }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+@keyframes twinkle { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .drift, .bob, .twinkle { animation: none; } }

@@ -7,11 +7,11 @@ import { getMyUserId } from '@/lib/review';
 import { setActiveChild } from '@/lib/childSession';
 import { handleChoiceKey, isPressKey } from '@/lib/keynav';
 import { Stage } from '@/components/Stage';
-import { Hills } from '@/components/Hills';
 import AdultCheck from '@/components/auth/AdultCheck';
 import LogoutButton from '@/components/auth/LogoutButton';
 import ChildPickCard from '@/components/play/ChildPickCard';
 import ParentConfigCard from '@/components/play/ParentConfigCard';
+import { SkyScene } from '@/components/play/SkyScene';
 import PinEntry from '@/components/play/PinEntry';
 import styles from '@/components/play/play.module.css';
 
@@ -25,6 +25,8 @@ export default function Play() {
   const [picked, setPicked] = useState<Child | null>(null);
   const [check, setCheck] = useState(false);
   const lastPicked = useRef<string | null>(null);
+  // 4 or fewer cards in total keeps the large size; with 5 children the six cards use the small size (FP2)
+  const size = kids && kids.length + 1 <= 4 ? 'large' : 'small';
 
   const load = useCallback(async () => {
     setFailed(false);
@@ -68,7 +70,7 @@ export default function Play() {
 
   return (
     <Stage>
-      <Hills variant="double" />
+      <SkyScene festive />
       {failed ? (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <button type="button" className={`hm-tap ${styles.retry}`} aria-label="Try again" onClick={() => void load()} autoFocus>
@@ -80,21 +82,24 @@ export default function Play() {
         </div>
       ) : (
         kids && (
-          <div
-            style={{ position: 'absolute', left: 60, right: 60, top: 240, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 32 }}
-            onKeyDown={(e) => {
-              const el = e.target as HTMLElement;
-              if (isPressKey(e) && el.hasAttribute('data-pick-card')) {
-                e.preventDefault();
-                el.click();
-              }
-            }}
-          >
-            {kids.map((c) => (
-              <ChildPickCard key={c.id} child={c} onPick={() => { lastPicked.current = c.id; setPicked(c); }} />
-            ))}
-            <ParentConfigCard onOpen={() => setCheck(true)} />
-          </div>
+          <>
+            <h1 className={styles.title}>Who are you?</h1>
+            <div
+              style={{ position: 'absolute', left: 60, right: 60, top: 240, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: size === 'large' ? 32 : 24 }}
+              onKeyDown={(e) => {
+                const el = e.target as HTMLElement;
+                if (isPressKey(e) && el.hasAttribute('data-pick-card')) {
+                  e.preventDefault();
+                  el.click();
+                }
+              }}
+            >
+              {kids.map((c) => (
+                <ChildPickCard key={c.id} child={c} size={size} onPick={() => { lastPicked.current = c.id; setPicked(c); }} />
+              ))}
+              <ParentConfigCard size={size} onOpen={() => setCheck(true)} />
+            </div>
+          </>
         )
       )}
       <LogoutButton />

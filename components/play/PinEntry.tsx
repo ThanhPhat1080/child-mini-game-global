@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
+import { useEffect, useId, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
+import { ModalClose } from '@/components/ModalClose';
 import { GENDER_THEME } from '@/lib/childTheme';
 import { mediaUrl } from '@/lib/media';
+import { trapTab } from '@/lib/trapTab';
 import type { Child } from '@/lib/children';
 import { Pic } from '@/components/Pic';
 import styles from './play.module.css';
@@ -12,8 +14,9 @@ const OK = /^[A-Za-z0-9]$/;
 const EMPTY = ['', '', '', ''];
 
 /**
- * Four-box PIN step (K10, KU10). The PIN is compared exactly (case sensitive) once the fourth character is in.
- * A wrong PIN shakes the boxes and clears them; there is never any text (the child cannot read).
+ * Four-box PIN step (K10, KU10, FP6-FP8). The PIN is compared exactly (case sensitive) once the fourth character is in.
+ * A typed character shows as `*`, never the character itself. A wrong PIN shakes the boxes and clears them.
+ * The title is for the grown-up (ADR-036); the child gets no text.
  */
 export default function PinEntry({ child, onCorrect, onCancel }: { child: Child; onCorrect(): void; onCancel(): void }) {
   const [chars, setChars] = useState<string[]>(EMPTY);
@@ -21,8 +24,11 @@ export default function PinEntry({ child, onCorrect, onCancel }: { child: Child;
   const refs = useRef<(HTMLInputElement | null)[]>([]);
   const onCancelRef = useRef(onCancel);
   onCancelRef.current = onCancel;
+  const titleId = useId();
+  const panelRef = useRef<HTMLDivElement>(null);
   const theme = GENDER_THEME[child.gender];
   const src = mediaUrl(child.avatar_path);
+  const name = child.display_name.trim();
 
   useEffect(() => {
     refs.current[0]?.focus();
@@ -56,7 +62,10 @@ export default function PinEntry({ child, onCorrect, onCancel }: { child: Child;
   }
 
   function onChange(i: number, raw: string) {
-    const c = raw.slice(-1);
+    // the boxes show `*`: a `*` in the input is the mask, so only a new letter or digit counts
+    const typed = raw.replace(/\*/g, '');
+    if (raw !== '' && typed === '') return;
+    const c = typed.slice(-1);
     if (c !== '' && !OK.test(c)) return;
     const next = [...chars];
     next[i] = c;
@@ -91,11 +100,24 @@ export default function PinEntry({ child, onCorrect, onCancel }: { child: Child;
   }
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.panel} role="group" aria-label={child.display_name} style={{ borderColor: theme.accent, background: theme.bg }}>
-        <span className={styles.avatar} aria-hidden="true" style={{ color: theme.text, width: 130, height: 130, fontSize: 72 }}>
-          {src ? <Pic src={src} alt="" /> : [...child.display_name.trim()][0]?.toUpperCase()}
-        </span>
+    <div className={styles.overlay} data-pin-overlay onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }}>
+      <div
+        ref={panelRef}
+        className={styles.panel}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        style={{ borderColor: theme.accent, background: theme.bg, position: 'relative' }}
+        onKeyDown={(e) => { if (panelRef.current) trapTab(e, panelRef.current); }}
+      >
+        <ModalClose size="child" onClick={onCancel} />
+        <div className={styles.pinHead}>
+          <Pic src={theme.hero} alt="" width={200} height={252} className={styles.pinHero} />
+          <span className={styles.avatar} aria-hidden="true" style={{ color: theme.text, width: 130, height: 130, fontSize: 72 }}>
+            {src ? <Pic src={src} alt="" /> : [...name][0]?.toUpperCase()}
+          </span>
+        </div>
+        <h2 id={titleId} className={styles.pinTitle} style={{ color: theme.text }}>Enter your PIN, {name}!</h2>
         <div key={wrong} className={`${styles.row} ${wrong ? styles.wrong : ''}`} data-wrong={wrong ? 'true' : undefined}>
           {chars.map((c, i) => (
             <input
@@ -109,7 +131,8 @@ export default function PinEntry({ child, onCorrect, onCancel }: { child: Child;
               spellCheck={false}
               maxLength={1}
               aria-label={`PIN character ${i + 1}`}
-              value={c}
+              value={c ? '*' : ''}
+              onFocus={(e) => e.target.select()}
               onChange={(e) => onChange(i, e.target.value)}
               onKeyDown={(e) => onKeyDown(i, e)}
               onPaste={(e) => onPaste(i, e)}

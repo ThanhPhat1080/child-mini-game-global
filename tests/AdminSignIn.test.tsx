@@ -67,3 +67,11 @@ describe('Admin sign-in routes by role (U11)', () => {
     expect((await screen.findByRole('alert')).textContent).toMatch(/email or password/i);
   });
 });
+
+describe('admin sign-in page (FS5)', () => {
+  it('is clearly the admin page and links to the play area', () => {
+    render(<SignInPage />);
+    expect(screen.getByRole('heading', { name: 'Parent Admin sign-in' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Go to the play area' }).getAttribute('href')).toBe('/play/sign-in');
+  });
+});

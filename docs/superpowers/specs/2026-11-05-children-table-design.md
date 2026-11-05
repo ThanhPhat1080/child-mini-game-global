@@ -36,7 +36,7 @@ Success means: a parent creates, edits and removes children from a card view; a 
 - **K7** The play device holds a **parent session** (email sign-in, unchanged). `/play` lists that parent's children.
 - **K8** A child taps their card and types the PIN. A correct PIN stores the child's `id` in a cookie `cp_child` (not a secret, set by the client, `SameSite=Lax`, session-long). A wrong PIN shakes the card; no text (the child cannot read).
 - **K9** `/games/**` redirects to `/play` when `cp_child` is missing, or when the id does not resolve to a child of the signed-in parent (checked through RLS). The welcome screen and per-child settings load from that id.
-- **K10** Switching child asks for the new child's PIN again. Content shown to a child is the parent's content plus global content, filtered to `published` in the queries the play pages use (RLS no longer narrows a parent's own rows to published ones).
+- **K10** Switching child asks for the new child's PIN again. Content shown to a child is the parent's content plus global content, filtered to `published` in the queries the play pages use (RLS no longer narrows a parent's own rows to published ones). (Changed by parent feedback spec: FP11-FP13, switching child goes through Leave game.)
 - **K11** Bans keep today's rules: a banned parent is sent to `/admin/suspended` and their content is invisible through RLS. Their session on the play device is not signed out, so `/play` still lists their children; they see no content until unbanned.
 
 - **K12** `/admin` is reached from the play device through the **Parent Configuration** card (KU9) and its grown-up check. This is a convenience for parents, not a lock: `/admin` itself is not guarded by the check, and typing the address works for anyone on a parent session. No extra cookie is used.
@@ -49,17 +49,17 @@ Success means: a parent creates, edits and removes children from a card view; a 
 - **KU4** Remove asks for confirmation (never optimistic, per CLAUDE.md), then deletes the row.
 - **KU5** A dashed "Add child" card at the end; disabled at five children with the existing limit note.
 - **KU6** One modal component for create and edit. Fields: login name (create only; read-only with a lock icon in edit), display name, avatar picker, PIN (4 characters, letters or digits), age band (segmented 2-5 / 5-10), welcome sound picker, and a Boy / Girl segmented switch (`aria-pressed`).
-- **KU7** Switching Boy / Girl recolors the modal background, borders, title and primary button immediately to the colors in KU2.
+- **KU7** Switching Boy / Girl recolors the modal background, borders, title and primary button immediately to the colors in KU2. (Changed by parent feedback spec: FA2, modal background is now `modalBg`.)
 - **KU8** Edit mode adds a collapsed "More sounds" block (music, hooray, oh-oh, complete). A duplicate login name shows an inline error under the name field ("That name is already used. Choose another."), mapped from the unique violation (`23505`).
 
 Errors are plain English and never show raw database text. Create and edit are not optimistic (they add or change identity data); the list reloads after success.
 
 ## 6. Play UI: child picker (KU9..KU12)
 
-- **KU9** `/play`: a row of large cards (avatar and display name) in the gender colors, then the PIN entry (four boxes) after a card is tapped. The **last card is Parent Configuration**: neutral color (`--peach`), a tool icon (wrench), no avatar, an `aria-label` and a tooltip. It always shows, even with no children, so a parent with zero children can still reach the admin.
+- **KU9** `/play`: a row of large cards (avatar and display name) in the gender colors, then the PIN entry (four boxes) after a card is tapped. The **last card is Parent Configuration**: neutral color (`--peach`), a tool icon (wrench), no avatar, an `aria-label` and a tooltip. It always shows, even with no children, so a parent with zero children can still reach the admin. (Changed by parent feedback spec: FP5, Parent Configuration has a dashed border and no background.)
 - **KU9b** Tapping Parent Configuration opens the grown-up check popup (`AdultCheck`, "a + b = ?"). A correct answer goes to `/admin`; a wrong answer shakes the popup and offers a new sum. Esc or tapping outside closes it.
-- **KU10** After a correct PIN: the existing welcome screen shows the display name and plays the child's welcome sound once audio is allowed ("tap to enter" rule, ADR audio).
-- **KU11** A corner **back to sign-in** button on the picker screen. The "a + b = ?" check stays on it (as for logout today). When passed it signs the parent out and goes to `/admin/sign-in`, which links to sign-up. Clears `cp_child`.
+- **KU10** After a correct PIN: the existing welcome screen shows the display name and plays the child's welcome sound once audio is allowed ("tap to enter" rule, ADR audio). (Changed by parent feedback spec: FP6-FP8, the PIN popup has a title, hero art, masked boxes and a close button.)
+- **KU11** A corner **back to sign-in** button on the picker screen. The "a + b = ?" check stays on it (as for logout today). When passed it signs the parent out and goes to `/admin/sign-in`, which links to sign-up. Clears `cp_child`. (Changed by parent feedback spec: FS7, sign-out goes to `/play/sign-in`.)
 - **KU12** Honors `prefers-reduced-motion`; keyboard works (Left/Right across cards, Enter to pick, Esc back); visible focus ring.
 
 ## 7. Super Admin (K13)

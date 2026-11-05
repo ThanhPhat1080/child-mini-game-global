@@ -12,7 +12,7 @@ import { MusicButton } from '@/components/MusicButton';
 import { AvatarSay } from '@/components/AvatarSay';
 import { isPressKey } from '@/lib/keynav';
 import { GAMES } from '@/lib/games/registry';
-import SwitchChildButton from '@/components/auth/SwitchChildButton';
+import LeaveGameButton from '@/components/auth/LeaveGameButton';
 import { GameArt, GameIcon } from '@/components/games/GameArt';
 import { ScopeSwitch } from '@/components/games/ScopeSwitch';
 
@@ -123,7 +123,7 @@ export default function Games() {
       </div>
       <ScopeSwitch />
       <MusicButton />
-      <SwitchChildButton />
+      <LeaveGameButton />
     </Stage>
   );
 }

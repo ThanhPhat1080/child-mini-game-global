@@ -5,6 +5,7 @@ import { moveCrop, resizeCrop, startCropFor, type Crop } from '@/lib/crop/geomet
 import { ghostBtn } from './editor-parts';
 import s from './admin-ui.module.css';
 import { Pic } from '@/components/Pic';
+import { ModalClose } from '@/components/ModalClose';
 
 /** Arrow keys move the square by this fraction of the picture's shorter side. */
 const KEY_STEP = 0.02;
@@ -103,11 +104,11 @@ export function CropDialog({ file, start, onCancel, onSave }: {
         aria-modal="true"
         aria-label="Crop picture"
         onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); onCancel(); } }}
-        style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: 'calc(100vh - 32px)', overflowY: 'auto', boxSizing: 'border-box', padding: '24px 28px', boxShadow: '0 20px 60px rgba(74,56,48,0.3)', display: 'flex', flexDirection: 'column', gap: 16, fontFamily: 'Nunito, sans-serif', color: '#4A3830' }}
+        style={{ position: 'relative', background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: 'calc(100vh - 32px)', overflowY: 'auto', boxSizing: 'border-box', padding: '24px 28px', boxShadow: '0 20px 60px rgba(74,56,48,0.3)', display: 'flex', flexDirection: 'column', gap: 16, fontFamily: 'Nunito, sans-serif', color: '#4A3830' }}
       >
+        <ModalClose onClick={onCancel} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>Crop picture</h2>
-          <button type="button" aria-label="Close" onClick={onCancel} style={{ ...ghostBtn, width: 36, padding: 0 }}>×</button>
         </div>
 
         <div
@@ -175,12 +176,12 @@ export function CropDialog({ file, start, onCancel, onSave }: {
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-          <button type="button" className={`${s.btn} ${s.ghost}`} onClick={onCancel}>Cancel</button>
+          <button type="button" className={`${s.btn} ${s.ghost}`} onClick={onCancel} style={{ height: 44, padding: '0 20px' }}>Cancel</button>
           <button
             type="button"
             disabled={!ready}
             onClick={() => crop && onSave(crop)}
-            style={{ height: 40, padding: '0 20px', borderRadius: 12, border: 'none', background: '#5a4038', color: '#fff', fontWeight: 700, fontSize: 14, cursor: ready ? 'pointer' : 'default', opacity: ready ? 1 : 0.5 }}
+            style={{ height: 44, padding: '0 20px', borderRadius: 12, border: 'none', background: '#5a4038', color: '#fff', fontWeight: 700, fontSize: 15, cursor: ready ? 'pointer' : 'default', opacity: ready ? 1 : 0.5 }}
           >
             Save
           </button>

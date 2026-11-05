@@ -231,3 +231,10 @@
 - **Context:** A child account needed an email and password the child cannot type, and it made the parent create and manage Auth users through the service role key.
 - **Decision:** Roles are `super_admin` and `parent`. A child is a row in `public.children` (`child_name` login name unique service-wide, `display_name`, `gender`, `age_band`, 4-character `pin`, `avatar_path`) owned by a parent, at most 5 per parent. The play device keeps the parent's session. `/play` lists the parent's children; the child taps a card and types the PIN; the choice is the cookie `cp_child` (a UUID, checked by the middleware against the parent's own rows through RLS). Settings are per child (`child_settings.child_id` references `children`). Leaving the picker or opening Parent Configuration asks the adult check. Old child accounts are deleted by migration `20261105020000_children_table.sql`.
 - **Consequences:** No service-role route is needed to create children. The PIN is a convenience lock, not a secret: it is readable by the parent's session. Deploying the migration deletes existing child users, so apply it (`supabase db push`) before the release.
+
+### ADR-036: Fixed English text on three child screens, for the accompanying grown-up
+
+- **Status:** Accepted (2026-11-05). Narrow exception to "no child-facing text is hard-coded".
+- **Decision:** `/play` ("Who are you?"), the PIN popup ("Enter your PIN, <name>!"), the Leave game popup ("Leave game?", "Stay", "Leave") and the parent sign-out check ("Sign out now?", "Finish the sum below to sign out.", "Signout now!") and farewell ("See you later!") may show fixed English text. It is for the grown-up playing along. Each screen stays usable without reading, through pictures, avatars and icons. Wrong-PIN feedback stays without text. Other child screens keep the old rule.
+- **Also:** leaving a child's session has no "a + b" check, because the PIN guards coming back. Parent sign-out and Parent configuration keep the check.
+

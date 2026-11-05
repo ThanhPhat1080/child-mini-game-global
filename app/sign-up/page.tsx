@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import PolicyCarousel from '@/components/auth/PolicyCarousel';
+import { signInPathFor, type SignInPath } from '@/lib/auth/signInPath';
 import { POLICY_VERSION } from '@/lib/policy/slides';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import styles from '../admin/admin.module.css';
@@ -39,6 +40,9 @@ export default function SignUpPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [carouselOpen, setCarouselOpen] = useState(false);
+  // read on mount, not with useSearchParams: that would need a Suspense boundary (FS6)
+  const [signInPath, setSignInPath] = useState<SignInPath>('/admin/sign-in');
+  useEffect(() => setSignInPath(signInPathFor(window.location.search)), []);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -64,7 +68,7 @@ export default function SignUpPage() {
         password,
         options: {
           data: { policy_version: POLICY_VERSION },
-          emailRedirectTo: `${location.origin}/admin/sign-in`,
+          emailRedirectTo: `${location.origin}${signInPath}`,
         },
       });
       if (signUpError) {
@@ -86,14 +90,14 @@ export default function SignUpPage() {
     <div className={`${styles.page} ${styles.signWrap}`}>
       <div className={styles.signCol}>
         <div className={styles.signBrand}>
-          <span className={styles.brand} style={{ fontSize: 28 }}>Parent Admin</span>
+          <span className={styles.brand} style={{ fontSize: 28 }}>{signInPath === '/play/sign-in' ? 'ABC Play' : 'Parent Admin'}</span>
         </div>
 
         {done ? (
           <div className={styles.card}>
             <h1>Check your email to confirm your account</h1>
             <p className={styles.sub}>We sent a link to {email.trim()}. Open it, then sign in.</p>
-            <Link href="/admin/sign-in" className={styles.primary}>Go to sign in</Link>
+            <Link href={signInPath} className={styles.primary}>Go to sign in</Link>
           </div>
         ) : (
           <form className={styles.card} onSubmit={onSubmit} noValidate>
@@ -113,7 +117,7 @@ export default function SignUpPage() {
             </div>
             {error && <p role="alert" className={styles.error}>{error}</p>}
             <button type="submit" className={styles.primary} disabled={busy}>{busy ? 'Creating…' : 'Create account'}</button>
-            <p className={styles.foot}>Already have an account? <Link href="/admin/sign-in">Sign in</Link></p>
+            <p className={styles.foot}>Already have an account? <Link href={signInPath}>Sign in</Link></p>
           </form>
         )}
       </div>
