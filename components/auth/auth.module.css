@@ -15,7 +15,8 @@
 .navEnd { display: flex; gap: 12px; }
 .count { font-size: 13px; color: #7a6458; text-align: center; margin: 0; }
 .adultForm { display: flex; flex-direction: column; gap: 14px; }
-.hint { margin: 0; font-size: 22px; line-height: 1.4; color: #7a5c50; }
+.hint { margin: 0; font-size: 30px; line-height: 1.4; color: #7a5c50; }
+.sumRow { display: flex; align-items: center; justify-content: center; gap: 16px; }
 .adultQ { margin: 0; font-size: 32px; font-weight: 700; text-align: center; }
 .shake { animation: adultShake .4s ease; }
 @keyframes adultShake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }

@@ -8,6 +8,9 @@ import { ModalClose } from '@/components/ModalClose';
 
 type Props = { open: boolean; onPass(): void; onCancel(): void; random?: () => number; title?: string; icon?: ReactNode; hint?: string; centered?: boolean; submitLabel?: string };
 
+/** The centered (sign-out) check uses bigger buttons for a grown-up reading across the room. */
+const bigBtn = { height: 64, padding: '0 36px', fontSize: 26 } as const;
+
 /** Two integers in 6..9, so the sum is 12..18: out of reach for a 4-5 year old. */
 function pick(random: () => number): [number, number] {
   const n = () => 6 + Math.min(3, Math.floor(random() * 4));
@@ -98,28 +101,31 @@ function CheckDialog({ onPass, onCancel, random, title, icon, hint, centered, su
         aria-modal="true"
         aria-labelledby="adult-title"
         tabIndex={-1}
-        style={centered ? { alignItems: 'center', textAlign: 'center' } : undefined}
+        style={centered ? { alignItems: 'center', textAlign: 'center', maxWidth: 580, padding: '40px 48px', background: '#FFF7DC', border: '14px solid #E9D9A6', borderRadius: 56, boxShadow: '0 16px 0 #EADCC8' } : undefined}
       >
-        <ModalClose onClick={onCancel} />
+        <ModalClose onClick={onCancel} size={centered ? 'child' : 'admin'} />
         {icon}
-        <h2 id="adult-title" style={{ margin: 0, fontSize: centered ? 32 : 20 }}>{title}</h2>
+        <h2 id="adult-title" style={{ margin: 0, fontSize: centered ? 44 : 20 }}>{title}</h2>
         {hint && <p className={styles.hint}>{hint}</p>}
-        <form onSubmit={onSubmit} className={styles.adultForm} noValidate style={centered ? { width: '100%' } : undefined}>
-          <p className={styles.adultQ} data-testid="adult-question">{nums[0]} + {nums[1]} = ?</p>
-          <input
-            ref={inputRef}
-            className={`${admin.input} ${wrong ? styles.shake : ''}`}
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            aria-label="Answer"
-            value={value}
-            onChange={(e) => setValue(e.target.value.replace(/\D/g, '').slice(0, 3))}
-          />
+        <form onSubmit={onSubmit} className={styles.adultForm} noValidate style={centered ? { width: '100%', gap: 40 } : undefined}>
+          <div className={styles.sumRow}>
+            <span className={styles.adultQ} data-testid="adult-question">{nums[0]} + {nums[1]} =</span>
+            <input
+              ref={inputRef}
+              className={`${admin.input} ${wrong ? styles.shake : ''}`}
+              style={{ width: 140, height: 64, fontSize: 32, fontWeight: 700, textAlign: 'center' }}
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              aria-label="Answer"
+              value={value}
+              onChange={(e) => setValue(e.target.value.replace(/\D/g, '').slice(0, 3))}
+            />
+          </div>
           {wrong && <p role="status" className={admin.error}>Not quite. Try this one.</p>}
           <div className={styles.navEnd} style={{ justifyContent: centered ? 'center' : 'flex-end' }}>
-            <button type="button" className={`${admin.ghost} ${admin.modalBtn}`} onClick={onCancel}>Cancel</button>
-            <button type="submit" className={`${admin.primary} ${admin.modalBtn}`}>{submitLabel}</button>
+            <button type="button" className={`${admin.ghost} ${admin.modalBtn}`} style={centered ? bigBtn : undefined} onClick={onCancel}>Cancel</button>
+            <button type="submit" className={`${admin.primary} ${admin.modalBtn}`} style={centered ? bigBtn : undefined}>{submitLabel}</button>
           </div>
         </form>
       </div>
