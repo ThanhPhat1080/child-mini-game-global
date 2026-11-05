@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,9 +11,16 @@ vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null | undefined) => (p ?
 vi.mock('@/lib/sfx', () => ({ applause: vi.fn(), ohOh: vi.fn(), speakKid: vi.fn(), yay: vi.fn() }));
 vi.mock('@/lib/media/renames', () => ({ useMediaRenamed: () => undefined }));
 vi.mock('@/components/admin/LibraryButton', () => ({
-  LibraryButton: ({ kind, label, onChoose }: { kind: string; label: string; onChoose: (p: string) => void }) => (
-    <button type="button" onClick={() => onChoose(kind === 'image' ? 'img/new.png' : 'snd/new.mp3')}>Choose {label}</button>
-  ),
+  LibraryButton: function MockLib({ kind, label, onChoose }: { kind: string; label: string; onChoose: (p: string) => void }) {
+    const [open, setOpen] = useState(false);
+    return (
+      <>
+        <button type="button" onClick={() => onChoose(kind === 'image' ? 'img/new.png' : 'snd/new.mp3')}>Choose {label}</button>
+        <button type="button" onClick={() => setOpen(true)}>Open library {label}</button>
+        {open && <div role="dialog" aria-label={`Library ${label}`}><button type="button">Lib first</button><button type="button">Lib last</button></div>}
+      </>
+    );
+  },
 }));
 
 import { ChildModal } from '@/components/admin/ChildModal';
@@ -100,13 +108,14 @@ describe('ChildModal (KU3-KU8)', () => {
   it('closes as created with a warning when the welcome sound write fails', async () => {
     h.createChild.mockResolvedValue({ ok: true, child: saved });
     h.updateChildSettings.mockRejectedValue(new Error('x'));
-    const onClose = vi.fn(); const onSaved = vi.fn();
-    render(<ChildModal mode="create" onClose={onClose} onSaved={onSaved} />);
+    const onClose = vi.fn(); const onSaved = vi.fn(); const onNotice = vi.fn();
+    render(<ChildModal mode="create" onClose={onClose} onSaved={onSaved} onNotice={onNotice} />);
     fill();
     fireEvent.click(screen.getByRole('button', { name: 'Choose welcome sound' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onClose).toHaveBeenCalled());
     expect(onSaved).toHaveBeenCalled();
+    expect(onNotice).toHaveBeenCalledWith('warning', expect.stringContaining('welcome sound'));
   });
 
   it('edit saves fields, welcome sound, and frees the replaced avatar', async () => {
@@ -149,8 +158,81 @@ describe('ChildModal (KU3-KU8)', () => {
     fill();
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
-    fireEvent.click(screen.getByTestId('modal-backdrop'));
+    fireEvent.mouseDown(screen.getByTestId('modal-backdrop'));
     expect(close2).not.toHaveBeenCalled();
     await act(async () => { resolve({ ok: false, error: 'failed' }); });
+  });
+
+  it('an idle backdrop mouse-down closes the modal', () => {
+    const onClose = vi.fn();
+    render(<ChildModal mode="create" onClose={onClose} onSaved={() => {}} />);
+    fireEvent.mouseDown(screen.getByTestId('modal-backdrop'));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('Tab and Shift+Tab wrap inside the modal', () => {
+    render(<ChildModal mode="create" onClose={() => {}} onSaved={() => {}} />);
+    const dlg = screen.getByRole('dialog');
+    const items = Array.from(dlg.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled])'));
+    const first = items[0]; const last = items[items.length - 1];
+    last.focus();
+    expect(fireEvent.keyDown(last, { key: 'Tab' })).toBe(false);
+    expect(document.activeElement).toBe(first);
+    expect(fireEvent.keyDown(first, { key: 'Tab', shiftKey: true })).toBe(false);
+    expect(document.activeElement).toBe(last);
+  });
+
+  it('focus moves into the dialog on open and returns to the opener on close', () => {
+    const opener = document.createElement('button');
+    document.body.appendChild(opener);
+    opener.focus();
+    const { unmount } = render(<ChildModal mode="create" onClose={() => {}} onSaved={() => {}} />);
+    expect(document.activeElement).toBe(screen.getByRole('dialog'));
+    unmount();
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
+  });
+
+  it('edit Save is disabled until the settings load', async () => {
+    let resolve: (v: unknown) => void = () => {};
+    h.getChildSettings.mockReturnValue(new Promise((r) => { resolve = r; }));
+    render(<ChildModal mode="edit" child={kid} onClose={() => {}} onSaved={() => {}} />);
+    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true);
+    await act(async () => { resolve({ child_id: 'c1', greeting_path: null }); });
+    expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('when the settings fail to load, the other fields still save and the welcome sound is unavailable', async () => {
+    h.getChildSettings.mockRejectedValue(new Error('boom'));
+    const onSaved = vi.fn(); const onClose = vi.fn();
+    render(<ChildModal mode="edit" child={kid} onClose={onClose} onSaved={onSaved} />);
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(false));
+    expect(screen.queryByRole('button', { name: 'Choose welcome sound' })).toBeNull();
+    fireEvent.change(screen.getByLabelText('PIN'), { target: { value: 'zz99' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
+    expect(h.updateChild).toHaveBeenCalledWith('c1', expect.objectContaining({ pin: 'zz99' }));
+    expect(h.updateChildSettings).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('Esc inside an open library dialog does not close the child modal', () => {
+    const onClose = vi.fn();
+    render(<ChildModal mode="create" onClose={onClose} onSaved={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open library avatar' }));
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Lib first' }), { key: 'Escape' });
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('Tab inside the library dialog stays inside it', () => {
+    render(<ChildModal mode="create" onClose={() => {}} onSaved={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Open library avatar' }));
+    const first = screen.getByRole('button', { name: 'Lib first' });
+    const last = screen.getByRole('button', { name: 'Lib last' });
+    last.focus();
+    expect(fireEvent.keyDown(last, { key: 'Tab' })).toBe(false);
+    expect(document.activeElement).toBe(first);
+    expect(fireEvent.keyDown(first, { key: 'Tab', shiftKey: true })).toBe(false);
+    expect(document.activeElement).toBe(last);
   });
 });

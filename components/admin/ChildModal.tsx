@@ -38,6 +38,7 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
   const [savedGreeting, setSavedGreeting] = useState<string | null>(null);
   const [greetingDraft, setGreetingDraft] = useState<string | null>(null);
   const [settingsReady, setSettingsReady] = useState(mode === 'create');
+  const [soundsFailed, setSoundsFailed] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -57,7 +58,7 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
     let live = true;
     getChildSettings(child.id).then(
       (r) => { if (!live) return; setSavedGreeting(r?.greeting_path ?? null); setSettingsReady(true); },
-      () => { if (live) { setFormError('Could not load the sounds. Close and try again.'); } },
+      () => { if (live) { setSoundsFailed(true); setSettingsReady(true); setFormError('Could not load the welcome sound. You can still save the other changes.'); } },
     );
     return () => { live = false; };
   }, [mode, child]);
@@ -72,13 +73,20 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
   const requestClose = () => { if (!busy) onClose(); };
 
   function onKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {
-    if (e.key === 'Escape') { e.stopPropagation(); requestClose(); return; }
-    if (e.key !== 'Tab' || !dialog.current) return;
-    const items = Array.from(dialog.current.querySelectorAll<HTMLElement>(FOCUSABLE));
+    const root = dialog.current;
+    if (!root) return;
+    // A nested dialog (the media library) inside this one owns Esc; Tab stays inside it.
+    const target = e.target as HTMLElement;
+    const nested = target.closest?.('[role="dialog"]');
+    const inNested = !!nested && nested !== root && root.contains(nested);
+    if (e.key === 'Escape') { if (inNested) return; e.stopPropagation(); requestClose(); return; }
+    if (e.key !== 'Tab') return;
+    const scope = inNested ? (nested as HTMLElement) : root;
+    const items = Array.from(scope.querySelectorAll<HTMLElement>(FOCUSABLE));
     if (items.length === 0) return;
     const first = items[0]; const last = items[items.length - 1];
     const active = document.activeElement;
-    if (e.shiftKey && (active === first || active === dialog.current)) { e.preventDefault(); last.focus(); }
+    if (e.shiftKey && (active === first || active === scope)) { e.preventDefault(); last.focus(); }
     else if (!e.shiftKey && active === last) { e.preventDefault(); first.focus(); }
   }
 
@@ -229,7 +237,7 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             {greetingShown && <PlayButton playing={playing} label={playing ? 'Pause welcome sound' : 'Play welcome sound'} onClick={togglePlay} />}
             <span style={{ fontWeight: 600 }}>{baseName(greetingShown) ?? 'No welcome sound yet'}</span>
-            <LibraryButton kind="audio" label="welcome sound" onChoose={(p) => { audio.current?.pause(); setPlaying(false); setGreetingDraft(p); }} />
+            {soundsFailed ? <span style={{ fontSize: 13 }}>Not available right now.</span> : <LibraryButton kind="audio" label="welcome sound" onChoose={(p) => { audio.current?.pause(); setPlaying(false); setGreetingDraft(p); }} />}
           </div>
         </div>
 
