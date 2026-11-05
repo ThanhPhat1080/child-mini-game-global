@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { as, createUser, resetDb, startDb, stopDb, superQuery } from './harness';
+import { as, createChild, createUser, resetDb, startDb, stopDb, superQuery } from './harness';
 
 // Spec U17: contact the Super Admin.
 
@@ -19,7 +19,8 @@ describe('support_messages (U17)', () => {
     sa = await createUser('super_admin');
     a = await createUser('parent');
     b = await createUser('parent');
-    child = await createUser('child', { parentId: a });
+    // A children row id is not a user: as(child) acts as a signed-in user with no profile.
+    child = await createChild(a);
   });
 
   const send = (u: string | null, body: string) =>

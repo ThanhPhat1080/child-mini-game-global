@@ -69,7 +69,7 @@ export function resumeMusic(): void {
   if (wanted) playMusic();
 }
 
-/** The bottom-left button: sets the viewer's choice and plays or pauses right away. */
+/** The bottom-right button: sets the viewer's choice and plays or pauses right away. */
 export function setMusicWanted(value: boolean): void {
   wanted = value;
   try {
@@ -89,6 +89,14 @@ export function restoreMusicPref(): void {
   } catch {
     // Storage blocked: keep the choice made on this screen.
   }
+  notify();
+}
+
+/** Stops the track and forgets it (FP13). The viewer's music choice is kept. */
+export function stopMusic(): void {
+  music?.pause();
+  music = null;
+  currentUrl = null;
   notify();
 }
 

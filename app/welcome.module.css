@@ -33,8 +33,8 @@
 .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .enterWrap { gap: 40px; }
 .enterBtn {
-  width: 380px; height: 380px; border-radius: 190px; border: 14px solid #fff; background: #ebb7bc;
-  box-shadow: 0 16px 0 #d9a0a6, 0 0 0 40px rgba(235, 183, 188, 0.25);
+  width: 380px; height: 380px; border-radius: 190px; border: 14px solid #fff; background: var(--w-enter, #ebb7bc);
+  box-shadow: 0 16px 0 var(--w-enter-shadow, #d9a0a6), 0 0 0 40px var(--w-enter-halo, rgba(235, 183, 188, 0.25));
   display: flex; align-items: center; justify-content: center; cursor: pointer;
 }
 .hint { margin: 0; font-size: 28px; font-weight: 500; color: #9a8174; letter-spacing: 0.5px; }
@@ -45,8 +45,8 @@
   box-shadow: 0 12px 0 #eadcc8; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
 }
 .bars { position: absolute; right: -36px; top: 40px; display: flex; gap: 6px; align-items: center; }
-.bars span { width: 14px; border-radius: 7px; background: #ebb7bc; }
-.greeting { margin: 0; font-size: 112px; font-weight: 600; color: #b8737b; letter-spacing: 1px; }
+.bars span { width: 14px; border-radius: 7px; background: var(--w-bars, #ebb7bc); }
+.greeting { margin: 0; font-size: 112px; font-weight: 600; color: var(--w-name, #b8737b); letter-spacing: 1px; }
 .start {
   display: flex; align-items: center; gap: 28px; height: 160px; padding: 0 72px 0 56px; border-radius: 80px;
   background: #9cc3a4; box-shadow: 0 14px 0 #7fa889; text-decoration: none; color: #fff;

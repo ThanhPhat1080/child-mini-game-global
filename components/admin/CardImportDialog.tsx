@@ -6,6 +6,7 @@ import { parseCardImport } from '@/lib/memory/import';
 import type { ECard, EGroup } from '@/lib/memory/adminCards';
 import s from './admin-ui.module.css';
 import { ghostBtn } from './editor-parts';
+import { ModalClose } from '@/components/ModalClose';
 
 const SHOW_ERRORS = 8;
 
@@ -36,7 +37,8 @@ export function CardImportDialog({ groups = [], onCancel, onImport }: { groups?:
   const n = ready.length;
   return (
     <div onMouseDown={(e) => { if (e.target === e.currentTarget) onCancel(); }} style={{ position: 'fixed', inset: 0, background: 'rgba(74,56,48,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box', zIndex: 50 }}>
-      <div role="dialog" aria-modal="true" aria-labelledby="cimtitle" style={{ background: '#fff', borderRadius: 20, padding: 28, maxWidth: 560, width: '100%', maxHeight: 'calc(100vh - 32px)', overflowY: 'auto', boxSizing: 'border-box', boxShadow: '0 20px 60px rgba(74,56,48,0.3)', display: 'flex', flexDirection: 'column', gap: 16, fontFamily: 'Nunito, sans-serif', color: '#4A3830' }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="cimtitle" style={{ position: 'relative', background: '#fff', borderRadius: 20, padding: 28, maxWidth: 560, width: '100%', maxHeight: 'calc(100vh - 32px)', overflowY: 'auto', boxSizing: 'border-box', boxShadow: '0 20px 60px rgba(74,56,48,0.3)', display: 'flex', flexDirection: 'column', gap: 16, fontFamily: 'Nunito, sans-serif', color: '#4A3830' }}>
+        <ModalClose onClick={onCancel} />
         <h2 id="cimtitle" style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Quick import cards</h2>
 
         <div style={{ background: '#F1F6FB', borderRadius: 14, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>

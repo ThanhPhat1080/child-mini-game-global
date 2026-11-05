@@ -17,7 +17,10 @@ beforeEach(() => {
   h.signUp.mockReset();
   h.signUp.mockResolvedValue({ data: {}, error: null });
 });
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  window.history.pushState({}, '', '/sign-up');
+});
 
 function fill(email = 'mum@example.com', password = 'longenough1') {
   fireEvent.change(screen.getByLabelText(/email/i), { target: { value: email } });
@@ -97,6 +100,20 @@ describe('Sign-up page (U7, U16)', () => {
     expect(screen.queryByText(/too weak/i)).toBeNull();
   });
 
+  it.each([
+    ['email_address_invalid', 'Email address "a@b.co" is invalid', /not valid/i],
+    ['email_exists', 'Email already exists', /already has an account/i],
+    ['email_address_not_authorized', 'Email address not authorized', /cannot send mail/i],
+  ])('shows the %s error under the email field', async (code, message, expected) => {
+    h.signUp.mockResolvedValue({ data: {}, error: { message, code } });
+    const { container } = render(<SignUpPage />);
+    fill();
+    await acceptPolicy();
+    const alert = await screen.findByText(expected);
+    expect(alert.closest('div')?.querySelector('#su-email')).toBeTruthy();
+    expect(container.textContent).not.toContain(message);
+  });
+
   it('shows the generic message and re-enables the button when signUp throws', async () => {
     h.signUp.mockRejectedValue(new Error('network down'));
     render(<SignUpPage />);
@@ -113,5 +130,18 @@ describe('Sign-up page (U7, U16)', () => {
     fill();
     await acceptPolicy();
     expect(await screen.findByText(/too weak/i)).toBeTruthy();
+  });
+});
+
+describe('sign-up from the play area (FS6)', () => {
+  it('from=play sends every sign-in path to the play area', async () => {
+    window.history.pushState({}, '', '/sign-up?from=play');
+    render(<SignUpPage />);
+    expect(await screen.findByText('ABC Play')).toBeTruthy();
+    expect(screen.getByRole('link', { name: /sign in/i }).getAttribute('href')).toBe('/play/sign-in');
+    fill();
+    await acceptPolicy();
+    expect((await screen.findAllByRole('link', { name: /sign in/i }))[0].getAttribute('href')).toBe('/play/sign-in');
+    expect(h.signUp.mock.calls[0][0].options.emailRedirectTo).toBe(`${location.origin}/play/sign-in`);
   });
 });

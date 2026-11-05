@@ -1,16 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({ rpc: vi.fn(), update: vi.fn(), eq: vi.fn() }));
+const h = vi.hoisted(() => ({ rpc: vi.fn(), update: vi.fn(), eq: vi.fn(), from: vi.fn() }));
 vi.mock('@/lib/supabase/client', () => ({
-  createSupabaseBrowserClient: () => ({ rpc: h.rpc, from: () => ({ update: h.update }) }),
+  createSupabaseBrowserClient: () => ({ rpc: h.rpc, from: (t: string) => (h.from(t) ?? { update: h.update }) }),
 }));
 
-import { approveItem, banParent, createAccount, deleteItem, markMessage, rejectItem, setQuota, unbanParent, unpublishItem } from '@/lib/superAdmin';
+import { approveItem, banParent, createAccount, deleteItem, listAllChildren, markMessage, removeChild, rejectItem, setQuota, unbanParent, unpublishItem } from '@/lib/superAdmin';
 
 beforeEach(() => {
   h.rpc.mockReset().mockResolvedValue({ error: null });
   h.eq.mockReset().mockResolvedValue({ error: null });
   h.update.mockReset().mockReturnValue({ eq: h.eq });
+  h.from.mockReset().mockReturnValue(undefined);
 });
 
 describe('Super Admin database calls', () => {
@@ -63,3 +64,54 @@ describe('Super Admin database calls', () => {
     await expect(createAccount({ role: 'parent', email: 'a@b.co', password: 'secret123', displayName: 'A' }, bad as unknown as typeof fetch)).rejects.toThrow('That email is already used.');
   });
 });
+
+describe('Super Admin children (K13)', () => {
+  const kids = [
+    { id: 'c1', display_name: 'Mia', child_name: 'mia', parent_id: 'p1' },
+    { id: 'c2', display_name: 'Bao', child_name: 'bao', parent_id: 'p2' },
+    { id: 'c3', display_name: 'Nam', child_name: 'nam', parent_id: 'p1' },
+  ];
+  function childrenThenProfiles(profiles: { data: unknown; error: unknown }) {
+    const inFn = vi.fn().mockResolvedValue(profiles);
+    const order = vi.fn().mockResolvedValue({ data: kids, error: null });
+    h.from.mockImplementation((t: string) =>
+      t === 'children' ? { select: () => ({ order }) } : { select: () => ({ in: inFn }) },
+    );
+    return { inFn };
+  }
+
+  it('listAllChildren reads children, then the distinct parents, and joins the names', async () => {
+    const { inFn } = childrenThenProfiles({ data: [{ user_id: 'p1', display_name: 'Lan' }], error: null });
+    const list = await listAllChildren();
+    expect(inFn).toHaveBeenCalledWith('user_id', ['p1', 'p2']);
+    expect(list).toEqual([
+      { id: 'c1', display_name: 'Mia', child_name: 'mia', parent_id: 'p1', parent_name: 'Lan' },
+      { id: 'c2', display_name: 'Bao', child_name: 'bao', parent_id: 'p2', parent_name: null },
+      { id: 'c3', display_name: 'Nam', child_name: 'nam', parent_id: 'p1', parent_name: 'Lan' },
+    ]);
+  });
+
+  it('listAllChildren keeps the list when the parent names fail to load', async () => {
+    childrenThenProfiles({ data: null, error: { message: 'boom' } });
+    const list = await listAllChildren();
+    expect(list).toHaveLength(3);
+    expect(list.every((c) => c.parent_name === null)).toBe(true);
+  });
+
+  it('listAllChildren throws when the children read fails', async () => {
+    h.from.mockReturnValue({ select: () => ({ order: vi.fn().mockResolvedValue({ data: null, error: { message: 'raw db text' } }) }) });
+    await expect(listAllChildren()).rejects.toThrow();
+  });
+
+  it('removeChild deletes by id, and hides raw database text on failure', async () => {
+    const eq = vi.fn().mockResolvedValue({ error: null });
+    h.from.mockReturnValue({ delete: () => ({ eq }) });
+    await removeChild('c1');
+    expect(h.from).toHaveBeenCalledWith('children');
+    expect(eq).toHaveBeenCalledWith('id', 'c1');
+    eq.mockResolvedValue({ error: { message: 'permission denied for table children' } });
+    await expect(removeChild('c1')).rejects.toThrow(/Could not remove/);
+    await expect(removeChild('c1')).rejects.not.toThrow(/permission denied/);
+  });
+});
+

@@ -1,7 +1,7 @@
 .btn {
   position: absolute;
   z-index: 10;
-  left: 56px;
+  right: 56px;
   bottom: 48px;
   width: 104px;
   height: 104px;

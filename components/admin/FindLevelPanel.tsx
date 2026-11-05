@@ -83,7 +83,7 @@ export function FindLevelPanel({ l, n, message, onEdit, onSvg, onAskDelete, onVi
             {l.active ? 'On' : 'Off (draft)'}
           </label>
           {!l.isNew && (
-            <Link href={`/games/find/${l.id}`} target="_blank" rel="noopener" className={`${s.btn} ${s.ghost}`} style={{ ...small, display: 'inline-flex', alignItems: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>Preview as child</Link>
+            <Link href={`/games/find/${l.id}?preview=1`} target="_blank" rel="noopener" className={`${s.btn} ${s.ghost}`} style={{ ...small, display: 'inline-flex', alignItems: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>Preview as child</Link>
           )}
           <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete level ${n}`} onClick={onAskDelete} style={{ ...dangerBtn, height: 34 }}>Delete</button>
         </div>

@@ -1,28 +1,27 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { getMyChildSettings } from '@/lib/settings';
+import { useState, type CSSProperties } from 'react';
 import { mediaUrl } from '@/lib/media';
 import { playOnce, startMusic } from '@/lib/audio';
+import { BOY_WELCOME_VARS, GENDER_THEME } from '@/lib/childTheme';
+import { useActiveChild } from '@/lib/useActiveChild';
 import { Stage } from '@/components/Stage';
 import { MusicButton } from '@/components/MusicButton';
+import LeaveGameButton from '@/components/auth/LeaveGameButton';
 import styles from './welcome.module.css';
 import { Pic } from '@/components/Pic';
 
-type Settings = { child_name: string; greeting_path: string | null; music_path: string | null; music_volume: number; avatar_path: string | null };
-
 const CROWN = 'M4 38 L8 10 L20 24 L30 4 L40 24 L52 10 L56 38 Z';
 
-/** Welcome (C1). Nothing plays until the child taps the big button (ADR-016). */
+/** Welcome (C1, FP9). Nothing plays until the child taps the big button (ADR-016). The picture and colors follow the child's gender. */
 export default function Welcome() {
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const child = useActiveChild();
+  const settings = child.settings;
+  const known = child.status !== 'loading';
   const [entered, setEntered] = useState(false);
-
-  useEffect(() => {
-    getMyChildSettings()
-      .then((data) => setSettings((data as Settings) ?? null), () => setSettings(null));
-  }, []);
+  const theme = GENDER_THEME[child.gender ?? 'female'];
+  const vars = child.gender === 'male' ? (BOY_WELCOME_VARS as CSSProperties) : undefined;
 
   function onEnter() {
     setEntered(true);
@@ -32,7 +31,7 @@ export default function Welcome() {
 
   return (
     <Stage>
-      <div className={styles.scene}>
+      <div className={styles.scene} data-welcome-scene style={vars}>
         <svg aria-hidden="true" width="1920" height="1080" viewBox="0 0 1920 1080" style={{ position: 'absolute', inset: 0 }}>
           <circle cx="1620" cy="190" r="96" fill="#F6E2A6" />
           <circle cx="1620" cy="190" r="140" fill="#F6E2A6" opacity="0.35" />
@@ -51,24 +50,27 @@ export default function Welcome() {
           <circle cx="1540" cy="940" r="8" fill="#FFFFFF" />
         </svg>
 
-        <div className={`${styles.princess} ${styles.float}`}>
-          <Pic src="/images/princess.webp" alt="Chibi princess with a magic wand" width={520} height={655} />
-          <svg aria-hidden="true" width="520" height="655" viewBox="0 0 520 655">
-            <g className={styles.twinkle} style={{ transformOrigin: '40px 190px' }}>
-              <path d="M40 168 L45 185 L62 190 L45 195 L40 212 L35 195 L18 190 L35 185 Z" fill="#F6E2A6" />
-            </g>
-            <g className={styles.twinkle} style={{ transformOrigin: '490px 120px', animationDelay: '1.2s' }}>
-              <path d="M490 98 L494 114 L510 120 L494 126 L490 142 L486 126 L470 120 L486 114 Z" fill="#F6E2A6" />
-            </g>
-            <g className={styles.twinkle} style={{ transformOrigin: '500px 470px', animationDelay: '2.2s' }}>
-              <path d="M500 456 L503 467 L514 470 L503 473 L500 484 L497 473 L486 470 L497 467 Z" fill="#EBB7BC" />
-            </g>
-          </svg>
-        </div>
+        {known && (
+          <div className={`${styles.princess} ${styles.float}`}>
+            <Pic src={theme.hero} alt={theme.heroAlt} width={520} height={655} />
+            <svg aria-hidden="true" width="520" height="655" viewBox="0 0 520 655">
+              <g className={styles.twinkle} style={{ transformOrigin: '40px 190px' }}>
+                <path d="M40 168 L45 185 L62 190 L45 195 L40 212 L35 195 L18 190 L35 185 Z" fill="#F6E2A6" />
+              </g>
+              <g className={styles.twinkle} style={{ transformOrigin: '490px 120px', animationDelay: '1.2s' }}>
+                <path d="M490 98 L494 114 L510 120 L494 126 L490 142 L486 126 L470 120 L486 114 Z" fill="#F6E2A6" />
+              </g>
+              <g className={styles.twinkle} style={{ transformOrigin: '500px 470px', animationDelay: '2.2s' }}>
+                <path d="M500 456 L503 467 L514 470 L503 473 L500 484 L497 473 L486 470 L497 467 Z" fill="#EBB7BC" />
+              </g>
+            </svg>
+          </div>
+        )}
 
         <MusicButton />
+        <LeaveGameButton />
 
-        {!entered ? (
+        {!known ? null : !entered ? (
           <div className={`${styles.center} ${styles.enterWrap}`}>
             <button type="button" className={`${styles.enterBtn} ${styles.breathe}`} aria-label="Tap to enter" onClick={onEnter}>
               <svg aria-hidden="true" width="170" height="170" viewBox="0 0 24 24" fill="#FFFFFF" stroke="#FFFFFF" strokeWidth="1.5" strokeLinejoin="round">

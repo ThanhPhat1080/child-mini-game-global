@@ -20,7 +20,7 @@ const pending = {
   images: ['p1/covers/cover.png', 'p1/answers/a.png'], sounds: ['p1/voices/v.mp3'],
 };
 const parent = (over: Record<string, unknown> = {}) => ({
-  userId: 'p1', role: 'parent', parentId: null, name: 'Lan', banned: false, banReasonCode: null, banNote: null, bannedAt: null, quotaBytes: 50 * 1024 * 1024, ...over,
+  userId: 'p1', role: 'parent', name: 'Lan', banned: false, banReasonCode: null, banNote: null, bannedAt: null, quotaBytes: 50 * 1024 * 1024, ...over,
 });
 
 beforeEach(() => {

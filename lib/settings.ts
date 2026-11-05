@@ -1,51 +1,53 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getActiveChildId } from '@/lib/childSession';
+import type { Gender } from '@/lib/childTheme';
 
-/** One row per child (spec U4); replaces the old singleton `settings` table. */
-export type ChildSettings = {
+/** `child_settings` columns: sounds and music, one row per child. */
+export type ChildSettingsRow = {
   child_id: string;
-  child_name: string | null;
   greeting_path: string | null;
   music_path: string | null;
   music_volume: number;
-  avatar_path: string | null;
   hooray_path: string | null;
   ohoh_path: string | null;
   complete_path: string | null;
 };
 
+/** What play pages read: the settings row plus the child's display name and avatar from `children`. */
+export type ChildSettings = ChildSettingsRow & { child_name: string | null; avatar_path: string | null; gender: Gender };
+
 type Client = ReturnType<typeof createSupabaseBrowserClient>;
 
-/** The signed-in child's row, or null when nobody is signed in or there is no row. */
+/** The active child's settings, or null when no child is chosen or the child is not visible. */
 export async function getMyChildSettings(client: Client = createSupabaseBrowserClient()): Promise<ChildSettings | null> {
-  const { data } = await client.auth.getSession();
-  if (!data.session) return null;
-  return getChildSettings(data.session.user.id, client);
+  const id = getActiveChildId();
+  if (!id) return null;
+  const [settings, kid] = await Promise.all([
+    getChildSettings(id, client),
+    client.from('children').select('display_name, avatar_path, gender').eq('id', id).maybeSingle(),
+  ]);
+  if (kid.error) throw new Error(kid.error.message);
+  if (!settings || !kid.data) return null;
+  const k = kid.data as { display_name: string; avatar_path: string | null; gender: Gender };
+  return { ...settings, child_name: k.display_name, avatar_path: k.avatar_path, gender: k.gender };
 }
 
 export async function getChildSettings(
   childId: string,
   client: Client = createSupabaseBrowserClient(),
-): Promise<ChildSettings | null> {
+): Promise<ChildSettingsRow | null> {
   const { data, error } = await client.from('child_settings').select('*').eq('child_id', childId).maybeSingle();
   if (error) throw new Error(error.message);
-  return (data as ChildSettings | null) ?? null;
+  return (data as ChildSettingsRow | null) ?? null;
 }
 
 export async function updateChildSettings(
   childId: string,
-  patch: Partial<ChildSettings>,
+  patch: Partial<ChildSettingsRow>,
   client: Client = createSupabaseBrowserClient(),
 ): Promise<void> {
-  const { child_id: _ignored, ...rest } = patch;
+  // child_name and avatar_path live on `children` now; drop them (and the key) if a caller still sends them.
+  const { child_id: _ignored, child_name: _n, avatar_path: _a, ...rest } = patch as Record<string, unknown>;
   const { error } = await client.from('child_settings').update(rest).eq('child_id', childId);
   if (error) throw new Error(error.message);
-}
-
-export type ChildSummary = Pick<ChildSettings, 'child_id' | 'child_name' | 'avatar_path'>;
-
-/** The signed-in parent's children (RLS limits the rows), oldest first by name. */
-export async function listMyChildren(client: Client = createSupabaseBrowserClient()): Promise<ChildSummary[]> {
-  const { data, error } = await client.from('child_settings').select('child_id, child_name, avatar_path').order('child_name');
-  if (error) throw new Error(error.message);
-  return (data ?? []) as ChildSummary[];
 }

@@ -23,7 +23,6 @@ describe('Super Admin console guard (N5)', () => {
 
   it.each([
     ['a parent', { role: 'parent', banned: false }],
-    ['a child', { role: 'child' }],
     ['nobody', null],
   ])('non-super-admin (%s) sees the forbidden page and never the children', async (_n, profile) => {
     h.getMyProfile.mockResolvedValue(profile);

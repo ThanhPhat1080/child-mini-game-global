@@ -49,6 +49,7 @@
 .ghost { height: 40px; padding: 0 16px; border-radius: 10px; border: 1.5px solid #e3d5c4; background: #fff; color: #4a3830; font-weight: 700; font-family: 'Nunito', sans-serif; font-size: 14px; cursor: pointer; display: inline-flex; align-items: center; }
 .ghost:hover { background: #f6eadc; }
 .ghost:disabled { opacity: 0.5; cursor: default; background: #fff; }
+.modalBtn { height: 44px; padding: 0 20px; border-radius: 12px; font-size: 15px; }
 .hidden { display: none; }
 .volume { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding-top: 6px; }
 .volume input[type='range'] { flex: 0 1 260px; accent-color: #8a5560; }

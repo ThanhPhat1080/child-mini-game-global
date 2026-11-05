@@ -1,23 +1,36 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import PolicyCarousel from '@/components/auth/PolicyCarousel';
+import { signInPathFor, type SignInPath } from '@/lib/auth/signInPath';
 import { POLICY_VERSION } from '@/lib/policy/slides';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import styles from '../admin/admin.module.css';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function friendlyError(err: { message?: string; code?: string }): string {
+type FieldError = { field: 'email' | 'password' | 'form'; message: string };
+
+function friendlyError(err: { message?: string; code?: string }): FieldError {
   const message = err.message ?? '';
-  if (err.code === 'user_already_exists' || /already registered/i.test(message)) {
-    return 'This email already has an account. Try signing in instead.';
+  const code = err.code ?? '';
+  if (code === 'user_already_exists' || code === 'email_exists' || /already (been )?registered/i.test(message)) {
+    return { field: 'email', message: 'This email already has an account. Try signing in instead.' };
   }
-  if (err.code === 'weak_password' || /should be at least|weak/i.test(message)) {
-    return 'That password is too weak. Try a longer one with letters and numbers.';
+  if (code === 'email_address_invalid' || code === 'validation_failed' || /email address .* is invalid/i.test(message)) {
+    return { field: 'email', message: 'This email address is not valid. Check it for typos, or use a different one.' };
   }
-  return 'Something went wrong. Please try again.';
+  if (code === 'email_address_not_authorized') {
+    return { field: 'email', message: 'We cannot send mail to this address yet. Try a different email.' };
+  }
+  if (code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit' || /rate limit/i.test(message)) {
+    return { field: 'form', message: 'Too many attempts. Wait a few minutes, then try again.' };
+  }
+  if (code === 'weak_password' || /should be at least|weak/i.test(message)) {
+    return { field: 'password', message: 'That password is too weak. Try a longer one with letters and numbers.' };
+  }
+  return { field: 'form', message: 'Something went wrong. Please try again.' };
 }
 
 export default function SignUpPage() {
@@ -27,6 +40,9 @@ export default function SignUpPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [carouselOpen, setCarouselOpen] = useState(false);
+  // read on mount, not with useSearchParams: that would need a Suspense boundary (FS6)
+  const [signInPath, setSignInPath] = useState<SignInPath>('/admin/sign-in');
+  useEffect(() => setSignInPath(signInPathFor(window.location.search)), []);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
@@ -52,16 +68,19 @@ export default function SignUpPage() {
         password,
         options: {
           data: { policy_version: POLICY_VERSION },
-          emailRedirectTo: `${location.origin}/admin/sign-in`,
+          emailRedirectTo: `${location.origin}${signInPath}`,
         },
       });
       if (signUpError) {
-        setError(friendlyError(signUpError));
+        const fe = friendlyError(signUpError);
+        if (fe.field === 'email') setEmailError(fe.message);
+        else if (fe.field === 'password') setPasswordError(fe.message);
+        else setError(fe.message);
         return;
       }
       setDone(true);
     } catch {
-      setError(friendlyError({}));
+      setError(friendlyError({}).message);
     } finally {
       setBusy(false);
     }
@@ -71,14 +90,14 @@ export default function SignUpPage() {
     <div className={`${styles.page} ${styles.signWrap}`}>
       <div className={styles.signCol}>
         <div className={styles.signBrand}>
-          <span className={styles.brand} style={{ fontSize: 28 }}>Parent Admin</span>
+          <span className={styles.brand} style={{ fontSize: 28 }}>{signInPath === '/play/sign-in' ? 'ABC Play' : 'Parent Admin'}</span>
         </div>
 
         {done ? (
           <div className={styles.card}>
             <h1>Check your email to confirm your account</h1>
             <p className={styles.sub}>We sent a link to {email.trim()}. Open it, then sign in.</p>
-            <Link href="/admin/sign-in" className={styles.primary}>Go to sign in</Link>
+            <Link href={signInPath} className={styles.primary}>Go to sign in</Link>
           </div>
         ) : (
           <form className={styles.card} onSubmit={onSubmit} noValidate>
@@ -98,7 +117,7 @@ export default function SignUpPage() {
             </div>
             {error && <p role="alert" className={styles.error}>{error}</p>}
             <button type="submit" className={styles.primary} disabled={busy}>{busy ? 'Creating…' : 'Create account'}</button>
-            <p className={styles.foot}>Already have an account? <Link href="/admin/sign-in">Sign in</Link></p>
+            <p className={styles.foot}>Already have an account? <Link href={signInPath}>Sign in</Link></p>
           </form>
         )}
       </div>

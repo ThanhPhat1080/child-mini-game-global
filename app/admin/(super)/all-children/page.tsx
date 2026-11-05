@@ -1,26 +1,40 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { listPeople, type PersonRow } from '@/lib/superAdmin';
-import { CreateAccountForm } from '@/components/admin/CreateAccountForm';
+import { listAllChildren, removeChild, type AdminChild } from '@/lib/superAdmin';
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { Toast, useToast } from '@/components/admin/Toast';
 import styles from '../../admin.module.css';
 
-/** Every child with their parent (N5), and creating a child for a parent. */
+/** Every child with their parent (N5). Read-only except removing a child, which asks first. */
 export default function AllChildrenPage() {
-  const [kids, setKids] = useState<PersonRow[] | null>(null);
-  const [parents, setParents] = useState<PersonRow[]>([]);
+  const [kids, setKids] = useState<AdminChild[] | null>(null);
+  const [target, setTarget] = useState<AdminChild | null>(null);
+  const [busy, setBusy] = useState(false);
   const { toast, show, close } = useToast();
 
   const load = useCallback(async () => {
     try {
-      const [c, p] = await Promise.all([listPeople('child'), listPeople('parent')]);
-      setKids(c); setParents(p);
+      setKids(await listAllChildren());
     } catch (e) { show('error', (e as Error).message); }
   }, [show]);
   useEffect(() => { void load(); }, [load]);
 
-  const parentName = (id: string | null) => parents.find((p) => p.userId === id)?.name || 'Unknown parent';
+  async function confirmRemove() {
+    if (!target) return;
+    setBusy(true);
+    try {
+      await removeChild(target.id);
+      setTarget(null);
+      show('success', 'Child removed.');
+      await load();
+    } catch (e) {
+      setTarget(null);
+      show('error', (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <>
@@ -33,15 +47,25 @@ export default function AllChildrenPage() {
       {kids && kids.length === 0 && <p className={styles.note}>No children yet.</p>}
       <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 10 }}>
         {(kids ?? []).map((k) => (
-          <li key={k.userId} className={styles.row}>
+          <li key={k.id} className={styles.row}>
             <div className={styles.rowText}>
-              <div className={styles.rowTitle}>{k.name || 'Unnamed child'}</div>
-              <div className={styles.rowMeta}>Parent: {parentName(k.parentId)}</div>
+              <div className={styles.rowTitle}>{k.display_name || k.child_name || 'Unnamed child'}</div>
+              <div className={styles.rowMeta}>Parent: {k.parent_name || 'Unknown parent'}</div>
             </div>
+            <button type="button" className={styles.ghost} onClick={() => setTarget(k)}>Remove</button>
           </li>
         ))}
       </ul>
-      <CreateAccountForm roles={['child']} parents={parents} onCreated={(m) => { show('success', m); void load(); }} onError={(m) => show('error', m)} />
+      {target && (
+        <ConfirmDialog
+          title="Remove this child?"
+          body={`${target.display_name || target.child_name} and their settings will be deleted. This cannot be undone.`}
+          button="Remove"
+          busy={busy}
+          onCancel={() => setTarget(null)}
+          onConfirm={() => void confirmRemove()}
+        />
+      )}
       <Toast toast={toast} onClose={close} />
     </>
   );

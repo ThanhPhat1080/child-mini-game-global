@@ -85,14 +85,14 @@ describe('FindBoard (F2-F9)', () => {
     expect(pic().style.height).toBe('900px');
   });
 
-  it('a 2:1 picture fills 1280 px wide, a tall one fills 900 px high', async () => {
+  it('a 2:1 picture fills 1184 px wide, a tall one fills 900 px high', async () => {
     const { unmount } = render(<FindBoard url="/a.svg" objects={objects} found={[]} onTap={() => {}} />);
     const img = area().querySelector('img')!;
     Object.defineProperty(img, 'naturalWidth', { value: 2000, configurable: true });
     Object.defineProperty(img, 'naturalHeight', { value: 1000, configurable: true });
     await act(async () => { fireEvent.load(img); });
-    expect(pic().style.width).toBe('1280px');
-    expect(pic().style.height).toBe('640px');
+    expect(pic().style.width).toBe('1184px');
+    expect(pic().style.height).toBe('592px'); // 1184 / 2
     unmount();
     render(<FindBoard url="/a.svg" objects={objects} found={[]} onTap={() => {}} />);
     const img2 = area().querySelector('img')!;

@@ -5,11 +5,12 @@ import { createServer } from 'node:http';
 import { randomUUID } from 'node:crypto';
 
 const PORT = Number(process.env.STANDIN_PORT ?? 54391);
-// Phase 3: three fixed accounts. `admin@test.local` is the parent so the older admin specs keep working.
+// Three fixed accounts: Super Admin and parent sign in. `admin@test.local` is the parent so the older admin specs keep working.
+// The child is a row in `children` (not an account); its PIN is 1234.
 const SUPER = { email: 'super@test.local', password: 'secret', id: '11111111-1111-4111-8111-111111111111' };
 const PARENT = { email: 'admin@test.local', password: 'secret', id: '22222222-2222-4222-8222-222222222222' };
-const CHILD = { email: 'child@test.local', password: 'secret', id: '33333333-3333-4333-8333-333333333333' };
-const TABLES = ['memory_cards', 'card_groups', 'spot_levels', 'find_levels', 'child_settings', 'quiz_sets', 'questions', 'answers', 'profiles', 'support_messages', 'review_events'];
+const CHILD = { id: '33333333-3333-4333-8333-333333333333', name: 'Test', pin: '1234' };
+const TABLES = ['children', 'memory_cards', 'card_groups', 'spot_levels', 'find_levels', 'child_settings', 'quiz_sets', 'questions', 'answers', 'profiles', 'support_messages', 'review_events'];
 const CONTENT = ['quiz_sets', 'memory_cards', 'spot_levels', 'card_groups', 'find_levels'];
 const QUOTA = 50 * 1024 * 1024;
 const RESERVED = new Set(['select', 'order', 'limit', 'offset', 'on_conflict', 'columns']);
@@ -20,17 +21,23 @@ const SAMPLE_WORDS = [
 ];
 
 const profile = (u, role, extra = {}) => ({
-  user_id: u.id, role, parent_id: null, display_name: role, banned: false, ban_reason_code: null, ban_note: null,
+  user_id: u.id, role, display_name: role, banned: false, ban_reason_code: null, ban_note: null,
   banned_at: null, quota_bytes: QUOTA, created_at: new Date(Date.UTC(2026, 0, 1)).toISOString(), ...extra,
 });
+
+const seedChild = () => ({
+  id: CHILD.id, parent_id: PARENT.id, child_name: CHILD.name.toLowerCase(), display_name: CHILD.name, avatar_path: null,
+  gender: 'female', age_band: '2-5', pin: CHILD.pin, created_at: new Date(Date.UTC(2026, 0, 1)).toISOString(),
+});
+const childSettings = (childId) => ({ child_id: childId, music_volume: 30, greeting_path: null, music_path: null });
 
 function defaultState() {
   return {
     profiles: [
       profile(SUPER, 'super_admin', { display_name: 'Super' }),
       profile(PARENT, 'parent', { display_name: 'Parent' }),
-      profile(CHILD, 'child', { display_name: 'Test', parent_id: PARENT.id }),
     ],
+    children: [seedChild()],
     support_messages: [],
     review_events: [],
     memory_cards: SAMPLE_WORDS.map((w, i) => ({
@@ -44,7 +51,7 @@ function defaultState() {
     card_groups: [],
     spot_levels: [],
     find_levels: [],
-    child_settings: [{ child_id: CHILD.id, child_name: 'Test', music_volume: 30, greeting_path: null, music_path: null, avatar_path: null }],
+    child_settings: [childSettings(CHILD.id)],
     quiz_sets: [],
     questions: [],
     answers: [],
@@ -61,7 +68,7 @@ const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const users = new Map(); // id -> { id, email, password }
 const resetUsers = () => {
   users.clear();
-  for (const u of [SUPER, PARENT, CHILD]) users.set(u.id, { ...u });
+  for (const u of [SUPER, PARENT]) users.set(u.id, { ...u });
 };
 resetUsers();
 normalize();
@@ -200,6 +207,7 @@ function applyOrder(rows, order) {
 
 function withDefaults(table, row) {
   const r = { ...row };
+  if (table === 'children' && r.parent_id === undefined) r.parent_id = currentUserId;
   if (table !== 'child_settings' && table !== 'profiles' && r.id === undefined) r.id = randomUUID();
   if (r.created_at === undefined && table !== 'child_settings') r.created_at = new Date().toISOString();
   if (table === 'memory_cards' && r.active === undefined) r.active = true;
@@ -341,6 +349,14 @@ function rest(req, res, table, url, bodyBuf) {
         return send(res, 409, { code: '23505', details: null, hint: null, message: 'duplicate key value violates unique constraint' });
       } else {
         const created = withDefaults(table, r);
+        if (table === 'children') {
+          const norm = (n) => String(n).trim().replace(/\s+/g, ' ').toLowerCase();
+          if (rows.some((c) => norm(c.child_name) === norm(created.child_name))) {
+            return send(res, 409, { code: '23505', details: null, hint: null, message: 'duplicate key value violates unique constraint "children_child_name_key"' });
+          }
+          if (rows.filter((c) => c.parent_id === created.parent_id).length >= 5) return bad(res, 'too_many_children: a parent has at most 5 children', '23514');
+          state.child_settings.push(childSettings(created.id)); // the create_child_settings trigger
+        }
         rows.push(created);
         out.push(created);
       }
@@ -353,19 +369,16 @@ function rest(req, res, table, url, bodyBuf) {
     for (let i = 0; i < rows.length; i++) {
       if (match(rows[i])) { rows[i] = { ...rows[i], ...(body ?? {}) }; out.push(rows[i]); }
     }
-    if (table === 'profiles') {
-      for (const p of out) {
-        if (p.role === 'child' && !state.child_settings.some((c) => c.child_id === p.user_id)) {
-          state.child_settings.push({ child_id: p.user_id, child_name: p.display_name, music_volume: 30, greeting_path: null, music_path: null, avatar_path: null });
-        }
-      }
-    }
     return respond(200, out);
   }
 
   if (req.method === 'DELETE') {
     const out = rows.filter(match);
     state[table] = rows.filter((r) => !out.includes(r));
+    if (table === 'children') { // ON DELETE CASCADE
+      const gone = new Set(out.map((c) => String(c.id)));
+      state.child_settings = state.child_settings.filter((c) => !gone.has(String(c.child_id)));
+    }
     if (table === 'card_groups') { // ON DELETE SET NULL
       const gone = new Set(out.map((g) => String(g.id)));
       state.memory_cards = state.memory_cards.map((c) => (c.group_id != null && gone.has(String(c.group_id)) ? { ...c, group_id: null } : c));

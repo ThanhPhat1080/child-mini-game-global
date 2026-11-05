@@ -3,25 +3,33 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { fakeFrom } from './support/fakeSupabase';
 
-type Who = 'signedOut' | 'child' | 'parent' | 'bannedParent' | 'superAdmin' | 'noProfile';
+type Who = 'signedOut' | 'parent' | 'bannedParent' | 'superAdmin' | 'noProfile';
 
 const h = vi.hoisted(() => ({
   who: 'signedOut' as string,
   setAll: null as null | ((c: { name: string; value: string; options: object }[]) => void),
   refreshCookie: false,
+  childParent: null as string | null,
+  childIds: ['11111111-1111-4111-8111-111111111111'] as string[],
 }));
 
 const profiles: Record<string, object> = {
-  child: { user_id: 'c1', role: 'child', parent_id: 'p1', banned: false },
-  parent: { user_id: 'p1', role: 'parent', parent_id: null, banned: false },
-  bannedParent: { user_id: 'p2', role: 'parent', parent_id: null, banned: true },
-  superAdmin: { user_id: 's1', role: 'super_admin', parent_id: null, banned: false },
+  parent: { user_id: 'p1', role: 'parent', banned: false },
+  bannedParent: { user_id: 'p2', role: 'parent', banned: true },
+  superAdmin: { user_id: 's1', role: 'super_admin', banned: false },
 };
 
 vi.mock('@supabase/ssr', () => ({
   createServerClient: (_url: string, _key: string, opts: { cookies: { setAll: typeof h.setAll } }) => {
     h.setAll = opts.cookies.setAll;
-    const { from } = fakeFrom(() => ({ data: profiles[h.who] ?? null }));
+    const { from } = fakeFrom((q) => {
+      if (q.table === 'children') {
+        const id = q.filters.find(([c]) => c === 'id')?.[1] as string;
+        const parent = q.filters.find(([c]) => c === 'parent_id')?.[1];
+        return { data: h.childIds.includes(id) && (parent === undefined || parent === (h.childParent ?? (profiles[h.who] as { user_id?: string } | undefined)?.user_id)) ? { id } : null };
+      }
+      return { data: profiles[h.who] ?? null };
+    });
     return {
       auth: {
         getUser: vi.fn(async () => {
@@ -36,16 +44,21 @@ vi.mock('@supabase/ssr', () => ({
 
 import { config, middleware } from '@/middleware';
 
+const CHILD = '11111111-1111-4111-8111-111111111111';
+
 beforeEach(() => {
   h.who = 'signedOut';
   h.refreshCookie = false;
+  h.childIds = [CHILD];
+  h.childParent = null;
   process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://sb.test';
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'anon';
 });
 
-async function visit(path: string, who: Who) {
+async function visit(path: string, who: Who, cookie: string | null = `cp_child=${CHILD}`) {
   h.who = who;
-  const res = await middleware(new NextRequest(new URL(path, 'http://app.test')));
+  const headers = cookie ? { cookie } : undefined;
+  const res = await middleware(new NextRequest(new URL(path, 'http://app.test'), { headers }));
   const loc = res.headers.get('location');
   return loc ? new URL(loc).pathname : 'next';
 }
@@ -53,17 +66,18 @@ async function visit(path: string, who: Who) {
 const NEXT = 'next';
 const ADMIN_IN = '/admin/sign-in';
 const PLAY_IN = '/play/sign-in';
+const PICKER = '/play';
 
-// path, signedOut, child, parent, bannedParent, superAdmin, noProfile
-const table: [string, string, string, string, string, string, string][] = [
-  ['/', PLAY_IN, NEXT, NEXT, NEXT, NEXT, PLAY_IN],
-  ['/games', PLAY_IN, NEXT, NEXT, NEXT, NEXT, PLAY_IN],
-  ['/games/quiz/abc', PLAY_IN, NEXT, NEXT, NEXT, NEXT, PLAY_IN],
-  ['/admin', ADMIN_IN, '/admin/forbidden', NEXT, '/admin/suspended', NEXT, ADMIN_IN],
-  ['/admin/settings', ADMIN_IN, '/admin/forbidden', NEXT, '/admin/suspended', NEXT, ADMIN_IN],
-  ['/admin/sets/1', ADMIN_IN, '/admin/forbidden', NEXT, '/admin/suspended', NEXT, ADMIN_IN],
+// path, signedOut, parent, bannedParent, superAdmin, noProfile
+const table: [string, string, string, string, string, string][] = [
+  ['/', PLAY_IN, NEXT, NEXT, NEXT, PLAY_IN],
+  ['/games', PLAY_IN, NEXT, NEXT, NEXT, PLAY_IN],
+  ['/games/quiz/abc', PLAY_IN, NEXT, NEXT, NEXT, PLAY_IN],
+  ['/admin', ADMIN_IN, NEXT, '/admin/suspended', NEXT, ADMIN_IN],
+  ['/admin/settings', ADMIN_IN, NEXT, '/admin/suspended', NEXT, ADMIN_IN],
+  ['/admin/sets/1', ADMIN_IN, NEXT, '/admin/suspended', NEXT, ADMIN_IN],
 ];
-const whos: Who[] = ['signedOut', 'child', 'parent', 'bannedParent', 'superAdmin', 'noProfile'];
+const whos: Who[] = ['signedOut', 'parent', 'bannedParent', 'superAdmin', 'noProfile'];
 
 describe('middleware route protection (U11, U12, U13)', () => {
   for (const [path, ...expected] of table) {
@@ -81,11 +95,68 @@ describe('middleware route protection (U11, U12, U13)', () => {
     });
   }
 
+  describe('active child cookie (K9)', () => {
+    for (const path of ['/', '/games', '/games/quiz/abc']) {
+      it(`${path}: a profile without the cookie goes to /play`, async () => {
+        expect(await visit(path, 'parent', null)).toBe(PICKER);
+      });
+      it(`${path}: a cookie that is not a UUID goes to /play`, async () => {
+        expect(await visit(path, 'parent', 'cp_child=nope')).toBe(PICKER);
+      });
+      it(`${path}: the cookie of a deleted child (no row) goes to /play`, async () => {
+        h.childIds = [];
+        expect(await visit(path, 'parent')).toBe(PICKER);
+      });
+      it(`${path}: a valid cookie passes`, async () => {
+        expect(await visit(path, 'parent')).toBe(NEXT);
+      });
+      it(`${path}: signed out still goes to /play/sign-in, with or without the cookie`, async () => {
+        expect(await visit(path, 'signedOut', null)).toBe(PLAY_IN);
+        expect(await visit(path, 'signedOut')).toBe(PLAY_IN);
+      });
+    }
+
+    it("the cookie of another parent's child goes to /play", async () => {
+      h.childParent = 'someone-else';
+      expect(await visit('/games', 'parent')).toBe(PICKER);
+    });
+
+    it('?preview=1 with a profile passes without the cookie', async () => {
+      expect(await visit('/games/quiz/x?preview=1', 'parent', null)).toBe(NEXT);
+      expect(await visit('/games/quiz/x', 'parent', null)).toBe(PICKER);
+    });
+
+    it('?preview=1 with no profile still goes to /play/sign-in', async () => {
+      expect(await visit('/games/quiz/x?preview=1', 'signedOut', null)).toBe(PLAY_IN);
+      expect(await visit('/games/quiz/x?preview=1', 'noProfile', null)).toBe(PLAY_IN);
+    });
+
+    it('/play is never redirected', async () => {
+      for (const who of whos) {
+        expect(await visit('/play', who, null)).toBe(NEXT);
+        expect(await visit('/play', who, 'cp_child=nope')).toBe(NEXT);
+      }
+    });
+
+    it('/admin does not look at the cookie', async () => {
+      expect(await visit('/admin/settings', 'parent', null)).toBe(NEXT);
+      expect(await visit('/admin', 'parent', 'cp_child=nope')).toBe(NEXT);
+    });
+
+    it('keeps refreshed session cookies on the /play redirect', async () => {
+      h.refreshCookie = true;
+      h.who = 'parent';
+      const res = await middleware(new NextRequest(new URL('/games', 'http://app.test')));
+      expect(new URL(res.headers.get('location')!).pathname).toBe(PICKER);
+      expect(res.cookies.get('sb-token')?.value).toBe('fresh');
+    });
+  });
+
   it('keeps refreshed session cookies on a redirect', async () => {
     h.refreshCookie = true;
-    h.who = 'child';
+    h.who = 'signedOut';
     const res = await middleware(new NextRequest(new URL('/admin/settings', 'http://app.test')));
-    expect(new URL(res.headers.get('location')!).pathname).toBe('/admin/forbidden');
+    expect(new URL(res.headers.get('location')!).pathname).toBe('/admin/sign-in');
     expect(res.cookies.get('sb-token')?.value).toBe('fresh');
   });
 

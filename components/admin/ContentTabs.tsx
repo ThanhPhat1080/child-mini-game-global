@@ -8,15 +8,14 @@ export function ContentTabs({ scope, onChange }: { scope: Scope; onChange: (s: S
       type="button"
       role="tab"
       aria-selected={scope === value}
-      className={`${s.btn} ${scope === value ? '' : s.ghost}`}
-      style={{ height: 38, padding: '0 18px', fontWeight: 700 }}
+      className={`${s.tab} ${scope === value ? s.tabActive : ''}`}
       onClick={() => onChange(value)}
     >
       {label}
     </button>
   );
   return (
-    <div role="tablist" aria-label="Content" style={{ display: 'flex', gap: 8 }}>
+    <div role="tablist" aria-label="Content" className={s.tabs}>
       {tab('mine', 'Mine')}
       {tab('global', 'Global')}
     </div>
