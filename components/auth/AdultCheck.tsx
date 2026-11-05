@@ -6,7 +6,7 @@ import styles from './auth.module.css';
 import type { ReactNode } from 'react';
 import { ModalClose } from '@/components/ModalClose';
 
-type Props = { open: boolean; onPass(): void; onCancel(): void; random?: () => number; title?: string; icon?: ReactNode };
+type Props = { open: boolean; onPass(): void; onCancel(): void; random?: () => number; title?: string; icon?: ReactNode; hint?: string; centered?: boolean };
 
 /** Two integers in 6..9, so the sum is 12..18: out of reach for a 4-5 year old. */
 function pick(random: () => number): [number, number] {
@@ -15,12 +15,12 @@ function pick(random: () => number): [number, number] {
 }
 
 /** Grown-up check (U10): "a + b = ?". Mounted only while open, so state resets on every open. */
-export default function AdultCheck({ open, onPass, onCancel, random = Math.random, title = 'Grown-ups only', icon }: Props) {
+export default function AdultCheck({ open, onPass, onCancel, random = Math.random, title = 'Grown-ups only', icon, hint, centered = false }: Props) {
   if (!open) return null;
-  return <CheckDialog onPass={onPass} onCancel={onCancel} random={random} title={title} icon={icon} />;
+  return <CheckDialog onPass={onPass} onCancel={onCancel} random={random} title={title} icon={icon} hint={hint} centered={centered} />;
 }
 
-function CheckDialog({ onPass, onCancel, random, title, icon }: Omit<Props, 'open'> & { random: () => number; title: string }) {
+function CheckDialog({ onPass, onCancel, random, title, icon, hint, centered }: Omit<Props, 'open'> & { random: () => number; title: string; centered: boolean }) {
   const [nums, setNums] = useState<[number, number]>(() => pick(random));
   const [value, setValue] = useState('');
   const [wrong, setWrong] = useState(false);
@@ -91,11 +91,20 @@ function CheckDialog({ onPass, onCancel, random, title, icon }: Omit<Props, 'ope
 
   return (
     <div className={styles.backdrop}>
-      <div ref={dialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="adult-title" tabIndex={-1}>
+      <div
+        ref={dialogRef}
+        className={styles.dialog}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="adult-title"
+        tabIndex={-1}
+        style={centered ? { alignItems: 'center', textAlign: 'center' } : undefined}
+      >
         <ModalClose onClick={onCancel} />
         {icon}
         <h2 id="adult-title" style={{ margin: 0, fontSize: 20 }}>{title}</h2>
-        <form onSubmit={onSubmit} className={styles.adultForm} noValidate>
+        {hint && <p className={styles.hint}>{hint}</p>}
+        <form onSubmit={onSubmit} className={styles.adultForm} noValidate style={centered ? { width: '100%' } : undefined}>
           <p className={styles.adultQ} data-testid="adult-question">{nums[0]} + {nums[1]} = ?</p>
           <input
             ref={inputRef}
@@ -108,7 +117,7 @@ function CheckDialog({ onPass, onCancel, random, title, icon }: Omit<Props, 'ope
             onChange={(e) => setValue(e.target.value.replace(/\D/g, '').slice(0, 3))}
           />
           {wrong && <p role="status" className={admin.error}>Not quite. Try this one.</p>}
-          <div className={styles.navEnd} style={{ justifyContent: 'flex-end' }}>
+          <div className={styles.navEnd} style={{ justifyContent: centered ? 'center' : 'flex-end' }}>
             <button type="button" className={`${admin.ghost} ${admin.modalBtn}`} onClick={onCancel}>Cancel</button>
             <button type="submit" className={`${admin.primary} ${admin.modalBtn}`}>OK</button>
           </div>

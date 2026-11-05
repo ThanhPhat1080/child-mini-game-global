@@ -23,10 +23,11 @@ const answer = (v: string) => {
 };
 
 describe('LogoutButton (U10)', () => {
-  it('the check is titled "Leave now?" with the exit-door picture, not "Grown-ups only" (sign-out)', () => {
+  it('the check is titled "Sign out now?" with a hint and the exit-door picture, not "Grown-ups only" (sign-out)', () => {
     render(<LogoutButton />);
     open();
-    expect(screen.getByRole('heading', { name: 'Leave now?' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Sign out now?' })).toBeTruthy();
+    expect(screen.getByText('Finish the sum below to sign out.')).toBeTruthy();
     expect(screen.queryByText('Grown-ups only')).toBeNull();
     expect(screen.getByRole('dialog').querySelector('svg')).toBeTruthy();
   });

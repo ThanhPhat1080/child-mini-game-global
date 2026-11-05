@@ -39,7 +39,7 @@ export default function LogoutButton() {
           </g>
         </svg>
       </button>
-      <AdultCheck open={open} onPass={onPass} onCancel={() => setOpen(false)} title="Leave now?" icon={<ExitDoorIcon />} />
+      <AdultCheck open={open} onPass={onPass} onCancel={() => setOpen(false)} title="Sign out now?" hint="Finish the sum below to sign out." icon={<ExitDoorIcon />} centered />
     </>
   );
 }
