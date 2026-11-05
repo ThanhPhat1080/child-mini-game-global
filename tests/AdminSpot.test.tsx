@@ -209,7 +209,7 @@ describe('Admin Spot page (A14-A16)', () => {
   it('"Preview as child" links to the level and is hidden for a new level', async () => {
     await renderWith([level(1)]);
     const link = screen.getByRole('link', { name: 'Preview as child' });
-    expect(link.getAttribute('href')).toBe('/games/spot/l1');
+    expect(link.getAttribute('href')).toBe('/games/spot/l1?preview=1');
     fireEvent.click(screen.getByRole('button', { name: 'Add level' }));
     expect(screen.getAllByRole('link', { name: 'Preview as child' })).toHaveLength(1);
   });

@@ -190,7 +190,7 @@ describe('Admin Find page (A20-A22)', () => {
 
   it('"Preview as child" links to the level and is hidden for a new level', async () => {
     await renderWith([level(1)]);
-    expect(screen.getByRole('link', { name: 'Preview as child' }).getAttribute('href')).toBe('/games/find/l1');
+    expect(screen.getByRole('link', { name: 'Preview as child' }).getAttribute('href')).toBe('/games/find/l1?preview=1');
     fireEvent.click(screen.getByRole('button', { name: 'Add level' }));
     expect(screen.getAllByRole('link', { name: 'Preview as child' })).toHaveLength(1);
   });

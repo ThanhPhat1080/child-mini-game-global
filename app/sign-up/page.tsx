@@ -9,15 +9,27 @@ import styles from '../admin/admin.module.css';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-function friendlyError(err: { message?: string; code?: string }): string {
+type FieldError = { field: 'email' | 'password' | 'form'; message: string };
+
+function friendlyError(err: { message?: string; code?: string }): FieldError {
   const message = err.message ?? '';
-  if (err.code === 'user_already_exists' || /already registered/i.test(message)) {
-    return 'This email already has an account. Try signing in instead.';
+  const code = err.code ?? '';
+  if (code === 'user_already_exists' || code === 'email_exists' || /already (been )?registered/i.test(message)) {
+    return { field: 'email', message: 'This email already has an account. Try signing in instead.' };
   }
-  if (err.code === 'weak_password' || /should be at least|weak/i.test(message)) {
-    return 'That password is too weak. Try a longer one with letters and numbers.';
+  if (code === 'email_address_invalid' || code === 'validation_failed' || /email address .* is invalid/i.test(message)) {
+    return { field: 'email', message: 'This email address is not valid. Check it for typos, or use a different one.' };
   }
-  return 'Something went wrong. Please try again.';
+  if (code === 'email_address_not_authorized') {
+    return { field: 'email', message: 'We cannot send mail to this address yet. Try a different email.' };
+  }
+  if (code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit' || /rate limit/i.test(message)) {
+    return { field: 'form', message: 'Too many attempts. Wait a few minutes, then try again.' };
+  }
+  if (code === 'weak_password' || /should be at least|weak/i.test(message)) {
+    return { field: 'password', message: 'That password is too weak. Try a longer one with letters and numbers.' };
+  }
+  return { field: 'form', message: 'Something went wrong. Please try again.' };
 }
 
 export default function SignUpPage() {
@@ -56,12 +68,15 @@ export default function SignUpPage() {
         },
       });
       if (signUpError) {
-        setError(friendlyError(signUpError));
+        const fe = friendlyError(signUpError);
+        if (fe.field === 'email') setEmailError(fe.message);
+        else if (fe.field === 'password') setPasswordError(fe.message);
+        else setError(fe.message);
         return;
       }
       setDone(true);
     } catch {
-      setError(friendlyError({}));
+      setError(friendlyError({}).message);
     } finally {
       setBusy(false);
     }

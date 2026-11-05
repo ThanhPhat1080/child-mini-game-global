@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { as, createUser, resetDb, startDb, stopDb, superQuery } from './harness';
+import { as, createChild, createUser, resetDb, startDb, stopDb, superQuery } from './harness';
 
 // Spec V2-V5, V7, U15: review workflow, ban and quota functions (all security definer).
 
@@ -37,7 +37,8 @@ describe('review workflow (V2-V5, V7)', () => {
     sa = await createUser('super_admin');
     a = await createUser('parent');
     b = await createUser('parent');
-    child = await createUser('child', { parentId: a });
+    // A children row id is not a user: as(child) acts as a signed-in user with no profile.
+    child = await createChild(a);
   });
 
   it('walks private -> pending -> global -> unpublished -> private', async () => {

@@ -186,62 +186,60 @@ export default function CardsPage() {
   else if (incomplete) status = `${incomplete} ${incomplete === 1 ? 'card needs' : 'cards need'} a picture and a word before you can save.`;
   else if (dirty) status = 'Unsaved changes. Press Save to keep them.';
 
-  if (scope === 'global') {
-    return (
-      <>
-        <ContentTabs scope={scope} onChange={setScope} />
-        <GlobalContent table="memory_cards" />
-      </>
-    );
-  }
-
   return (
     <>
-      <ContentTabs scope={scope} onChange={setScope} />
-      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#FBF4E9', padding: '12px 0', margin: '-12px 0', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, boxShadow: '0 8px 8px -8px rgba(90,64,56,0.18)' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#FBF4E9', padding: '12px 0', margin: '-12px 0', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, minHeight: 112, boxSizing: 'border-box' }}>
         <div style={{ flex: '1 1 320px', minWidth: 0 }}>
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Memory cards</h1>
           <p style={{ margin: '6px 0 0', color: '#7A6458', fontSize: 15 }}>Pictures and words for the Memory Match game. Turn a card off to keep it out of the game.</p>
         </div>
-        <div style={{ flex: '0 0 auto', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+        {/* Always rendered so the header keeps its height; hidden (and not focusable) on the read-only Global tab. */}
+        <div aria-hidden={scope !== 'mine'} style={{ flex: '0 0 auto', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, visibility: scope === 'mine' ? 'visible' : 'hidden' }}>
           <CardsHeaderActions dirty={dirty} busy={busy} canSave={canSave} onImport={() => setImportOpen(true)} onRevert={revert} onSave={doSave} />
           <span role="status" style={{ fontSize: 13, color: '#7A6458', maxWidth: 420, textAlign: 'right' }}>{status}</span>
         </div>
       </div>
 
-      {error && <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700, fontSize: 14 }}>{error}</p>}
+      <ContentTabs scope={scope} onChange={setScope} />
+      {scope === 'global' ? (
+        <GlobalContent table="memory_cards" />
+      ) : (
+        <>
+          {error && <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700, fontSize: 14 }}>{error}</p>}
 
-      <section style={{ background: '#fff', borderRadius: 18, padding: '18px 22px', boxShadow: '0 1px 0 #EADCC8', display: 'flex', flexDirection: 'column', gap: 4 }}>
-        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Levels</h2>
-        <p data-testid="pool-health" style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{poolHealth(active)}</p>
-        <p data-testid="sort-health" style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{sortHealth(groupCards)}</p>
-        <p style={{ margin: 0, fontSize: 13, color: '#7A6458' }}>
-          Each level needs {LEVELS.map((l) => pairsOf(l)).join(' / ')} active cards ({LEVELS.join(' / ')} cards on the table).{dirty ? ' Counts include unsaved changes.' : ''}
-        </p>
-      </section>
+          <section style={{ background: '#fff', borderRadius: 18, padding: '18px 22px', boxShadow: '0 1px 0 #EADCC8', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>Levels</h2>
+            <p data-testid="pool-health" style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{poolHealth(active)}</p>
+            <p data-testid="sort-health" style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{sortHealth(groupCards)}</p>
+            <p style={{ margin: 0, fontSize: 13, color: '#7A6458' }}>
+              Each level needs {LEVELS.map((l) => pairsOf(l)).join(' / ')} active cards ({LEVELS.join(' / ')} cards on the table).{dirty ? ' Counts include unsaved changes.' : ''}
+            </p>
+          </section>
 
-      <GroupsPanel groups={draftGroups} usage={usage} onAdd={addGroup} onRename={renameGroup} onDelete={removeGroup} />
+          <GroupsPanel groups={draftGroups} usage={usage} onAdd={addGroup} onRename={renameGroup} onDelete={removeGroup} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 16 }}>
-        {draft.map((c, i) => (
-          <CardPanel
-            key={c.id} c={c} n={i + 1} autoFocus={c.id === focusId} groups={draftGroups} weakGroup={!!c.groupId && weak.has(c.groupId)}
-            duplicate={dups.has(c.word.trim().toLowerCase())} message={msgs[c.id] ?? null}
-            onEdit={(patch) => edit(c.id, patch)}
-            onChooseLibrary={(kind, path) => chooseLibrary(c.id, kind, path)}
-            onSvg={(code) => applySvg(c.id, code)}
-            onPlay={() => sayWord({ word: c.word.trim(), audio_path: c.audio })}
-            onAskDelete={() => setConfirm(i)}
-            onVisibility={(v) => setVisibility(c.id, v)}
-          />
-        ))}
-        <button type="button" onClick={add} className={`${s.btn} ${s.dash}`} style={{ minHeight: 200, borderRadius: 18, border: '2px dashed #D9C6B2', background: 'transparent', color: '#5A4038', fontSize: 16, fontWeight: 700, fontFamily: 'Nunito, sans-serif', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
-          Add card
-        </button>
-      </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 16 }}>
+            {draft.map((c, i) => (
+              <CardPanel
+                key={c.id} c={c} n={i + 1} autoFocus={c.id === focusId} groups={draftGroups} weakGroup={!!c.groupId && weak.has(c.groupId)}
+                duplicate={dups.has(c.word.trim().toLowerCase())} message={msgs[c.id] ?? null}
+                onEdit={(patch) => edit(c.id, patch)}
+                onChooseLibrary={(kind, path) => chooseLibrary(c.id, kind, path)}
+                onSvg={(code) => applySvg(c.id, code)}
+                onPlay={() => sayWord({ word: c.word.trim(), audio_path: c.audio })}
+                onAskDelete={() => setConfirm(i)}
+                onVisibility={(v) => setVisibility(c.id, v)}
+              />
+            ))}
+            <button type="button" onClick={add} className={`${s.btn} ${s.dash}`} style={{ minHeight: 200, borderRadius: 18, border: '2px dashed #D9C6B2', background: 'transparent', color: '#5A4038', fontSize: 16, fontWeight: 700, fontFamily: 'Nunito, sans-serif', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
+              Add card
+            </button>
+          </div>
 
-      {importOpen && <CardImportDialog groups={draftGroups} onCancel={() => setImportOpen(false)} onImport={importCards} />}
+          {importOpen && <CardImportDialog groups={draftGroups} onCancel={() => setImportOpen(false)} onImport={importCards} />}
+        </>
+      )}
 
       {doomed && (
         <ConfirmDialog

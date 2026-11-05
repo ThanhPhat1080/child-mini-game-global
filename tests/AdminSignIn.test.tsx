@@ -20,7 +20,7 @@ vi.mock('next/navigation', () => ({ useRouter: () => ({ push: h.push, refresh: h
 
 import SignInPage from '@/app/admin/sign-in/page';
 
-const parent = { user_id: 'p1', role: 'parent', parent_id: null, banned: false };
+const parent = { user_id: 'p1', role: 'parent', banned: false };
 
 beforeEach(() => {
   h.signIn.mockReset().mockResolvedValue({ data: {}, error: null });
@@ -42,7 +42,6 @@ describe('Admin sign-in routes by role (U11)', () => {
   it.each([
     ['parent', parent, '/admin'],
     ['super admin', { ...parent, role: 'super_admin' }, '/admin'],
-    ['child', { ...parent, role: 'child', parent_id: 'p0' }, '/admin/forbidden'],
     ['banned parent', { ...parent, banned: true }, '/admin/suspended'],
   ])('%s -> %s', async (_n, profile, target) => {
     h.profile = profile;

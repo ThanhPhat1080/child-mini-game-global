@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 // playwright.config.ts sets STANDIN_PORT before the workers start.
 export const STANDIN = `http://127.0.0.1:${process.env.STANDIN_PORT ?? 54391}`;
@@ -39,6 +39,7 @@ export type StandinState = {
   card_groups: Row[];
   spot_levels: Row[];
   find_levels: Row[];
+  children: Row[];
   child_settings: Row[];
   quiz_sets: Row[];
   questions: Row[];
@@ -143,8 +144,10 @@ export function makeFindLevels(n: number, objectsPer = 3, active = true): FindLe
 export const ACCOUNTS = {
   super: { email: 'super@test.local', password: 'secret', id: '11111111-1111-4111-8111-111111111111' },
   parent: { email: 'admin@test.local', password: 'secret', id: '22222222-2222-4222-8222-222222222222' },
-  child: { email: 'child@test.local', password: 'secret', id: '33333333-3333-4333-8333-333333333333' },
 } as const;
+
+/** The seed child (a `children` row of the parent, not an account): picks its card on /play, then types the PIN. */
+export const CHILD = { id: '33333333-3333-4333-8333-333333333333', name: 'Test', pin: '1234' } as const;
 
 /** Signs in through the real admin form as the parent (admin@test.local / secret); a parent lands on /admin/children. */
 export async function signInAsAdmin(page: Page): Promise<void> {
@@ -165,13 +168,23 @@ async function signInAdminForm(page: Page, who: { email: string; password: strin
   await page.getByRole('button', { name: 'Sign in' }).click();
 }
 
-/** Signs in on the child's device (/play/sign-in) and waits for the game list. */
-export async function signInAsChild(page: Page, who: { email: string; password: string } = ACCOUNTS.child): Promise<void> {
+/** Signs the parent in on the play device (/play/sign-in) and waits for the picker. */
+export async function signInOnDevice(page: Page, who: { email: string; password: string } = ACCOUNTS.parent): Promise<void> {
   await page.goto('/play/sign-in');
   await page.getByLabel('Email').fill(who.email);
   await page.getByLabel('Password').fill(who.password);
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await page.waitForURL('**/games');
+  await page.waitForURL('**/play');
+}
+
+/** On the picker: taps the child's card and types the PIN (lands on the welcome page), then opens the game list. */
+export async function pickChild(page: Page, name: string = CHILD.name, pin: string = CHILD.pin): Promise<void> {
+  await page.getByRole('button', { name, exact: true }).click();
+  await page.getByLabel('PIN character 1').fill(pin[0]);
+  for (let i = 1; i < pin.length; i++) await page.getByLabel(`PIN character ${i + 1}`).fill(pin[i]);
+  await expect(page.getByLabel('PIN character 1')).toBeHidden().catch(() => {});
+  await page.waitForURL((u) => u.pathname === '/');
+  await page.goto('/games');
 }
 
 /** Clears the browser session (use `test.use({ storageState: SIGNED_OUT })` to start a file signed out). */

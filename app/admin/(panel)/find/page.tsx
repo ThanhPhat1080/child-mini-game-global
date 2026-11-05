@@ -103,43 +103,41 @@ export default function FindPage() {
   else if (incomplete) status = `${incomplete} ${incomplete === 1 ? 'level needs' : 'levels need'} a picture, 2 to 12 objects and a word for each`;
   else if (dirty) status = 'Unsaved changes. Press Save to keep them.';
 
-  if (scope === 'global') {
-    return (
-      <>
-        <ContentTabs scope={scope} onChange={setScope} />
-        <GlobalContent table="find_levels" />
-      </>
-    );
-  }
-
   return (
     <>
-      <ContentTabs scope={scope} onChange={setScope} />
-      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#FBF4E9', padding: '12px 0', margin: '-12px 0', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, boxShadow: '0 8px 8px -8px rgba(90,64,56,0.18)' }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: '#FBF4E9', padding: '12px 0', margin: '-12px 0', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, minHeight: 112, boxSizing: 'border-box' }}>
         <div style={{ flex: '1 1 320px', minWidth: 0 }}>
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Find It</h1>
           <p style={{ margin: '6px 0 0', color: '#7A6458', fontSize: 15 }}>One picture and 2 to 12 objects per level. Turn a level off to keep it as a draft; you can still preview it as the child.</p>
         </div>
-        <div style={{ flex: '0 0 auto', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+        {/* Always rendered so the header keeps its height; hidden (and not focusable) on the read-only Global tab. */}
+        <div aria-hidden={scope !== 'mine'} style={{ flex: '0 0 auto', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, visibility: scope === 'mine' ? 'visible' : 'hidden' }}>
           <CardsHeaderActions dirty={dirty} busy={busy} canSave={canSave} onAdd={add} onRevert={revert} onSave={doSave} />
           <span role="status" style={{ fontSize: 13, color: '#7A6458', maxWidth: 420, textAlign: 'right' }}>{status}</span>
         </div>
       </div>
 
-      {error && <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700, fontSize: 14 }}>{error}</p>}
+      <ContentTabs scope={scope} onChange={setScope} />
+      {scope === 'global' ? (
+        <GlobalContent table="find_levels" />
+      ) : (
+        <>
+          {error && <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700, fontSize: 14 }}>{error}</p>}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <SortToggle desc={desc} onToggle={() => setDesc(!desc)} />
-        {displayOrder(draft, desc).map(({ level: l, i }) => (
-          <FindLevelPanel
-            key={l.id} l={l} n={i + 1} message={msgs[l.id] ?? null}
-            onEdit={(patch) => edit(l.id, patch)}
-            onSvg={(code) => applySvg(l.id, code)}
-            onAskDelete={() => setConfirm(i)}
-            onVisibility={(v) => setVisibility(l.id, v)}
-          />
-        ))}
-      </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <SortToggle desc={desc} onToggle={() => setDesc(!desc)} />
+            {displayOrder(draft, desc).map(({ level: l, i }) => (
+              <FindLevelPanel
+                key={l.id} l={l} n={i + 1} message={msgs[l.id] ?? null}
+                onEdit={(patch) => edit(l.id, patch)}
+                onSvg={(code) => applySvg(l.id, code)}
+                onAskDelete={() => setConfirm(i)}
+                onVisibility={(v) => setVisibility(l.id, v)}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       {doomed && (
         <ConfirmDialog

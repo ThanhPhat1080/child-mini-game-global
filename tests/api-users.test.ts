@@ -12,7 +12,6 @@ const { s, createUser, deleteUser, serviceQueries } = h.harness;
 
 import { POST } from '@/app/api/users/route';
 
-const parentId = '00000000-0000-4000-8000-000000000009';
 const base = { email: 'new@example.com', password: 'longenough1', displayName: 'New one' };
 const call = (body: unknown) => POST(post('http://app.test/api/users', body)).then(read);
 const update = () => serviceQueries.find((q) => q.op === 'update');
@@ -31,7 +30,7 @@ describe('POST /api/users (U8)', () => {
     expect((await call({ ...base, role: 'parent' })).status).toBe(401);
   });
 
-  it.each(['child', 'parent', 'bannedParent'] as const)('403 for %s', async (who) => {
+  it.each(['parent', 'bannedParent'] as const)('403 for %s', async (who) => {
     s.caller = who;
     expect((await call({ ...base, role: 'parent' })).status).toBe(403);
     expect(createUser).not.toHaveBeenCalled();
@@ -42,8 +41,10 @@ describe('POST /api/users (U8)', () => {
     expect(createUser).not.toHaveBeenCalled();
   });
 
-  it('400 for a child without parentId', async () => {
-    expect((await call({ ...base, role: 'child' })).status).toBe(400);
+  it('400 invalid_body for role child, even with a parentId', async () => {
+    const r = await call({ ...base, role: 'child', parentId: '00000000-0000-4000-8000-000000000009' });
+    expect(r.status).toBe(400);
+    expect(r.json).toEqual({ error: 'invalid_body' });
     expect(createUser).not.toHaveBeenCalled();
   });
 
@@ -73,23 +74,6 @@ describe('POST /api/users (U8)', () => {
       policy_version_accepted: null,
       policy_accepted_at: null,
     });
-  });
-
-  it('creates a child for a parent', async () => {
-    expect((await call({ ...base, role: 'child', parentId })).status).toBe(201);
-    expect(update()?.payload).toEqual({
-      role: 'child',
-      parent_id: parentId,
-      display_name: 'New one',
-      policy_version_accepted: null,
-      policy_accepted_at: null,
-    });
-  });
-
-  it('409 for a child when the parent already has 5', async () => {
-    s.childCount = 5;
-    expect((await call({ ...base, role: 'child', parentId })).status).toBe(409);
-    expect(createUser).not.toHaveBeenCalled();
   });
 
   it('409 when the email is taken', async () => {

@@ -87,7 +87,7 @@ export async function resetDb(): Promise<void> {
   await applyMigrations();
 }
 
-export type TestRole = 'super_admin' | 'parent' | 'child';
+export type TestRole = 'super_admin' | 'parent';
 
 /** A raw pooled connection as the (super)user, e.g. to hold a transaction open. Release it. */
 export function connect(): Promise<PoolClient> {
@@ -100,7 +100,7 @@ export function connect(): Promise<PoolClient> {
  */
 export async function createUser(
   role: TestRole,
-  opts: { parentId?: string; banned?: boolean; displayName?: string; policyVersion?: string } = {},
+  opts: { banned?: boolean; displayName?: string; policyVersion?: string } = {},
 ): Promise<string> {
   const id = randomUUID();
   await db().query(
@@ -109,9 +109,38 @@ export async function createUser(
   );
   await db().query(
     `insert into public.profiles
-       (user_id, role, parent_id, banned, display_name, policy_version_accepted, policy_accepted_at)
-     values ($1, $2, $3, $4, $5, $6, case when $6::text is null then null else now() end)`,
-    [id, role, opts.parentId ?? null, opts.banned ?? false, opts.displayName ?? null, opts.policyVersion ?? null],
+       (user_id, role, banned, display_name, policy_version_accepted, policy_accepted_at)
+     values ($1, $2, $3, $4, $5, case when $5::text is null then null else now() end)`,
+    [id, role, opts.banned ?? false, opts.displayName ?? null, opts.policyVersion ?? null],
+  );
+  return id;
+}
+
+export type ChildOverrides = {
+  childName?: string;
+  displayName?: string;
+  gender?: 'male' | 'female';
+  ageBand?: '2-5' | '5-10';
+  pin?: string;
+  avatarPath?: string | null;
+};
+
+/** Insert a children row for a parent (as the superuser, outside RLS) and return its id. */
+export async function createChild(parentId: string, over: ChildOverrides = {}): Promise<string> {
+  const id = randomUUID();
+  await db().query(
+    `insert into public.children (id, parent_id, child_name, display_name, avatar_path, gender, age_band, pin)
+     values ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    [
+      id,
+      parentId,
+      over.childName ?? `kid-${id}`,
+      over.displayName ?? 'Kid',
+      over.avatarPath ?? null,
+      over.gender ?? 'female',
+      over.ageBand ?? '2-5',
+      over.pin ?? 'ab12',
+    ],
   );
   return id;
 }

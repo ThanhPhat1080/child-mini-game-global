@@ -52,7 +52,7 @@ describe('MEDIA_SOURCES', () => {
   it('lists every column that can point at a bucket file', () => {
     const cols = MEDIA_SOURCES.map((s) => `${s.table}.${s.column}`);
     for (const c of [
-      'child_settings.greeting_path', 'child_settings.music_path', 'child_settings.avatar_path',
+      'child_settings.greeting_path', 'child_settings.music_path', 'children.avatar_path',
       'child_settings.hooray_path', 'child_settings.ohoh_path', 'child_settings.complete_path',
       'quiz_sets.cover_path', 'questions.prompt_image_path', 'questions.prompt_audio_path',
       'answers.image_path', 'memory_cards.image_path', 'memory_cards.audio_path',
@@ -65,7 +65,7 @@ describe('MEDIA_SOURCES', () => {
 describe('referencedPathsByScan (client-side column scan)', () => {
   const cases: [string, string, Record<string, unknown>, string][] = [
     ['child_settings', 'greeting_path', { child_id: 'c', greeting_path: 'audio/g.mp3' }, 'audio/g.mp3'],
-    ['child_settings', 'avatar_path', { child_id: 'c', avatar_path: 'img/avatar.png' }, 'img/avatar.png'],
+    ['children', 'avatar_path', { id: 'c', avatar_path: 'img/avatar.png' }, 'img/avatar.png'],
     ['child_settings', 'complete_path', { child_id: 'c', complete_path: 'sfx/done.mp3' }, 'sfx/done.mp3'],
     ['quiz_sets', 'cover_path', { id: 'q', cover_path: 'covers/c.png' }, 'covers/c.png'],
     ['questions', 'prompt_image_path', { id: 'p', prompt_image_path: 'questions/p.png' }, 'questions/p.png'],

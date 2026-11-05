@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { as, connect, createUser, resetDb, startDb, stopDb, superQuery } from './harness';
+import { as, connect, createChild, createUser, resetDb, startDb, stopDb, superQuery } from './harness';
 
 // Spec U1, U2, U5, U6. Note: `current_role` is an SQL keyword, so the function is always
 // called schema-qualified: public.current_role().
@@ -52,7 +52,6 @@ describe('profiles (U1, U2, U6)', () => {
         'banned_at',
         'created_at',
         'display_name',
-        'parent_id',
         'policy_accepted_at',
         'policy_version_accepted',
         'quota_bytes',
@@ -84,17 +83,15 @@ describe('profiles (U1, U2, U6)', () => {
       const id = await signUp({ policy_version: '2026-11-01' });
       const rows = await superQuery<{
         role: string;
-        parent_id: string | null;
         policy_version_accepted: string;
         policy_accepted_at: Date | null;
       }>(
-        `select role, parent_id, policy_version_accepted, policy_accepted_at
+        `select role, policy_version_accepted, policy_accepted_at
            from public.profiles where user_id = $1`,
         [id],
       );
       expect(rows).toHaveLength(1);
       expect(rows[0].role).toBe('parent');
-      expect(rows[0].parent_id).toBeNull();
       expect(rows[0].policy_version_accepted).toBe('2026-11-01');
       expect(rows[0].policy_accepted_at).not.toBeNull();
     });
@@ -130,119 +127,14 @@ describe('profiles (U1, U2, U6)', () => {
     });
   });
 
-  describe('role and parent rules', () => {
-    it('a child must have a parent, and that parent must have role parent', async () => {
-      const c = await provisionedUser();
-      await expect(
-        superQuery(`insert into public.profiles (user_id, role) values ($1, 'child')`, [c]),
-      ).rejects.toThrow(/parent/);
-      const admin = await createUser('super_admin');
-      await expect(
-        superQuery(`insert into public.profiles (user_id, role, parent_id) values ($1, 'child', $2)`, [
-          c,
-          admin,
-        ]),
-      ).rejects.toThrow(/parent/);
+  describe('roles', () => {
+    it("only 'super_admin' and 'parent' exist; parent_id is gone", async () => {
       const p = await createUser('parent');
-      const other = await createUser('child', { parentId: p });
+      await expect(superQuery(`update public.profiles set role = 'child' where user_id = $1`, [p])).rejects.toThrow();
+      const u = await provisionedUser();
       await expect(
-        superQuery(`insert into public.profiles (user_id, role, parent_id) values ($1, 'child', $2)`, [
-          c,
-          other,
-        ]),
-      ).rejects.toThrow(/parent/);
-      await superQuery(`insert into public.profiles (user_id, role, parent_id) values ($1, 'child', $2)`, [
-        c,
-        p,
-      ]);
-    });
-
-    it('roles other than child have no parent_id', async () => {
-      const p = await createUser('parent');
-      for (const role of ['parent', 'super_admin']) {
-        const u = await provisionedUser();
-        await expect(
-          superQuery(`insert into public.profiles (user_id, role, parent_id) values ($1, $2, $3)`, [
-            u,
-            role,
-            p,
-          ]),
-        ).rejects.toThrow(/parent_id/);
-      }
-      const c = await createUser('child', { parentId: p });
-      await expect(
-        superQuery(`update public.profiles set role = 'parent' where user_id = $1`, [c]),
-      ).rejects.toThrow(/parent_id/);
-    });
-
-    it('a parent with children cannot stop being a parent', async () => {
-      const p = await createUser('parent');
-      await createUser('child', { parentId: p });
-      await expect(
-        superQuery(`update public.profiles set role = 'super_admin' where user_id = $1`, [p]),
-      ).rejects.toThrow(/children/);
-    });
-
-    it('a parent gets at most 5 children; the 6th insert fails', async () => {
-      const p = await createUser('parent');
-      for (let i = 0; i < 5; i++) await createUser('child', { parentId: p });
-      await expect(createUser('child', { parentId: p })).rejects.toThrow(/at most 5 children/);
-      // Moving another parent's child onto a full parent fails too.
-      const p2 = await createUser('parent');
-      const c2 = await createUser('child', { parentId: p2 });
-      await expect(
-        superQuery(`update public.profiles set parent_id = $1 where user_id = $2`, [p, c2]),
-      ).rejects.toThrow(/at most 5 children/);
-      // Updating an existing child of a full parent (same parent) is fine.
-      const [first] = await superQuery<{ user_id: string }>(
-        `select user_id from public.profiles where parent_id = $1 limit 1`,
-        [p],
-      );
-      await superQuery(`update public.profiles set display_name = 'x' where user_id = $1`, [first.user_id]);
-      expect(await count(`select count(*) from public.profiles where parent_id = $1`, [p])).toBe(5);
-    });
-
-    it('two concurrent inserts for the 5th slot: exactly one wins', async () => {
-      const p = await createUser('parent');
-      for (let i = 0; i < 4; i++) await createUser('child', { parentId: p });
-      const c5 = await provisionedUser();
-      const c6 = await provisionedUser();
-      const a = await connect();
-      const b = await connect();
-      try {
-        await a.query('begin');
-        await b.query('begin');
-        await a.query(`insert into public.profiles (user_id, role, parent_id) values ($1, 'child', $2)`, [
-          c5,
-          p,
-        ]);
-        const bPid = (await b.query<{ pid: number }>('select pg_backend_pid() as pid')).rows[0].pid;
-        const bInsert = b
-          .query(`insert into public.profiles (user_id, role, parent_id) values ($1, 'child', $2)`, [c6, p])
-          .then(
-            () => null,
-            (e: Error) => e,
-          );
-        // Wait until b is blocked on a's advisory lock, then let a commit.
-        let waiting = false;
-        for (let i = 0; i < 100 && !waiting; i++) {
-          const rows = await superQuery<{ n: string }>(
-            `select count(*) as n from pg_stat_activity where pid = $1 and wait_event_type = 'Lock'`,
-            [bPid],
-          );
-          waiting = rows[0].n === '1';
-          if (!waiting) await new Promise((r) => setTimeout(r, 20));
-        }
-        expect(waiting).toBe(true);
-        await a.query('commit');
-        const err = await bInsert;
-        expect(err?.message).toMatch(/at most 5 children/);
-        await b.query('rollback');
-      } finally {
-        a.release();
-        b.release();
-      }
-      expect(await count(`select count(*) from public.profiles where parent_id = $1`, [p])).toBe(5);
+        superQuery(`insert into public.profiles (user_id, role) values ($1, 'child')`, [u]),
+      ).rejects.toThrow();
     });
   });
 
@@ -250,27 +142,23 @@ describe('profiles (U1, U2, U6)', () => {
     it('current_role returns the role, or null with no profile or anon', async () => {
       const admin = await createUser('super_admin');
       const p = await createUser('parent');
-      const c = await createUser('child', { parentId: p });
       const nobody = await provisionedUser();
       const role = async (u: string | null) =>
         (await as(u).query<{ r: string | null }>(`select public.current_role() as r`))[0].r;
       expect(await role(admin)).toBe('super_admin');
       expect(await role(p)).toBe('parent');
-      expect(await role(c)).toBe('child');
       expect(await role(nobody)).toBeNull();
       // Signed-out visitors may not call it at all (20261105000000_revoke_anon_execute).
       await expect(role(null)).rejects.toThrow(/permission denied/);
     });
 
-    it('owner_scope returns self for parent, parent_id for child, null for super_admin', async () => {
+    it('owner_scope returns self for a parent, null for super_admin and no profile', async () => {
       const admin = await createUser('super_admin');
       const p = await createUser('parent');
-      const c = await createUser('child', { parentId: p });
       const nobody = await provisionedUser();
       const scope = async (u: string | null) =>
         (await as(u).query<{ s: string | null }>(`select public.owner_scope()::text as s`))[0].s;
       expect(await scope(p)).toBe(p);
-      expect(await scope(c)).toBe(p);
       expect(await scope(admin)).toBeNull();
       expect(await scope(nobody)).toBeNull();
       await expect(scope(null)).rejects.toThrow(/permission denied/);
@@ -309,28 +197,23 @@ describe('profiles (U1, U2, U6)', () => {
   });
 
   describe('RLS on profiles', () => {
-    it('a user reads only their own profile; a parent also reads their children', async () => {
+    it('a user reads only their own profile', async () => {
       const p = await createUser('parent');
-      const c1 = await createUser('child', { parentId: p });
-      const c2 = await createUser('child', { parentId: p });
       const other = await createUser('parent');
-      const otherChild = await createUser('child', { parentId: other });
+      await createChild(p);
       await createUser('super_admin');
       const ids = async (u: string | null) =>
-        (await as(u).query<{ user_id: string }>(`select user_id from public.profiles`))
-          .map((r) => r.user_id)
-          .sort();
-      expect(await ids(p)).toEqual([p, c1, c2].sort());
-      expect(await ids(c1)).toEqual([c1]);
-      expect(await ids(other)).toEqual([other, otherChild].sort());
+        (await as(u).query<{ user_id: string }>(`select user_id from public.profiles`)).map((r) => r.user_id);
+      expect(await ids(p)).toEqual([p]);
+      expect(await ids(other)).toEqual([other]);
     });
 
     it('a super admin reads all profiles', async () => {
       const admin = await createUser('super_admin');
       const p = await createUser('parent');
-      await createUser('child', { parentId: p });
+      await createChild(p);
       const rows = await as(admin).query(`select user_id from public.profiles`);
-      expect(rows).toHaveLength(3);
+      expect(rows).toHaveLength(2);
     });
 
     it('anon sees nothing', async () => {
@@ -343,9 +226,8 @@ describe('profiles (U1, U2, U6)', () => {
       const admin = await createUser('super_admin');
       const p = await createUser('parent');
       const other = await createUser('parent');
-      const c = await createUser('child', { parentId: p });
       expect(await as(p).query(`select * from public.profiles where user_id = $1`, [other])).toHaveLength(0);
-      for (const u of [p, c, admin]) {
+      for (const u of [p, admin]) {
         await expect(
           as(u).query(`update public.profiles set banned = false, role = 'super_admin' where user_id = $1`, [u]),
         ).rejects.toThrow(/permission denied/);

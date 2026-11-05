@@ -1,8 +1,9 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({ signOut: vi.fn(), push: vi.fn(), refresh: vi.fn() }));
+const h = vi.hoisted(() => ({ signOut: vi.fn(), push: vi.fn(), refresh: vi.fn(), clear: vi.fn() }));
 vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ auth: { signOut: h.signOut } }) }));
+vi.mock('@/lib/childSession', () => ({ clearActiveChild: h.clear }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: h.push, refresh: h.refresh }) }));
 
 import LogoutButton from '@/components/auth/LogoutButton';
@@ -11,6 +12,7 @@ beforeEach(() => {
   h.signOut.mockReset().mockResolvedValue({ error: null });
   h.push.mockReset();
   h.refresh.mockReset();
+  h.clear.mockReset();
 });
 afterEach(cleanup);
 
@@ -26,16 +28,18 @@ describe('LogoutButton (U10)', () => {
     open();
     answer('1');
     expect(h.signOut).not.toHaveBeenCalled();
+    expect(h.clear).not.toHaveBeenCalled();
     expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
-  it('correct answer signs out and navigates to /play/sign-in', async () => {
+  it('correct answer signs out, clears the child and goes back to /admin/sign-in', async () => {
     vi.spyOn(Math, 'random').mockReturnValue(0);
     render(<LogoutButton />);
     open();
     answer('12');
-    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play/sign-in'));
+    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/admin/sign-in'));
     expect(h.signOut).toHaveBeenCalledTimes(1);
+    expect(h.clear).toHaveBeenCalledTimes(1);
     expect(h.refresh).toHaveBeenCalled();
     vi.restoreAllMocks();
   });
@@ -49,6 +53,7 @@ describe('LogoutButton (U10)', () => {
     await waitFor(() => expect(h.signOut).toHaveBeenCalled());
     await Promise.resolve();
     expect(h.push).not.toHaveBeenCalled();
+    expect(h.clear).not.toHaveBeenCalled();
     vi.restoreAllMocks();
   });
 

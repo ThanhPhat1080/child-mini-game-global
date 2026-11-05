@@ -1,30 +1,22 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { mediaUrl } from '@/lib/media';
-import { listMyChildren, type ChildSummary } from '@/lib/settings';
+import { deleteChild, listMyChildren, type Child } from '@/lib/children';
 import { MAX_CHILDREN } from '@/lib/auth/limits';
-import { ChildForm } from '@/components/admin/ChildForm';
+import { ChildCard } from '@/components/admin/ChildCard';
+import { ChildModal } from '@/components/admin/ChildModal';
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { Toast, useToast } from '@/components/admin/Toast';
-import { Pic } from '@/components/Pic';
 import styles from '../../admin.module.css';
+import ui from '@/components/admin/admin-ui.module.css';
 
-const ADD_ERRORS: Record<string, string> = {
-  child_limit: `You already have ${MAX_CHILDREN} children.`,
-  email_taken: 'That email is already used.',
-  invalid_body: 'Check the email, a password of at least 8 characters and a name.',
-  forbidden: 'You are not allowed to add a child.',
-  unauthenticated: 'Please sign in again.',
-};
+type Editing = { mode: 'create' } | { mode: 'edit'; child: Child } | null;
 
-/** Parent dashboard (N2): the parent's children (at most 5), add one, edit name, avatar and sounds. */
+/** Parent dashboard (KU1-KU8): the parent's children as cards (at most 5), add, edit and remove. Nothing is optimistic. */
 export default function ChildrenPage() {
-  const [kids, setKids] = useState<ChildSummary[] | null>(null);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [adding, setAdding] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [kids, setKids] = useState<Child[] | null>(null);
+  const [editing, setEditing] = useState<Editing>(null);
+  const [removing, setRemoving] = useState<Child | null>(null);
   const [busy, setBusy] = useState(false);
   const { toast, show, close } = useToast();
 
@@ -40,24 +32,15 @@ export default function ChildrenPage() {
 
   const full = (kids?.length ?? 0) >= MAX_CHILDREN;
 
-  async function add(e: React.FormEvent) {
-    e.preventDefault();
+  async function confirmRemove() {
+    if (!removing) return;
     setBusy(true);
     try {
-      const res = await fetch('/api/children', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, displayName: name }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => null)) as { error?: string } | null;
-        return show('error', ADD_ERRORS[body?.error ?? ''] ?? 'Could not add the child.');
-      }
-      setEmail(''); setPassword(''); setName(''); setAdding(false);
-      show('success', 'Child added.');
+      const res = await deleteChild(removing.id);
+      if (!res.ok) return show('error', 'Could not remove the child.');
+      setRemoving(null);
+      show('success', 'Child removed.');
       await load();
-    } catch {
-      show('error', 'Could not add the child.');
     } finally {
       setBusy(false);
     }
@@ -68,62 +51,46 @@ export default function ChildrenPage() {
       <div className={styles.head}>
         <div>
           <h1>Children</h1>
-          <p className={styles.sub}>Up to {MAX_CHILDREN} children. Each one signs in with their own email and password.</p>
+          <p className={styles.sub}>Up to {MAX_CHILDREN} children. Each one signs in with a login name and a PIN.</p>
         </div>
-        <button type="button" className={styles.primary} disabled={full || adding || !kids} onClick={() => setAdding(true)}>
-          Add child
-        </button>
       </div>
 
       {full && <p className={styles.note}>You have reached the limit of {MAX_CHILDREN} children.</p>}
+      {kids && kids.length === 0 && <p className={styles.note}>No children yet. Add the first one.</p>}
 
-      {adding && (
-        <form className={styles.section} onSubmit={add} aria-label="Add child">
-          <div className={styles.fieldGroup}>
-            <label htmlFor="child-name">Child&apos;s name</label>
-            <input id="child-name" className={styles.input} value={name} maxLength={40} onChange={(e) => setName(e.target.value)} required />
-          </div>
-          <div className={styles.fieldGroup}>
-            <label htmlFor="child-email">Email for the child</label>
-            <input id="child-email" className={styles.input} type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </div>
-          <div className={styles.fieldGroup}>
-            <label htmlFor="child-password">Password (at least 8 characters)</label>
-            <input id="child-password" className={styles.input} type="password" value={password} minLength={8} autoComplete="new-password" onChange={(e) => setPassword(e.target.value)} required />
-          </div>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button type="submit" className={styles.primary} disabled={busy}>{busy ? 'Adding…' : 'Create child'}</button>
-            <button type="button" className={styles.ghost} disabled={busy} onClick={() => setAdding(false)}>Cancel</button>
-          </div>
-        </form>
-      )}
-
-      {kids && kids.length === 0 && !adding && <p className={styles.note}>No children yet. Add the first one.</p>}
-
-      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
+      <ul className={ui.childGrid}>
         {(kids ?? []).map((k) => (
-          <li key={k.child_id}>
-            <div className={styles.row}>
-              <div className={styles.avatar} style={{ width: 48, height: 48 }}>
-                {mediaUrl(k.avatar_path) && <Pic src={mediaUrl(k.avatar_path) ?? ''} alt="" className={styles.avatarImg} />}
-              </div>
-              <div className={styles.rowText}>
-                <div className={styles.rowTitle}>{k.child_name || 'Unnamed child'}</div>
-              </div>
-              <button type="button" className={styles.ghost} onClick={() => setEditing(editing === k.child_id ? null : k.child_id)}>
-                {editing === k.child_id ? 'Close' : 'Edit'}
-              </button>
-            </div>
-            {editing === k.child_id && (
-              <ChildForm
-                childId={k.child_id}
-                onClose={() => setEditing(null)}
-                onSaved={(s) => setKids((all) => all && all.map((x) => (x.child_id === s.child_id ? { ...x, child_name: s.child_name, avatar_path: s.avatar_path } : x)))}
-              />
-            )}
+          <li key={k.id}>
+            <ChildCard child={k} onEdit={() => setEditing({ mode: 'edit', child: k })} onRemove={() => setRemoving(k)} />
           </li>
         ))}
+        <li>
+          <button type="button" className={ui.addCard} style={{ width: '100%', height: '100%' }} disabled={full || !kids} onClick={() => setEditing({ mode: 'create' })}>
+            <span aria-hidden="true">+ </span>Add child
+          </button>
+        </li>
       </ul>
+
+      {editing && (
+        <ChildModal
+          mode={editing.mode}
+          child={editing.mode === 'edit' ? editing.child : undefined}
+          onClose={() => setEditing(null)}
+          onSaved={() => { show('success', 'Saved'); void load(); }}
+          onNotice={show}
+        />
+      )}
+
+      {removing && (
+        <ConfirmDialog
+          title={`Remove ${removing.display_name}?`}
+          body="This deletes the child and their sounds settings. This cannot be undone."
+          button="Remove child"
+          busy={busy}
+          onCancel={() => setRemoving(null)}
+          onConfirm={confirmRemove}
+        />
+      )}
 
       <Toast toast={toast} onClose={close} />
     </>

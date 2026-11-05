@@ -7,36 +7,46 @@ const h = vi.hoisted(() => ({
   select: vi.fn(),
   update: vi.fn(),
   from: vi.fn(),
+  activeId: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({ auth: { getSession: h.getSession }, from: h.from }),
 }));
+vi.mock('@/lib/childSession', () => ({ getActiveChildId: () => h.activeId() }));
 
 import { getChildSettings, getMyChildSettings, updateChildSettings } from '@/lib/settings';
 
-const row = { child_id: 'c1', child_name: 'Mia', music_volume: 30 };
+const row = { child_id: 'c1', music_volume: 30 };
+const kid = { display_name: 'Mia', avatar_path: 'img/a.png' };
 
 beforeEach(() => {
   vi.resetAllMocks();
   h.from.mockReturnValue({ select: h.select, update: h.update });
   h.select.mockReturnValue({ eq: h.eq });
   h.eq.mockReturnValue({ maybeSingle: h.maybeSingle });
-  h.getSession.mockResolvedValue({ data: { session: { user: { id: 'c1' } } } });
-  h.maybeSingle.mockResolvedValue({ data: row, error: null });
+  h.activeId.mockReturnValue('c1');
+  h.maybeSingle.mockImplementation(() => Promise.resolve({ data: h.from.mock.calls.at(-1)?.[0] === 'children' ? kid : row, error: null }));
 });
 
 describe('child settings (U4)', () => {
-  it('getMyChildSettings returns the row for the signed-in child', async () => {
-    await expect(getMyChildSettings()).resolves.toEqual(row);
+  it('getMyChildSettings merges display_name and avatar_path from children', async () => {
+    await expect(getMyChildSettings()).resolves.toEqual({ ...row, child_name: 'Mia', avatar_path: 'img/a.png' });
     expect(h.from).toHaveBeenCalledWith('child_settings');
+    expect(h.from).toHaveBeenCalledWith('children');
     expect(h.eq).toHaveBeenCalledWith('child_id', 'c1');
+    expect(h.eq).toHaveBeenCalledWith('id', 'c1');
   });
 
-  it('getMyChildSettings returns null when nobody is signed in', async () => {
-    h.getSession.mockResolvedValue({ data: { session: null } });
+  it('getMyChildSettings returns null without an active child', async () => {
+    h.activeId.mockReturnValue(null);
     await expect(getMyChildSettings()).resolves.toBeNull();
     expect(h.from).not.toHaveBeenCalled();
+  });
+
+  it('getMyChildSettings returns null when the child row is not visible', async () => {
+    h.maybeSingle.mockImplementation(() => Promise.resolve({ data: null, error: null }));
+    await expect(getMyChildSettings()).resolves.toBeNull();
   });
 
   it('getChildSettings reads the given child and returns null for no row', async () => {
@@ -53,8 +63,8 @@ describe('child settings (U4)', () => {
   it('updateChildSettings updates by child id and never sends child_id in the patch', async () => {
     const eq = vi.fn().mockResolvedValue({ error: null });
     h.update.mockReturnValue({ eq });
-    await updateChildSettings('c1', { child_name: 'Lan', child_id: 'zzz' });
-    expect(h.update).toHaveBeenCalledWith({ child_name: 'Lan' });
+    await updateChildSettings('c1', { music_volume: 7, child_id: 'zzz', child_name: 'Lan' } as never);
+    expect(h.update).toHaveBeenCalledWith({ music_volume: 7 });
     expect(eq).toHaveBeenCalledWith('child_id', 'c1');
   });
 

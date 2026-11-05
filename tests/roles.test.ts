@@ -6,7 +6,6 @@ import { fakeFrom } from './support/fakeSupabase';
 const base: Profile = {
   user_id: 'u1',
   role: 'parent',
-  parent_id: null,
   display_name: 'Mum',
   banned: false,
   ban_reason_code: null,
@@ -18,7 +17,6 @@ const base: Profile = {
 describe('adminAccess (U11, U13)', () => {
   it.each([
     ['no profile', null, 'signin'],
-    ['child', { ...base, role: 'child', parent_id: 'p1' }, 'forbidden'],
     ['banned parent', { ...base, banned: true, ban_reason_code: 'spam' }, 'banned'],
     ['unbanned parent', base, 'ok'],
     ['super admin', { ...base, role: 'super_admin' }, 'ok'],
