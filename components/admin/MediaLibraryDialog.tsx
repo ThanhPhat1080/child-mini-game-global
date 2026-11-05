@@ -16,6 +16,7 @@ import type { Crop } from '@/lib/crop/geometry';
 import { useSoundPreview } from './useSoundPreview';
 import { PlayButton } from './PlayButton';
 import { CropDialog } from './CropDialog';
+import { ModalClose } from '@/components/ModalClose';
 
 /** Picture types the library accepts (the same as the Cards and Spot pictures). */
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
@@ -33,9 +34,9 @@ const createdOrder = (paths: string[], origins: Map<string, string>): string[] =
 const fileName = (path: string): string => path.split('/').pop() ?? path;
 
 /** Admin buttons: the dark primary of "Save changes", the blue of "Quick import", and the ghost used across the editors. */
-const primaryBtn = { height: 46, padding: '0 26px', borderRadius: 12, border: 'none', background: '#5A4038', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer' } as const;
+const primaryBtn = { height: 44, padding: '0 20px', borderRadius: 12, border: 'none', background: '#5A4038', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer' } as const;
 const uploadBtn = { height: 42, padding: '0 16px', borderRadius: 10, border: 'none', background: '#3F73B5', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' } as const;
-const cancelBtn = { ...ghostBtn, height: 46, padding: '0 22px', fontSize: 15 } as const;
+const cancelBtn = { ...ghostBtn, height: 44, padding: '0 20px', fontSize: 15 } as const;
 /** The dialog's height: the list scrolls inside it; the header and footer stay put. */
 const DIALOG_HEIGHT = 'min(600px, calc(100vh - 32px))';
 
@@ -402,7 +403,7 @@ export function MediaLibrary({ mode = 'dialog', kind, onChoose, onClose, startCr
   const title = kind === 'image' ? 'Image Library' : 'Sound Library';
 
   const header = (
-    <div style={{ flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: dialog ? '24px 28px 16px' : '20px 24px 12px' }}>
+    <div style={{ flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', padding: dialog ? '24px 64px 16px 28px' : '20px 24px 12px' }}>
       {dialog && <h2 style={{ margin: 0, fontSize: 21, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 10 }}><TitleIcon kind={kind} />{title}</h2>}
       <input ref={fileInput} type="file" hidden accept={kind === 'image' ? 'image/*' : 'audio/*'} aria-label={`Upload new ${kind === 'image' ? 'picture' : 'sound'}`}
         onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) void upload(f); }} />
@@ -449,7 +450,8 @@ export function MediaLibrary({ mode = 'dialog', kind, onChoose, onClose, startCr
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(74,56,48,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, boxSizing: 'border-box', zIndex: 50 }}>
-      <div role="dialog" aria-modal="true" aria-label={title} style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, height: DIALOG_HEIGHT, overflow: 'hidden', boxSizing: 'border-box', boxShadow: '0 20px 60px rgba(74,56,48,0.3)', display: 'flex', flexDirection: 'column', fontFamily: 'Nunito, sans-serif', color: '#4A3830' }}>
+      <div role="dialog" aria-modal="true" aria-label={title} style={{ position: 'relative', background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, height: DIALOG_HEIGHT, overflow: 'hidden', boxSizing: 'border-box', boxShadow: '0 20px 60px rgba(74,56,48,0.3)', display: 'flex', flexDirection: 'column', fontFamily: 'Nunito, sans-serif', color: '#4A3830' }}>
+        {onClose && <ModalClose onClick={onClose} />}
         {/* header: title and Upload new stay fixed */}
         {header}
         {status}

@@ -26,6 +26,17 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('MediaLibraryDialog', () => {
+  it('Close calls onClose like Cancel, and the footer buttons are both 44px high (FA1, FA5)', async () => {
+    lib.listLibrary.mockResolvedValue(['cards/c1.png']);
+    const onClose = vi.fn();
+    render(<MediaLibraryDialog kind="image" onChoose={() => undefined} onClose={onClose} />);
+    const dialog = screen.getByRole('dialog', { name: 'Image Library' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect((within(dialog).getByRole('button', { name: 'Cancel' }) as HTMLElement).style.height).toBe('44px');
+    expect((within(dialog).getByRole('button', { name: 'OK' }) as HTMLElement).style.height).toBe('44px');
+  });
+
   it('is a labelled dialog that lists pictures as choosable buttons', async () => {
     lib.listLibrary.mockResolvedValue(['cards/c1.png', 'spot/a.png']);
     render(<MediaLibraryDialog kind="image" onChoose={() => undefined} onClose={() => undefined} />);

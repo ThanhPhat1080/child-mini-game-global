@@ -45,6 +45,13 @@ const fill = () => {
 };
 
 describe('ChildModal (KU3-KU8)', () => {
+  it('Close calls onClose (FA4, FA5)', () => {
+    const onClose = vi.fn();
+    render(<ChildModal mode="create" onClose={onClose} onSaved={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }));
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it('create mode has an editable login name; edit mode shows it read-only', async () => {
     const { unmount } = render(<ChildModal mode="create" onClose={() => {}} onSaved={() => {}} />);
     expect((screen.getByLabelText('Login name') as HTMLInputElement).readOnly).toBe(false);

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import admin from '@/app/admin/admin.module.css';
 import styles from './auth.module.css';
+import { ModalClose } from '@/components/ModalClose';
 
 type Props = { open: boolean; onPass(): void; onCancel(): void; random?: () => number };
 
@@ -90,6 +91,7 @@ function CheckDialog({ onPass, onCancel, random }: Omit<Props, 'open'> & { rando
   return (
     <div className={styles.backdrop}>
       <div ref={dialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="adult-title" tabIndex={-1}>
+        <ModalClose onClick={onCancel} />
         <h2 id="adult-title" style={{ margin: 0, fontSize: 20 }}>Grown-ups only</h2>
         <form onSubmit={onSubmit} className={styles.adultForm} noValidate>
           <p className={styles.adultQ} data-testid="adult-question">{nums[0]} + {nums[1]} = ?</p>
@@ -105,8 +107,8 @@ function CheckDialog({ onPass, onCancel, random }: Omit<Props, 'open'> & { rando
           />
           {wrong && <p role="status" className={admin.error}>Not quite. Try this one.</p>}
           <div className={styles.navEnd} style={{ justifyContent: 'flex-end' }}>
-            <button type="button" className={admin.ghost} onClick={onCancel}>Cancel</button>
-            <button type="submit" className={admin.primary}>OK</button>
+            <button type="button" className={`${admin.ghost} ${admin.modalBtn}`} onClick={onCancel}>Cancel</button>
+            <button type="submit" className={`${admin.primary} ${admin.modalBtn}`}>OK</button>
           </div>
         </form>
       </div>

@@ -12,6 +12,7 @@ import { PlayButton } from '@/components/admin/PlayButton';
 import { ChildSounds } from '@/components/admin/ChildSounds';
 import { Pic } from '@/components/Pic';
 import s from './admin-ui.module.css';
+import { ModalClose } from '@/components/ModalClose';
 
 type Notice = (kind: 'success' | 'error' | 'warning', text: string) => void;
 type Errors = Partial<Record<keyof NewChild, string>>;
@@ -171,6 +172,7 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
         style={{ background: theme.bg, color: theme.text }}
         onKeyDown={onKeyDown}
       >
+        <ModalClose onClick={requestClose} disabled={busy} />
         <h2 id={titleId} style={{ color: theme.text }}>{mode === 'create' ? 'Add child' : 'Edit child'}</h2>
 
         <div className={s.modalField} role="group" aria-label="Gender">

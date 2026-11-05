@@ -94,9 +94,12 @@ describe('AdultCheck (U10)', () => {
     ok.focus();
     fireEvent.keyDown(ok, { key: 'Tab' });
     expect(dialog.contains(document.activeElement)).toBe(true);
-    expect(document.activeElement).toBe(input());
-    input().focus();
-    fireEvent.keyDown(input(), { key: 'Tab', shiftKey: true });
+    // the top-right Close button is the first item in the cycle now (FA4), so Tab wraps to it
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Close' }));
+    // Close is the first item now, so Shift+Tab from it wraps to OK
+    const close = screen.getByRole('button', { name: 'Close' });
+    close.focus();
+    fireEvent.keyDown(close, { key: 'Tab', shiftKey: true });
     expect(document.activeElement).toBe(ok);
   });
 });
