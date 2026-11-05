@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { as, connect, createUser, resetDb, startDb, stopDb, superQuery } from './harness';
+import { as, connect, createChild, createUser, resetDb, startDb, stopDb, superQuery } from './harness';
 
 // Spec Q1-Q6: owner folders, per-owner quota, safe delete.
 
@@ -25,7 +25,7 @@ describe('media folders, quota and delete guard (Q1-Q6)', () => {
     sa = await createUser('super_admin');
     a = await createUser('parent');
     b = await createUser('parent');
-    child = await createUser('child', { parentId: a });
+    child = await createChild(a);
   });
 
   it('parents and Super Admins write under their own folder only', async () => {
@@ -36,9 +36,7 @@ describe('media folders, quota and delete guard (Q1-Q6)', () => {
     await expect(upload(a, `seed/x.png`, 10)).rejects.toThrow();
   });
 
-  it('a child cannot upload, a banned parent cannot upload', async () => {
-    await expect(upload(child, `${child}/x.png`, 10)).rejects.toThrow();
-    await expect(upload(child, `${a}/x.png`, 10)).rejects.toThrow();
+  it('a banned parent cannot upload', async () => {
     await superQuery(`update public.profiles set banned = true where user_id = $1`, [a]);
     await expect(upload(a, `${a}/y.png`, 10)).rejects.toThrow();
   });
@@ -52,7 +50,6 @@ describe('media folders, quota and delete guard (Q1-Q6)', () => {
   it('every signed-in user can read any file, anon policy unchanged', async () => {
     await upload(a, `${a}/x.png`, 10);
     expect(await as(b).query(`select name from storage.objects`)).toHaveLength(1);
-    expect(await as(child).query(`select name from storage.objects`)).toHaveLength(1);
   });
 
   describe('quota', () => {
@@ -121,7 +118,7 @@ describe('media folders, quota and delete guard (Q1-Q6)', () => {
         `insert into public.find_levels (image_path, objects, owner_id, visibility) values ('f.png', $1::jsonb, $2, 'private')`,
         [JSON.stringify([{ audio_path: `${a}/obj.mp3` }, {}]), a],
       );
-      await superQuery(`update public.child_settings set avatar_path = $2 where child_id = $1`, [child, `${a}/avatar.png`]);
+      await superQuery(`update public.children set avatar_path = $2 where id = $1`, [child, `${a}/avatar.png`]);
       for (const p of [own, `${a}/own.mp3`, `${a}/obj.mp3`, `${a}/avatar.png`]) {
         expect((await as(b).query<{ r: boolean }>(`select public.media_in_use($1) r`, [p]))[0].r).toBe(true);
       }
@@ -143,11 +140,6 @@ describe('media folders, quota and delete guard (Q1-Q6)', () => {
       expect(await del(sa, used)).toEqual([]);
       expect(await del(b, free)).toEqual([]); // not their folder
       expect(await del(a, free)).toHaveLength(1);
-    });
-
-    it('a child cannot delete', async () => {
-      await upload(a, `${a}/x.png`, 10);
-      expect(await as(child).query(`delete from storage.objects where name = $1 returning name`, [`${a}/x.png`])).toEqual([]);
     });
   });
 

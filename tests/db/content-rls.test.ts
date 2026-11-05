@@ -100,44 +100,6 @@ describe('content ownership and RLS (U3, U5, V1, V5, V6)', () => {
       expect(await visibleIds(b, t)).toEqual([]);
     });
 
-    it("child of A selects A's published private row and any published global row", async () => {
-      const a = await createUser('parent');
-      const b = await createUser('parent');
-      const child = await createUser('child', { parentId: a });
-      const mine = await seedRow(t, a, 'private');
-      const global = await seedRow(t, b, 'global');
-      const otherPrivate = await seedRow(t, b, 'private');
-      const ids = await visibleIds(child, t);
-      expect(ids.sort()).toEqual([mine, global].sort());
-      expect(ids).not.toContain(otherPrivate);
-    });
-
-    it('child sees nothing unpublished (except card_groups, which has no published flag)', async () => {
-      if (t.name === 'card_groups') return;
-      const a = await createUser('parent');
-      const child = await createUser('child', { parentId: a });
-      await seedRow(t, a, 'private', false);
-      await seedRow(t, a, 'global', false);
-      expect(await visibleIds(child, t)).toEqual([]);
-    });
-
-    it('child cannot insert, update or delete', async () => {
-      const a = await createUser('parent');
-      const child = await createUser('child', { parentId: a });
-      const id = await seedRow(t, a, 'private');
-      const { cols, vals } = t.cols(true);
-      await expect(
-        as(child).query(
-          `insert into public.${t.name} (${cols}, owner_id, visibility)
-             values (${vals}, $1, 'private')`,
-          [a],
-        ),
-      ).rejects.toThrow();
-      expect(await as(child).query(`update public.${t.name} set ${t.edit} where id = $1 returning id`, [id])).toEqual([]);
-      expect(await as(child).query(`delete from public.${t.name} where id = $1 returning id`, [id])).toEqual([]);
-      expect(await visibleIds(a, t)).toEqual([id]);
-    });
-
     it('parent edits own private row, cannot edit when pending or global', async () => {
       const a = await createUser('parent');
       const priv = await seedRow(t, a, 'private');
@@ -221,17 +183,14 @@ describe('content ownership and RLS (U3, U5, V1, V5, V6)', () => {
       const sa = await createUser('super_admin');
       const a = await createUser('parent');
       const b = await createUser('parent');
-      const child = await createUser('child', { parentId: a });
       const priv = await seedRow(t, a, 'private');
       const global = await seedRow(t, a, 'global');
       await ban(a, true);
       expect(await visibleIds(a, t)).toEqual([]);
-      expect(await visibleIds(child, t)).toEqual([]);
       expect(await visibleIds(b, t)).toEqual([]);
       expect((await visibleIds(sa, t)).sort()).toEqual([priv, global].sort());
       await ban(a, false);
       expect(await visibleIds(a, t)).toHaveLength(2);
-      expect(await visibleIds(child, t)).toHaveLength(2);
       expect(await visibleIds(b, t)).toEqual([global]);
     });
 
@@ -262,10 +221,8 @@ describe('content ownership and RLS (U3, U5, V1, V5, V6)', () => {
     it.each(CONTENT_TABLES)('$name: published global rows are readable, only super admin edits', async (t) => {
       const sa = await createUser('super_admin');
       const a = await createUser('parent');
-      const child = await createUser('child', { parentId: a });
       const id = await seedRow(t, null, 'global');
       expect(await visibleIds(a, t)).toEqual([id]);
-      expect(await visibleIds(child, t)).toEqual([id]);
       expect(await as(a).query(`update public.${t.name} set ${t.edit} where id = $1 returning id`, [id])).toEqual([]);
       expect(await as(sa).query(`update public.${t.name} set ${t.edit} where id = $1 returning id`, [id])).toHaveLength(1);
     });
@@ -338,41 +295,33 @@ describe('content ownership and RLS (U3, U5, V1, V5, V6)', () => {
       const sa = await createUser('super_admin');
       const a = await createUser('parent');
       const b = await createUser('parent');
-      const child = await createUser('child', { parentId: a });
       await setWithQa(a, 'private');
       expect(await qa(a)).toEqual({ q: 1, a: 1 });
-      expect(await qa(child)).toEqual({ q: 1, a: 1 });
       expect(await qa(b)).toEqual({ q: 0, a: 0 });
       expect(await qa(sa)).toEqual({ q: 1, a: 1 });
       expect(await qa(null)).toEqual({ q: 0, a: 0 });
     });
 
-    it('a global set is visible to every parent and child, an unpublished one to its owner only', async () => {
+    it('a global set is visible to every parent, an unpublished one to its owner only', async () => {
       const a = await createUser('parent');
       const b = await createUser('parent');
-      const childB = await createUser('child', { parentId: b });
       await setWithQa(a, 'global');
       await setWithQa(a, 'global', false);
       expect(await qa(b)).toEqual({ q: 1, a: 1 });
-      expect(await qa(childB)).toEqual({ q: 1, a: 1 });
       expect(await qa(a)).toEqual({ q: 2, a: 2 });
     });
 
     it('hides everything of a banned owner and brings it back on unban', async () => {
       const a = await createUser('parent');
-      const child = await createUser('child', { parentId: a });
       await setWithQa(a, 'private');
       await ban(a, true);
-      expect(await qa(child)).toEqual({ q: 0, a: 0 });
       expect(await qa(a)).toEqual({ q: 0, a: 0 });
       await ban(a, false);
-      expect(await qa(child)).toEqual({ q: 1, a: 1 });
     });
 
     it('only the owner of a private set writes its questions and answers', async () => {
       const a = await createUser('parent');
       const b = await createUser('parent');
-      const child = await createUser('child', { parentId: a });
       const { setId, questionId } = await setWithQa(a, 'private');
       const addQ = (u: string) =>
         as(u).query(`insert into public.questions (set_id, position) values ($1, 2) returning id`, [setId]);
@@ -382,9 +331,7 @@ describe('content ownership and RLS (U3, U5, V1, V5, V6)', () => {
           [questionId],
         );
       await expect(addQ(b)).rejects.toThrow();
-      await expect(addQ(child)).rejects.toThrow();
       await expect(addA(b)).rejects.toThrow();
-      await expect(addA(child)).rejects.toThrow();
       await expect(addQ(a)).resolves.toHaveLength(1);
       await expect(addA(a)).resolves.toHaveLength(1);
     });
