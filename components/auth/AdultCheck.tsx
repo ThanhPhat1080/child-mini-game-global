@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import admin from '@/app/admin/admin.module.css';
 import styles from './auth.module.css';
+import type { ReactNode } from 'react';
 import { ModalClose } from '@/components/ModalClose';
 
-type Props = { open: boolean; onPass(): void; onCancel(): void; random?: () => number };
+type Props = { open: boolean; onPass(): void; onCancel(): void; random?: () => number; title?: string; icon?: ReactNode };
 
 /** Two integers in 6..9, so the sum is 12..18: out of reach for a 4-5 year old. */
 function pick(random: () => number): [number, number] {
@@ -14,12 +15,12 @@ function pick(random: () => number): [number, number] {
 }
 
 /** Grown-up check (U10): "a + b = ?". Mounted only while open, so state resets on every open. */
-export default function AdultCheck({ open, onPass, onCancel, random = Math.random }: Props) {
+export default function AdultCheck({ open, onPass, onCancel, random = Math.random, title = 'Grown-ups only', icon }: Props) {
   if (!open) return null;
-  return <CheckDialog onPass={onPass} onCancel={onCancel} random={random} />;
+  return <CheckDialog onPass={onPass} onCancel={onCancel} random={random} title={title} icon={icon} />;
 }
 
-function CheckDialog({ onPass, onCancel, random }: Omit<Props, 'open'> & { random: () => number }) {
+function CheckDialog({ onPass, onCancel, random, title, icon }: Omit<Props, 'open'> & { random: () => number; title: string }) {
   const [nums, setNums] = useState<[number, number]>(() => pick(random));
   const [value, setValue] = useState('');
   const [wrong, setWrong] = useState(false);
@@ -92,7 +93,8 @@ function CheckDialog({ onPass, onCancel, random }: Omit<Props, 'open'> & { rando
     <div className={styles.backdrop}>
       <div ref={dialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby="adult-title" tabIndex={-1}>
         <ModalClose onClick={onCancel} />
-        <h2 id="adult-title" style={{ margin: 0, fontSize: 20 }}>Grown-ups only</h2>
+        {icon}
+        <h2 id="adult-title" style={{ margin: 0, fontSize: 20 }}>{title}</h2>
         <form onSubmit={onSubmit} className={styles.adultForm} noValidate>
           <p className={styles.adultQ} data-testid="adult-question">{nums[0]} + {nums[1]} = ?</p>
           <input

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { clearActiveChild } from '@/lib/childSession';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import AdultCheck from './AdultCheck';
+import ParentLeaveIcon from './ParentLeaveIcon';
 import styles from './auth.module.css';
 
 /** Quiet corner button for grown-ups (U10). After the adult check: sign out, forget the active child, back to the play sign-in page (FS7). */
@@ -38,7 +39,7 @@ export default function LogoutButton() {
           </g>
         </svg>
       </button>
-      <AdultCheck open={open} onPass={onPass} onCancel={() => setOpen(false)} />
+      <AdultCheck open={open} onPass={onPass} onCancel={() => setOpen(false)} title="Leave now" icon={<ParentLeaveIcon />} />
     </>
   );
 }
