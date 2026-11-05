@@ -184,3 +184,23 @@ describe('Play picker (K7-K12, KU9-KU12)', () => {
     });
   });
 });
+
+describe('picker look (FP2, FP4)', () => {
+  it('asks "Who are you?"', async () => {
+    await ready();
+    expect(screen.getByRole('heading', { name: 'Who are you?' })).toBeTruthy();
+  });
+  it('uses large cards up to 4 in total', async () => {
+    h.list.mockResolvedValue([kid(1), kid(2), kid(3)]);
+    await ready();
+    expect(screen.getByRole('button', { name: 'Parent configuration' }).getAttribute('data-size')).toBe('large');
+    expect(screen.getByRole('button', { name: 'Kid 1' }).getAttribute('data-size')).toBe('large');
+  });
+  it('uses small cards with 5 children (6 cards)', async () => {
+    h.list.mockResolvedValue([kid(1), kid(2), kid(3), kid(4), kid(5)]);
+    await ready();
+    expect(screen.getByRole('button', { name: 'Parent configuration' }).getAttribute('data-size')).toBe('small');
+    expect(screen.getByRole('button', { name: 'Kid 1' }).getAttribute('data-size')).toBe('small');
+  });
+});
+
