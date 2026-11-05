@@ -13,8 +13,11 @@
 .config:hover .tip, .config:focus-visible .tip { opacity: 1; }
 
 .overlay { position: absolute; inset: 0; background: rgba(251, 244, 233, 0.88); display: flex; align-items: center; justify-content: center; z-index: 20; }
-.panel { display: flex; flex-direction: column; align-items: center; gap: 36px; padding: 44px 64px 56px; border-radius: 72px; background: #fff; box-shadow: 0 16px 0 #EADCC8; border: 14px solid transparent; }
+.panel { display: flex; flex-direction: column; align-items: center; gap: 24px; padding: 36px 64px 44px; border-radius: 72px; background: #fff; box-shadow: 0 16px 0 #EADCC8; border: 14px solid transparent; }
 .row { display: flex; gap: 28px; }
+.pinHead { display: flex; align-items: center; gap: 32px; }
+.pinHero { width: 200px; height: 252px; object-fit: contain; }
+.pinTitle { margin: 0; max-width: 760px; font-size: 56px; font-weight: 600; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
 .box { width: 130px; height: 160px; border-radius: 36px; border: 8px solid #E3D5C4; background: #FBF4E9; text-align: center; font-size: 84px; font-weight: 600; font-family: inherit; color: #5A4038; padding: 0; caret-color: transparent; }
 .box:focus { outline: none; border-color: #7A5C50; }
 .box:focus-visible { outline: 6px solid #7A5C50; outline-offset: 6px; }
