@@ -45,6 +45,15 @@ const fill = () => {
 };
 
 describe('ChildModal (KU3-KU8)', () => {
+  it('Gender and Age share one row (FA3)', () => {
+    render(<ChildModal mode="create" onClose={() => {}} onSaved={() => {}} />);
+    const gender = screen.getByRole('group', { name: 'Gender' });
+    const age = screen.getByRole('group', { name: 'Age band' });
+    expect(gender.parentElement).toBe(age.parentElement);
+    // both sit in a row of their own, not directly in the dialog column
+    expect(gender.parentElement).not.toBe(screen.getByRole('dialog'));
+  });
+
   it('Close calls onClose (FA4, FA5)', () => {
     const onClose = vi.fn();
     render(<ChildModal mode="create" onClose={onClose} onSaved={() => {}} />);
@@ -69,11 +78,11 @@ describe('ChildModal (KU3-KU8)', () => {
     const title = screen.getByRole('heading');
     expect(screen.getByRole('button', { name: 'Boy' }).getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Girl' }));
-    expect(dlg.getAttribute('style')).toContain('rgb(248, 220, 223)');
+    expect(dlg.getAttribute('style')).toContain('rgb(252, 239, 240)'); // modalBg (FA2)
     expect(title.getAttribute('style')).toContain('rgb(154, 69, 80)');
     expect(screen.getByRole('button', { name: 'Girl' }).getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Boy' }));
-    expect(dlg.getAttribute('style')).toContain('rgb(220, 232, 241)');
+    expect(dlg.getAttribute('style')).toContain('rgb(238, 244, 249)'); // modalBg (FA2)
     expect(title.getAttribute('style')).toContain('rgb(63, 98, 133)');
     expect(screen.getByRole('button', { name: 'Girl' }).getAttribute('aria-pressed')).toBe('false');
   });

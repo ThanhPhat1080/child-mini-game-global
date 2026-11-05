@@ -169,19 +169,30 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
         aria-labelledby={titleId}
         tabIndex={-1}
         className={s.modal}
-        style={{ background: theme.bg, color: theme.text }}
+        style={{ background: theme.modalBg, color: theme.text }}
         onKeyDown={onKeyDown}
       >
         <ModalClose onClick={requestClose} disabled={busy} />
         <h2 id={titleId} style={{ color: theme.text }}>{mode === 'create' ? 'Add child' : 'Edit child'}</h2>
 
-        <div className={s.modalField} role="group" aria-label="Gender">
-          <div className={s.segmented}>
-            {(['male', 'female'] as const).map((g) => (
-              <button key={g} type="button" className={s.segBtn} aria-pressed={gender === g} onClick={() => setGender(g)}>
-                <span aria-hidden="true">{GENDER_THEME[g].icon} </span>{GENDER_THEME[g].label}
-              </button>
-            ))}
+        <div className={s.genderAgeRow}>
+          <div className={s.modalField} role="group" aria-label="Gender">
+            <span className={s.modalLabel}>Gender</span>
+            <div className={s.segmented}>
+              {(['male', 'female'] as const).map((g) => (
+                <button key={g} type="button" className={s.segBtn} aria-pressed={gender === g} onClick={() => setGender(g)}>
+                  <span aria-hidden="true">{GENDER_THEME[g].icon} </span>{GENDER_THEME[g].label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className={s.modalField} role="group" aria-label="Age band">
+            <span className={s.modalLabel}>Age</span>
+            <div className={s.segmented}>
+              {(['2-5', '5-10'] as const).map((b) => (
+                <button key={b} type="button" className={s.segBtn} aria-pressed={age === b} onClick={() => setAge(b)}>{b}</button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -225,14 +236,6 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
           {errors.pin && <span className={s.fieldError}>{errors.pin}</span>}
         </div>
 
-        <div className={s.modalField} role="group" aria-label="Age band">
-          <span className={s.modalLabel}>Age</span>
-          <div className={s.segmented}>
-            {(['2-5', '5-10'] as const).map((b) => (
-              <button key={b} type="button" className={s.segBtn} aria-pressed={age === b} onClick={() => setAge(b)}>{b}</button>
-            ))}
-          </div>
-        </div>
 
         <div className={s.modalField}>
           <span className={s.modalLabel}>Welcome sound</span>
