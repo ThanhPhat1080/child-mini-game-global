@@ -90,14 +90,16 @@
    Buttons marked data-nav (question list, level headers, picture tabs) stay usable. */
 .viewLock:disabled button:not([data-nav]) { visibility: hidden; }
 
-/* Quiz set editor: question list as a sidebar on wide screens, a row of cards on narrow ones. */
+/* Quiz set editor: question list as a sidebar on wide screens, a snapping carousel with Previous/Next on narrow ones. */
 .qLayout { display: grid; grid-template-columns: minmax(240px, 300px) minmax(0, 1fr); gap: 24px; align-items: start; }
 .qSide { position: sticky; top: 140px; max-height: calc(100vh - 160px); overflow-y: auto; box-sizing: border-box; }
 .qList { display: flex; flex-direction: column; gap: 6px; }
 .qItem { display: flex; align-items: center; border-radius: 12px; }
+.qNav { display: none; }
 @media (max-width: 960px) {
   .qLayout { grid-template-columns: minmax(0, 1fr); }
   .qSide { position: static; max-height: none; overflow: visible; }
-  .qList { flex-direction: row; overflow-x: auto; padding-bottom: 6px; }
-  .qItem { flex: none; width: 240px; }
+  .qList { flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; }
+  .qItem { flex: none; width: 240px; scroll-snap-align: start; }
+  .qNav { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 6px; }
 }

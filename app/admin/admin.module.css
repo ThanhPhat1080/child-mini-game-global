@@ -21,8 +21,23 @@
 
 /* panel */
 .shell { min-height: 100vh; background: #fbf4e9; font-family: 'Nunito', sans-serif; color: #4a3830; display: flex; flex-wrap: wrap; align-items: flex-start; }
-.nav { flex: 1 1 240px; max-width: 280px; min-width: 220px; padding: 28px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; }
+/* Sticky while the page scrolls. Overflow stays scrollable on short screens, but the scrollbar is hidden. */
+.nav { flex: 1 1 240px; max-width: 280px; min-width: 220px; padding: 28px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; position: sticky; top: 0; align-self: flex-start; max-height: 100vh; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+.nav::-webkit-scrollbar { display: none; }
 .navBrand { white-space: nowrap; display: flex; align-items: center; gap: 10px; padding: 0 12px 20px; font-size: 22px; }
+.navToggle { margin-left: auto; flex: none; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; border-radius: 10px; background: transparent; color: #7a6458; cursor: pointer; }
+.navToggle:hover { background: #f6eadc; }
+.navToggle:focus-visible { outline: 3px solid #c77d85; outline-offset: 2px; }
+/* Icons-only rail (collapsed): labels are visually hidden but stay readable by screen readers. */
+.navLabel { white-space: nowrap; }
+/* Collapsed: a 40px rail of icons, with only the expand toggle at the top. */
+.navCollapsed { flex: 0 0 40px; width: 40px; min-width: 40px; max-width: 40px; padding: 16px 4px; align-items: center; }
+.navCollapsed .navBrand { padding: 0 0 12px; justify-content: center; }
+.navCollapsed .navBrand .crownDot, .navCollapsed .navBrand .brand { display: none; }
+.navCollapsed .navToggle { margin: 0; }
+.navCollapsed .navLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.navCollapsed .navLink { justify-content: center; padding: 10px 0; width: 32px; box-sizing: border-box; }
+.navCollapsed .divider { width: 24px; margin: 10px 0; }
 .navLink { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; color: #4a3830; font-weight: 600; text-decoration: none; background: transparent; border: none; font-family: 'Nunito', sans-serif; font-size: 16px; cursor: pointer; text-align: left; }
 .navLink:hover { background: #f6eadc; }
 .navActive { background: #fff; font-weight: 700; box-shadow: 0 1px 0 #eadcc8; }
@@ -30,7 +45,7 @@
 .navMuted { color: #7a6458; }
 .divider { height: 1px; background: #eadcc8; margin: 14px 12px; }
 .main { flex: 999 1 560px; min-width: 0; padding: 36px 32px 64px; box-sizing: border-box; }
-.mainInner { max-width: 880px; display: flex; flex-direction: column; gap: 24px; }
+.mainInner { display: flex; flex-direction: column; gap: 24px; }
 .head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; }
 .head h1 { margin: 0; font-size: 30px; font-weight: 700; }
 .section { background: #fff; border-radius: 18px; padding: 28px; box-shadow: 0 1px 0 #eadcc8; display: flex; flex-direction: column; gap: 16px; }

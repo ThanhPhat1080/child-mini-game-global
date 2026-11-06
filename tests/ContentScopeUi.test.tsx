@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({ rows: [] as unknown[], rpc: vi.fn() }));
@@ -72,5 +72,16 @@ describe('Global tab content (N3)', () => {
     h.rows = [];
     render(<GlobalContent table="spot_levels" />);
     await waitFor(() => expect(screen.getByText(/Nothing has been shared/)).toBeTruthy());
+  });
+
+  it('a shared spot level opens read-only with its differences marked', async () => {
+    h.rows = [{ id: 's', owner_id: 'other', image_a_path: 'a.png', image_b_path: 'b.png', differences: [{ x: 0.2, y: 0.3, r: 0.06 }, { x: 0.5, y: 0.5, r: 0.06 }, { x: 0.8, y: 0.7, r: 0.06 }] }];
+    render(<GlobalContent table="spot_levels" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'View spot level 1' }));
+    const dialog = screen.getByRole('dialog', { name: 'Spot the differences level' });
+    expect(within(dialog).getByRole('img', { name: 'Picture A' })).toBeTruthy();
+    expect(within(dialog).getByText('3 differences marked.')).toBeTruthy();
+    expect(within(dialog).queryByRole('button', { name: 'Spot 1' })).toBeNull();
+    expect(within(dialog).getByLabelText('Spot 3')).toBeTruthy();
   });
 });
