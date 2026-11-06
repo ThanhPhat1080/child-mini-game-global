@@ -7,3 +7,4 @@
 .child { top: 20px; right: 20px; width: 88px; height: 88px; border-radius: 44px; border: none; box-shadow: 0 6px 0 #eadcc8; color: #7a5c50; }
 .child svg { width: 44px; height: 44px; }
 .child:focus-visible { outline: 6px solid #7a5c50; outline-offset: 4px; }
+.left { left: 20px; right: auto; }

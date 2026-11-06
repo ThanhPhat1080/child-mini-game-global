@@ -185,8 +185,8 @@ export default function CaroPlay() {
       <style>{MOTION}</style>
       <Hills />
 
-      <div style={{ position: 'absolute', top: 40, left: 56 }}>
-        <BackButton href="/games" label="Back to games" />
+      <div style={{ position: 'absolute', top: 40, left: 56, zIndex: 2 }}>
+        <BackButton href="/games" label="Back to games" game="caro" />
       </div>
 
       <div style={{ position: 'absolute', top: 40, right: 40, zIndex: 2 }}>

@@ -211,7 +211,7 @@ export default function QuestionPage() {
   return (
     <Stage>
       <div style={{ position: 'absolute', top: 48, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <BackButton href="/games/quiz" label="Back to quiz sets" />
+        <BackButton href="/games/quiz" label="Back to quiz sets" game="quiz" />
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
           <div style={{ display: 'flex', gap: 8 }} role="group" aria-label={`Question ${q + 1} of ${qs.length}`}>
             {qs.map((_, i) => (

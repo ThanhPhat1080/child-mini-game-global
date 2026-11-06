@@ -16,6 +16,25 @@ async function play(page: Page, cells: number[]) {
   for (const n of cells) await square(page, n).click();
 }
 
+test('Back asks "Leave now?": No stays on the board, Yes goes to the games list', async ({ page }) => {
+  await page.goto('/games');
+  await page.getByRole('link', { name: 'Play Caro' }).click();
+  await expect(page).toHaveURL(/\/games\/caro$/);
+  await play(page, [1, 31]);
+
+  await page.getByRole('link', { name: 'Back to games' }).click();
+  const ask = page.getByRole('dialog', { name: 'Leave now?' });
+  await expect(ask).toBeVisible();
+  await page.screenshot({ path: process.env.LEAVE_SHOT ?? 'test-results/leave-now.png' });
+  await page.getByRole('button', { name: 'No' }).click();
+  await expect(ask).toHaveCount(0);
+  await expect(page).toHaveURL(/\/games\/caro$/);
+
+  await page.getByRole('link', { name: 'Back to games' }).click();
+  await page.getByRole('button', { name: 'Yes' }).click();
+  await expect(page).toHaveURL(/\/games$/);
+});
+
 test('the child makes five in a row and sees Hooray; after it, Play again clears the board', async ({ page }) => {
   await page.goto('/games');
   await page.getByRole('link', { name: 'Play Caro' }).click();
