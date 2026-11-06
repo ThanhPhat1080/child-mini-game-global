@@ -176,20 +176,24 @@ describe('Spot play screen (S2-S10)', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('Esc goes back to the level grid', async () => {
+  it('Esc asks "Leave now?"; Yes goes back to the level grid', async () => {
     await ready();
     fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Leave now?' })).toBeTruthy();
+    expect(h.push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     expect(h.push).toHaveBeenCalledWith('/games/spot');
   });
 
-  it('a null level shows the friendly status; Back and Esc still work', async () => {
+  it('a null level shows the friendly status; Back and Esc both ask first', async () => {
     h.fetchLevel.mockResolvedValue(null);
     render(<SpotPlay />);
     await advance(10);
     expect(screen.getByRole('status').getAttribute('aria-label')).toBe('This picture is not available');
     expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/games/spot');
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(h.push).toHaveBeenCalledWith('/games/spot');
+    expect(screen.getByRole('dialog', { name: 'Leave now?' })).toBeTruthy();
+    expect(h.push).not.toHaveBeenCalled();
   });
 
   it('a rejected fetchLevel shows the same friendly status', async () => {

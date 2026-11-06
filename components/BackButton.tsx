@@ -17,7 +17,8 @@ const ASK_CSS = `
  * Round back (or home) button; Esc / Back key also goes back (C8).
  * On a play screen (`game` set) a click on the button asks "Leave now?" first: Yes goes back, No, X, Esc or a
  * click outside stays. Pickers (the game list, level and set lists) do not pass `game`, so they go back at once.
- * Esc and the Back key go back straight away, as before.
+ * Esc and the Back key do the same: on a play screen they ask, on a picker they go back, and while the question is
+ * open they close it (No).
  */
 export function BackButton({ href, label = 'Back', home = false, game }: { href: string; label?: string; home?: boolean; game?: Game['id'] }) {
   const router = useRouter();
@@ -26,20 +27,26 @@ export function BackButton({ href, label = 'Back', home = false, game }: { href:
   // Read by the window listener, which is set up once: while the question is open, the question handles Esc.
   const askingNow = useRef(false);
   askingNow.current = asking;
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (askingNow.current) return;
-      if (e.key === 'Escape' || e.key === 'BrowserBack') router.push(href);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [href, router]);
-
   function onNo() {
     setAsking(false);
     // Back to the button, so a keyboard player stays where they were.
     setTimeout(() => link.current?.focus(), 0);
   }
+  // Read by the window listener, which is set up once.
+  const onNoNow = useRef(onNo);
+  onNoNow.current = onNo;
+
+  // Esc and the Back key do what the button does: an open question closes (No), a play screen asks, a picker goes back.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.repeat || (e.key !== 'Escape' && e.key !== 'BrowserBack')) return;
+      if (askingNow.current) onNoNow.current();
+      else if (game) setAsking(true);
+      else router.push(href);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [href, router, game]);
 
   return (
     <>

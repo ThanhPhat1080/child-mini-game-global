@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { makeCards, reset } from './support/fixtures';
 
 // Back on a game screen asks "Leave now?" only while the child is playing (the play screens). The pickers
-// (game list, level and set lists) go back at once. Esc and the Back key always go back at once.
+// (game list, level and set lists) go back at once. Esc does what the button does: it asks on a play screen.
 
 const PICKERS = ['/games/quiz', '/games/memory', '/games/find', '/games/spot'];
 // `/games/quiz/<set>` is not here: the stand-in renders it empty (no questions), so it is covered by the unit test
@@ -45,10 +45,12 @@ for (const url of PLAY) {
   });
 }
 
-test('on a play screen Esc still goes back at once, with no question', async ({ page }) => {
+test('on a play screen Esc asks too; a second Esc closes the question and the child stays', async ({ page }) => {
   await page.goto('/games/caro');
   await expect(back(page)).toHaveCount(1);
   await page.keyboard.press('Escape');
+  await expect(ask(page)).toBeVisible();
+  await page.keyboard.press('Escape');
   await expect(ask(page)).toHaveCount(0);
-  await expect(page).toHaveURL(/\/games$/);
+  await expect(page).toHaveURL(/\/games\/caro$/);
 });
