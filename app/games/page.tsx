@@ -28,6 +28,8 @@ export default function Games() {
   const [dragging, setDragging] = useState(false);
   const [initials, setInitials] = useState('HM');
   const [avatar, setAvatar] = useState<string | null>(null);
+  const [name, setName] = useState('');
+  const [gender, setGender] = useState<'male' | 'female'>('female');
   const startX = useRef(0);
   const scale = useRef(1);
   const moved = useRef(false);
@@ -39,6 +41,8 @@ export default function Games() {
       const w = (data.child_name ?? '').trim().split(/\s+/).filter(Boolean);
       if (w.length) setInitials(w.map((x: string) => x[0]).join('').slice(0, 2).toUpperCase());
       setAvatar(mediaUrl(data.avatar_path));
+      setName((data.child_name ?? '').trim());
+      setGender(data.gender === 'male' ? 'male' : 'female');
     }, () => undefined);
     viewRef.current?.focus();
   }, []);
@@ -118,7 +122,7 @@ export default function Games() {
 
       <div style={{ position: 'absolute', top: 40, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <span style={{ marginTop: 8 }}><BackButton href="/" label="Back home" home /></span>
-        <AvatarSay avatar={avatar} initials={initials} />
+        <AvatarSay avatar={avatar} initials={initials} name={name} gender={gender} />
       </div>
       <MusicButton />
       <LeaveGameButton />
