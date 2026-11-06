@@ -37,6 +37,7 @@
   box-shadow: 0 16px 0 var(--w-enter-shadow, #d9a0a6), 0 0 0 40px var(--w-enter-halo, rgba(235, 183, 188, 0.25));
   display: flex; align-items: center; justify-content: center; cursor: pointer;
 }
+.playNow { position: absolute; top: 90px; left: 0; right: 0; margin: 0; text-align: center; font-family: 'Baloo 2', 'Nunito', sans-serif; font-size: 150px; font-weight: 700; line-height: 1.1; color: var(--w-name, #c77d85); }
 .hint { margin: 0; font-size: 28px; font-weight: 500; color: #9a8174; letter-spacing: 0.5px; }
 
 .enteredWrap { gap: 36px; padding-bottom: 80px; box-sizing: border-box; }

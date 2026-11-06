@@ -7,6 +7,7 @@ import { getMyUserId } from '@/lib/review';
 import { setActiveChild } from '@/lib/childSession';
 import { handleChoiceKey, isPressKey } from '@/lib/keynav';
 import { Stage } from '@/components/Stage';
+import { BounceText } from '@/components/BounceText';
 import AdultCheck from '@/components/auth/AdultCheck';
 import StopHandIcon from '@/components/auth/StopHandIcon';
 import LogoutButton from '@/components/auth/LogoutButton';
@@ -84,7 +85,7 @@ export default function Play() {
       ) : (
         kids && (
           <>
-            <h1 className={styles.title}>Who are you?</h1>
+            <h1 className={styles.title}><BounceText text="Who are you?" delay={0.3} /></h1>
             <div
               style={{ position: 'absolute', left: 60, right: 60, top: 240, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: size === 'large' ? 32 : 24 }}
               onKeyDown={(e) => {
