@@ -200,3 +200,14 @@ Spec: `docs/superpowers/specs/2026-11-06-super-admin-people-design.md`. Parents 
 - N16 SA adds/edits children with non-media fields only; media is hidden.
 - N17 Messages: Pending and History tabs, search and sort by parent.
 - N18 Sidebar: All content removed; "Children" renamed; red dot on Messages.
+
+## 4g. Phase 2: Caro X O for two players (2026-11-06)
+Spec: `docs/superpowers/specs/2026-11-06-caro-xo-design.md`. A 3x3 board, two players on one computer, drawn X and O, no text.
+- X1 3x3 board of large cells, centred on the stage.
+- X2 Turns alternate, X first; an occupied cell or a finished round does nothing.
+- X3 The player whose turn it is is enlarged and ringed (the chips at the top).
+- X4 Three in a row wins; the line is highlighted and applause plays.
+- X5 A full board with no line is a draw (no message, no penalty).
+- X6 Play again (drawn arrow, no text) starts a new board after the round ends.
+- X7 Keyboard: arrows move between cells, Enter or Space place, Esc goes back.
+- X8 Registered on the game registry (ADR-014) with a drawn card and icon; reduced motion removes the win pulse.
