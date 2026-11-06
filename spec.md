@@ -213,8 +213,8 @@ Spec: `docs/superpowers/specs/2026-11-06-caro-xo-design.md`. A 30x20 board, five
 - X8 Keyboard: arrows move between cells, Enter or Space place, Esc goes back.
 - X9 Registered on the game registry (ADR-014) with a drawn 3x3 board and the word "Caro" on the card, and the round icon.
 - X10 "? Caro" button at the top right opens the how-to-play popup (3 steps).
-- X11 The child wins: full-screen Hooray for about 3 seconds, then the board with the win line and Play again.
-- X12 The opponent wins: Oh-oh toast, then the "Let's try again?" popup over a blurred board (child's avatar, Yes starts a new board, No goes back to the game list).
+- X11 The child wins: the win line lights for 1 s, then full-screen Hooray for about 3 s, then the board with the win line and a blue Play again.
+- X12 The opponent wins: the win line lights for 1 s, then the Oh-oh toast for about 1.4 s, then the board with the opponent's line lit and a blue Play again. No retry popup.
 
 ## 4h. "You did it" characters (parent feedback, 2026-11-06)
 The shared celebration scene (`CelebrationScene`, used by the done screens of Quiz, Memory, Sort It, Spot, Find It and Listen & Pick) shows one or two characters on the left and right, by these rules:

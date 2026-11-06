@@ -1,14 +1,13 @@
 'use client';
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Stage } from '@/components/Stage';
 import { Hills } from '@/components/Hills';
 import { BackButton } from '@/components/BackButton';
 import { MusicButton } from '@/components/MusicButton';
 import { Pic } from '@/components/Pic';
 import { CaroHelp } from '@/components/CaroHelp';
-import { CaroHooray, CaroOhOh, CaroRetry, HOORAY_MS, OHOH_MS } from '@/components/caro/CaroResult';
+import { CaroHooray, CaroOhOh, HOORAY_MS, OHOH_MS, RESULT_DELAY_MS } from '@/components/caro/CaroResult';
 import { CaroMark, markColor } from '@/components/caro/CaroMark';
 import { CARO_TEAL } from '@/components/games/GameArt';
 import { gridStep } from '@/lib/keynav';
@@ -38,6 +37,13 @@ const MOTION = `
   @media (prefers-reduced-motion: reduce) { .caro-win { animation: none; } }
   .caro-cell:focus-visible { outline: 4px solid #E59AA1; outline-offset: 1px; }
 `;
+
+/**
+ * Where the round is: `playing` (moves go on), `waiting` (the last mark is down; the board stays for a second),
+ * `hooray` or `ohoh` (the child won, or the opponent did), and `done` (the board again, with Play again).
+ * A draw goes straight to `done`.
+ */
+type Phase = 'playing' | 'waiting' | 'hooray' | 'ohoh' | 'done';
 
 /**
  * One cell. Memoised: a move re-renders only the cell it changed. Keyboard focus moves by DOM order inside
@@ -81,19 +87,14 @@ function Side({ label, mark, src, active }: { label: string; mark: Player; src: 
 
 type Child = { gender: Gender; avatar: string | null; hooray: string | null; ohoh: string | null };
 
-/** Caro X O for two players on one computer (X1-X10). The child is X (boy) or O (girl); X always starts. */
+/** Caro X O for two players on one computer (X1-X12). The child is X (boy) or O (girl); X always starts. */
 export default function CaroPlay() {
-  const router = useRouter();
   const [board, setBoard] = useState<Board>(emptyBoard);
+  const [phase, setPhase] = useState<Phase>('playing');
   const [help, setHelp] = useState(false);
-  /** The child's win: the Hooray screen is up. */
-  const [celebrate, setCelebrate] = useState(false);
-  /** The opponent's win: the Oh-oh toast, then the "Let's try again?" popup. */
-  const [loss, setLoss] = useState<'toast' | 'modal' | null>(null);
   const [child, setChild] = useState<Child>({ gender: 'female', avatar: null, hooray: null, ohoh: null });
   const helpBtn = useRef<HTMLButtonElement>(null);
-  const hoorayTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lossTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resultTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Read by press() so that press keeps the same identity and the memoised cells do not re-render.
   const boardNow = useRef(board);
   boardNow.current = board;
@@ -109,10 +110,16 @@ export default function CaroPlay() {
       });
     }, () => undefined);
     return () => {
-      if (hoorayTimer.current) clearTimeout(hoorayTimer.current);
-      if (lossTimer.current) clearTimeout(lossTimer.current);
+      if (resultTimer.current) clearTimeout(resultTimer.current);
     };
   }, []);
+
+  // Hooray and Oh-oh last a while, then the board is shown again with Play again.
+  useEffect(() => {
+    if (phase !== 'hooray' && phase !== 'ohoh') return;
+    const t = setTimeout(() => setPhase('done'), phase === 'hooray' ? HOORAY_MS : OHOH_MS);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   const state = useMemo(() => roundState(board), [board]);
   const turn: Player = turnOf(board);
@@ -130,44 +137,43 @@ export default function CaroPlay() {
   const childRef = useRef(child);
   childRef.current = child;
 
-  const clearResultTimers = useCallback(() => {
-    if (hoorayTimer.current) clearTimeout(hoorayTimer.current);
-    if (lossTimer.current) clearTimeout(lossTimer.current);
-    hoorayTimer.current = null;
-    lossTimer.current = null;
-  }, []);
-
   const press = useCallback((i: number) => {
     const next = place(boardNow.current, i);
     if (!next) return;
     boardNow.current = next;
     setBoard(next);
     const after = roundState(next);
-    if (after.status !== 'won') {
+    if (after.status === 'playing') {
       chime();
       return;
     }
-    if (after.winner === childMarkRef.current) {
-      // The child won: the Hooray screen (the quiz's sound, or the built-in one), then the board with the win line.
-      yay(childRef.current.hooray);
-      setCelebrate(true);
-      hoorayTimer.current = setTimeout(() => setCelebrate(false), HOORAY_MS);
-    } else {
-      // The opponent won: the Oh-oh sound and toast, then the "Let's try again?" popup.
-      ohOh(childRef.current.ohoh);
-      setLoss('toast');
-      lossTimer.current = setTimeout(() => setLoss('modal'), OHOH_MS);
+    if (after.status === 'draw') {
+      chime();
+      setPhase('done');
+      return;
     }
+    // A win: the board keeps its win line for a second, then Hooray (the child won) or Oh-oh (the opponent won).
+    setPhase('waiting');
+    resultTimer.current = setTimeout(() => {
+      resultTimer.current = null;
+      if (after.winner === childMarkRef.current) {
+        yay(childRef.current.hooray);
+        setPhase('hooray');
+      } else {
+        ohOh(childRef.current.ohoh);
+        setPhase('ohoh');
+      }
+    }, RESULT_DELAY_MS);
   }, []);
 
-  /** Play again, and Yes in the "Let's try again?" popup: a new empty board, no popups. */
+  /** Play again: a new empty board, no popups. */
   const restart = useCallback(() => {
-    clearResultTimers();
-    setCelebrate(false);
-    setLoss(null);
+    if (resultTimer.current) clearTimeout(resultTimer.current);
+    resultTimer.current = null;
+    setPhase('playing');
     boardNow.current = emptyBoard();
     setBoard(boardNow.current);
-  }, [clearResultTimers]);
+  }, []);
 
   const closeHelp = useCallback(() => {
     setHelp(false);
@@ -197,16 +203,16 @@ export default function CaroPlay() {
         </button>
       </div>
 
-      {over && loss === null && !celebrate && (
+      {phase === 'done' && (
         <div style={{ position: 'absolute', top: 14, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 2 }}>
           <button
             type="button"
             aria-label="Play again"
             className="hm-tap"
             onClick={restart}
-            style={{ width: 110, height: 110, borderRadius: 55, border: 'none', background: '#fff', boxShadow: '0 8px 0 #EADCC8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ width: 120, height: 120, borderRadius: 60, border: 'none', background: '#4F8FD8', boxShadow: '0 8px 0 #3A6FB0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <svg aria-hidden="true" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#7A5C50" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <svg aria-hidden="true" width="68" height="68" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" />
             </svg>
           </button>
@@ -235,15 +241,8 @@ export default function CaroPlay() {
         ))}
       </div>
 
-      {celebrate && <CaroHooray />}
-      {loss === 'toast' && <CaroOhOh />}
-      {loss === 'modal' && (
-        <CaroRetry
-          avatar={childSrc}
-          onYes={restart}
-          onNo={() => router.push('/games')}
-        />
-      )}
+      {phase === 'hooray' && <CaroHooray />}
+      {phase === 'ohoh' && <CaroOhOh />}
 
       {help && <CaroHelp playHref={null} onClose={closeHelp} />}
       <MusicButton />

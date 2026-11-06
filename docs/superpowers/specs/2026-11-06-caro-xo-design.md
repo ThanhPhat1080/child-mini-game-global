@@ -1,7 +1,7 @@
 # Caro X O for two players (Phase 2 game)
 
 Date: 2026-11-06. Status: implemented on branch `claude/phase2/caro-xo`.
-Requirement IDs: X1–X12 (listed in `spec.md`, section 4g).
+Requirement IDs: X1–X12 (listed in `spec.md`, section 4g). X11 and X12 were revised on 2026-11-06 (see below).
 
 ## 1. Goal
 
@@ -33,8 +33,8 @@ The board is large, so the cells are easy to hit with a mouse or the keyboard.
 - **X8** Keyboard: Arrow keys move between the 600 cells, Enter and Space place a mark, Esc goes back. Works on the `/games/caro` page only.
 - **X9** The game is in the game registry (ADR-014) and in the game list carousel: a drawn 3×3 board and the word "Caro" on the card, and the round icon.
 - **X10** A "? Caro" button at the top right opens the how-to-play popup (dialog "How to play Caro", 3 steps, Play goes to `/games/caro`, Esc closes).
-- **X11** The child wins: the full-screen Hooray (star, confetti, "Hooray!") shows for about 3 seconds, then the board is shown again with the win line and Play again.
-- **X12** The opponent wins: the Oh-oh toast ("Oh-oh… try again!") shows, then a small popup opens over a blurred board: "Let's try again?" with the child's round avatar in the middle, and two choices. Yes starts a new board. No goes back to the game list. Arrow keys move between Yes and No; Yes has focus when the popup opens.
+- **X11** The child wins: the win line stays lit for 1 second, then the full-screen Hooray (star, confetti, "Hooray!") shows for about 3 seconds, then the board is shown again with the win line and a blue Play again button.
+- **X12** The opponent wins: the win line stays lit for 1 second, then the Oh-oh toast ("Oh-oh… try again!") shows for about 1.4 seconds, then the board is shown again with the opponent's line lit, so the child can see how it was lost, and a blue Play again button. There is no "Let's try again?" popup. A draw shows the board and Play again straight away.
 
 ## 4. Out of scope
 

@@ -14,7 +14,7 @@ vi.mock('next/link', () => ({
 vi.mock('@/components/MusicButton', () => ({ MusicButton: () => null }));
 
 import CaroPlay from '@/app/games/caro/page';
-import { HOORAY_MS, OHOH_MS } from '@/components/caro/CaroResult';
+import { HOORAY_MS, OHOH_MS, RESULT_DELAY_MS } from '@/components/caro/CaroResult';
 
 // Direct DOM lookup: role queries compute the name of every cell on each call and are very slow here.
 const squares = () => Array.from(document.querySelectorAll<HTMLButtonElement>('.caro-cell'));
@@ -119,16 +119,20 @@ describe('Caro X O page (X1-X8)', () => {
     expect(side('Player 2').getAttribute('aria-current')).toBe('true');
   });
 
-  it('a child win: the five cells are highlighted, the Hooray sound plays, and Play again comes back after the Hooray', async () => {
+  it('a child win: the board keeps the win line for a second, then Hooray, then the board with a blue Play again', async () => {
     await renderBoy();
     vi.useFakeTimers();
     play(...CHILD_WINS); // X (the child) takes five in the top row
+    // The win line is lit at once; nothing else happens for the first second.
+    for (const n of [1, 2, 3, 4, 5]) expect(square(n).className).toContain('caro-win');
+    expect(square(31).className).not.toContain('caro-win');
+    expect(h.yay).not.toHaveBeenCalled();
+    expect(screen.queryByText('Hooray!')).toBeNull();
+    expect(playAgain()).toBeNull();
+    act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS); });
     expect(h.yay).toHaveBeenCalledTimes(1);
     expect(h.ohOh).not.toHaveBeenCalled();
     expect(screen.getByText('Hooray!')).toBeTruthy();
-    for (const n of [1, 2, 3, 4, 5]) expect(square(n).className).toContain('caro-win');
-    expect(square(31).className).not.toContain('caro-win');
-    expect(playAgain()).toBeNull();
     act(() => { vi.advanceTimersByTime(HOORAY_MS); });
     expect(screen.queryByText('Hooray!')).toBeNull();
     expect(playAgain()).not.toBeNull();
@@ -136,48 +140,53 @@ describe('Caro X O page (X1-X8)', () => {
     expect(square(6).getAttribute('aria-label')).toBe('Square 6, empty');
   });
 
-  it('the opponent wins: the Oh-oh toast, then the "Let\'s try again?" popup with the child\'s avatar', async () => {
+  it('the Play again button is blue', async () => {
+    await renderBoy();
+    vi.useFakeTimers();
+    play(...CHILD_WINS);
+    act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS); });
+    act(() => { vi.advanceTimersByTime(HOORAY_MS); });
+    expect(playAgain()?.style.background).toBe('rgb(79, 143, 216)');
+  });
+
+  it('the opponent wins: after a second the Oh-oh toast, then the board stays with Play again, and no popup', async () => {
     await renderBoy();
     vi.useFakeTimers();
     play(...OPPONENT_WINS);
+    // The opponent's five stays on the board, lit, while the second passes.
+    for (const n of [31, 32, 33, 34, 35]) expect(square(n).className).toContain('caro-win');
+    expect(h.ohOh).not.toHaveBeenCalled();
+    expect(screen.queryByText('Oh-oh… try again!')).toBeNull();
+    act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS); });
     expect(h.ohOh).toHaveBeenCalledTimes(1);
     expect(h.yay).not.toHaveBeenCalled();
     expect(screen.getByText('Oh-oh… try again!')).toBeTruthy();
-    expect(screen.queryByRole('dialog', { name: "Let's try again?" })).toBeNull();
     act(() => { vi.advanceTimersByTime(OHOH_MS); });
     expect(screen.queryByText('Oh-oh… try again!')).toBeNull();
-    const dialog = screen.getByRole('dialog', { name: "Let's try again?" });
-    expect(within(dialog).getByText("Let's try again?")).toBeTruthy();
-    expect(dialog.querySelector('img')?.getAttribute('src')).toContain('prince.webp'); // the child is a boy: the child's own default picture
-    expect(within(dialog).getByRole('button', { name: 'Yes' })).toBeTruthy();
-    expect(within(dialog).getByRole('button', { name: 'No' })).toBeTruthy();
-  });
-
-  it('Yes in the popup starts a new board with no popups', async () => {
-    await renderBoy();
-    vi.useFakeTimers();
-    play(...OPPONENT_WINS);
-    act(() => { vi.advanceTimersByTime(OHOH_MS); });
-    fireEvent.click(within(screen.getByRole('dialog', { name: "Let's try again?" })).getByRole('button', { name: 'Yes' }));
-    expect(screen.queryByRole('dialog', { name: "Let's try again?" })).toBeNull();
-    expect(square(1).getAttribute('aria-label')).toBe('Square 1, empty');
-    expect(side('Player 1').getAttribute('aria-current')).toBe('true');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(playAgain()).not.toBeNull();
+    // The board is still there, with the five-in-a-row, so the child can see how it was lost.
+    expect(square(31).className).toContain('caro-win');
     expect(h.push).not.toHaveBeenCalled();
   });
 
-  it('No in the popup goes back to the game list', async () => {
+  it('Play again after a loss gives an empty board and X starts', async () => {
     await renderBoy();
     vi.useFakeTimers();
     play(...OPPONENT_WINS);
+    act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS); });
     act(() => { vi.advanceTimersByTime(OHOH_MS); });
-    fireEvent.click(within(screen.getByRole('dialog', { name: "Let's try again?" })).getByRole('button', { name: 'No' }));
-    expect(h.push).toHaveBeenCalledWith('/games');
+    fireEvent.click(playAgain()!);
+    expect(square(31).getAttribute('aria-label')).toBe('Square 31, empty');
+    expect(side('Player 1').getAttribute('aria-current')).toBe('true');
+    expect(playAgain()).toBeNull();
   });
 
   it('Play again clears the board and X starts again', async () => {
     await renderBoy();
     vi.useFakeTimers();
     play(...CHILD_WINS);
+    act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS); });
     act(() => { vi.advanceTimersByTime(HOORAY_MS); });
     fireEvent.click(playAgain()!);
     for (const n of [1, 2, 31]) expect(square(n).getAttribute('aria-label')).toBe(`Square ${n}, empty`);

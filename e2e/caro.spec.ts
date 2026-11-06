@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { reset } from './support/fixtures';
 
-// Caro X O (X1-X10). The e2e child is a girl, so she plays O; X (the opponent) starts.
+// Caro X O (X1-X12). The e2e child is a girl, so she plays O; X (the opponent) starts.
 
 test.beforeEach(async () => {
   await reset();
@@ -31,15 +31,18 @@ test('the child makes five in a row and sees Hooray; after it, Play again clears
   await expect(square(page, 1)).toHaveAttribute('aria-label', 'Square 1, empty');
 });
 
-test('when the opponent makes five: Oh-oh, then "Let\'s try again?"; No goes back to the game list', async ({ page }) => {
+test('when the opponent makes five: Oh-oh, the board stays with the five lit, and a blue Play again starts over', async ({ page }) => {
   await page.goto('/games/caro');
   await play(page, [1, 31, 2, 32, 3, 33, 4, 34, 5]); // X makes five in the top row
 
-  await expect(page.getByText('Oh-oh… try again!')).toBeVisible();
-  const dialog = page.getByRole('dialog', { name: "Let's try again?" });
-  await expect(dialog).toBeVisible({ timeout: 6000 });
-  await dialog.getByRole('button', { name: 'No' }).click();
-  await expect(page).toHaveURL(/\/games$/);
+  await expect(page.getByText('Oh-oh… try again!')).toBeVisible({ timeout: 4000 });
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByText('Oh-oh… try again!')).toHaveCount(0, { timeout: 6000 });
+  // The board is still there, with X's five lit, and the blue Play again button.
+  await expect(square(page, 1)).toHaveClass(/caro-win/);
+  await expect(playAgain(page)).toBeVisible({ timeout: 6000 });
+  await playAgain(page).click();
+  await expect(square(page, 1)).toHaveAttribute('aria-label', 'Square 1, empty');
 });
 
 test('the Caro card opens from the list with arrow keys and Enter', async ({ page }) => {
