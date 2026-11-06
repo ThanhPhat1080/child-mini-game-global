@@ -109,7 +109,7 @@ describe('ChildModal (KU3-KU8)', () => {
     expect(screen.getByRole('dialog')).toBeTruthy();
   });
 
-  it('success calls onSaved and closes, writing the welcome sound after the insert', async () => {
+  it('success saves, writes the welcome sound, and keeps the modal open on the new child with More sounds pulsing', async () => {
     h.createChild.mockResolvedValue({ ok: true, child: saved });
     const onClose = vi.fn(); const onSaved = vi.fn();
     render(<ChildModal mode="create" onClose={onClose} onSaved={onSaved} />);
@@ -120,10 +120,16 @@ describe('ChildModal (KU3-KU8)', () => {
     await waitFor(() => expect(onSaved).toHaveBeenCalledWith(saved));
     expect(h.createChild).toHaveBeenCalledWith({ child_name: 'lan', display_name: 'Lan', avatar_path: 'img/new.png', celebrate_a_path: null, celebrate_b_path: null, gender: 'male', age_band: '2-5', pin: 'ab12' });
     expect(h.updateChildSettings).toHaveBeenCalledWith('c9', { greeting_path: 'snd/new.mp3' });
-    expect(onClose).toHaveBeenCalled();
+    // The modal stays open: it is now an edit of the new child, and More sounds is ready to open.
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Edit child' })).toBeTruthy();
+    const more = screen.getByRole('button', { name: /More sounds/ });
+    expect(more.className).toContain('morePulse');
+    expect(more.getAttribute('aria-expanded')).toBe('false');
+    expect(document.activeElement).toBe(more);
   });
 
-  it('closes as created with a warning when the welcome sound write fails', async () => {
+  it('after the warning case, the modal stays open with the warning and More sounds', async () => {
     h.createChild.mockResolvedValue({ ok: true, child: saved });
     h.updateChildSettings.mockRejectedValue(new Error('x'));
     const onClose = vi.fn(); const onSaved = vi.fn(); const onNotice = vi.fn();
@@ -131,9 +137,10 @@ describe('ChildModal (KU3-KU8)', () => {
     fill();
     fireEvent.click(screen.getByRole('button', { name: 'Choose welcome sound' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(onClose).toHaveBeenCalled());
-    expect(onSaved).toHaveBeenCalled();
+    await waitFor(() => expect(onSaved).toHaveBeenCalled());
     expect(onNotice).toHaveBeenCalledWith('warning', expect.stringContaining('welcome sound'));
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /More sounds/ }).className).toContain('morePulse');
   });
 
   it('edit saves the two celebration pictures and frees the ones they replace', async () => {
