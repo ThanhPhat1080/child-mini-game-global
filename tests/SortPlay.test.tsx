@@ -433,7 +433,6 @@ describe('Sort It play screen (R1-R6, R8-R10)', () => {
   it.each([
     ['no round can be built (one usable group)', () => h.fetchSortCards.mockResolvedValue([...group('ga', 6), card('x1', 'x', null)])],
     ['fewer than 2 usable groups (3 cards in one)', () => h.fetchSortCards.mockResolvedValue([...group('ga', 4), ...group('gb', 3)])],
-    ['the fetch fails', () => h.fetchSortCards.mockRejectedValue(new Error('offline'))],
     ['same-word cards count once ("Apple" and "apple")', () => h.fetchSortCards.mockResolvedValue([...group('ga', 4), card('b1', 'Apple', 'gb'), card('b2', 'apple', 'gb'), card('b3', 'pear', 'gb'), card('b4', 'plum', 'gb')])],
   ])('friendly empty screen when %s', async (_name, setup) => {
     setup();
@@ -442,6 +441,16 @@ describe('Sort It play screen (R1-R6, R8-R10)', () => {
     expect(screen.getByRole('status', { name: 'New cards are coming soon' })).toBeTruthy();
     expect(objects()).toHaveLength(0);
     expect(document.querySelector('[data-basket]')).toBeNull();
+  });
+
+  it('a fetch failure: a retry screen (not "coming soon"), no board', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    h.fetchSortCards.mockRejectedValue(new Error('offline'));
+    render(<SortPlay />);
+    await advance(PRELOAD_MS + 10);
+    expect(screen.getByRole('alert', { name: /went wrong/ })).toBeTruthy();
+    expect(screen.queryByRole('status', { name: 'New cards are coming soon' })).toBeNull();
+    expect(objects()).toHaveLength(0);
   });
 
   it('Esc goes back to the game list', async () => {

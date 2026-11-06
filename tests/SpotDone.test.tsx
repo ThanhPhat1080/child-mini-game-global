@@ -2,7 +2,7 @@ import { cleanup, render } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({ applause: vi.fn(), speakKid: vi.fn(), playFile: vi.fn(), push: vi.fn(), stop: vi.fn(), cancel: vi.fn() }));
+const h = vi.hoisted(() => ({ applause: vi.fn((_s?: number, speak?: () => void) => { speak?.(); return undefined as unknown; }), speakKid: vi.fn(), playFile: vi.fn(), push: vi.fn(), stop: vi.fn(), cancel: vi.fn() }));
 vi.mock('@/lib/sfx', () => ({ applause: h.applause, speakKid: h.speakKid, playFile: h.playFile }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: h.push }) }));
 vi.mock('next/link', () => ({
@@ -15,7 +15,7 @@ const ui = (url: string | null = null) => <SpotDone childName="Mi" completeUrl={
 
 beforeEach(() => {
   for (const f of Object.values(h)) f.mockReset();
-  h.applause.mockReturnValue({ stop: h.stop, ms: 4000 });
+  h.applause.mockImplementation((_s?: number, speak?: () => void) => { speak?.(); return { stop: h.stop, ms: 4000 }; });
   h.playFile.mockReturnValue({ stop: h.stop, ms: 0 });
   Object.defineProperty(window, 'speechSynthesis', { configurable: true, value: { cancel: h.cancel } });
 });

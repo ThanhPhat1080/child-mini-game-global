@@ -1,5 +1,6 @@
 'use client';
 
+import { LoadError } from '@/components/LoadError';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Stage } from '@/components/Stage';
@@ -51,6 +52,8 @@ export default function MemoryPlay() {
   const [, setRender] = useState(0);
   const rerender = useCallback(() => setRender((n) => n + 1), []);
   const [phase, setPhase] = useState<'loading' | 'empty' | 'ready'>('loading');
+  const [loadErr, setLoadErr] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
   const [won, setWon] = useState<{ flips: number } | null>(null);
   const [round, setRound] = useState(0);
   const [praise, setPraise] = useState<{ name: string; url: string | null } | null>(null);
@@ -102,10 +105,10 @@ export default function MemoryPlay() {
           setPhase('ready');
         });
       },
-      () => live && setPhase('empty'),
+      (e) => { if (live) { setLoadErr(e ?? true); setPhase('empty'); } },
     );
     return () => { live = false; stopPreload?.(); };
-  }, [level, round]);
+  }, [level, round, attempt]);
 
   // The completion screen needs the child's name and optional custom sound (as the Quiz done page).
   useEffect(() => {
@@ -208,7 +211,8 @@ export default function MemoryPlay() {
             </div>
           </>
         )}
-        {phase === 'empty' && (
+        {!!loadErr && <LoadError error={loadErr} onRetry={() => { setLoadErr(null); setPhase('loading'); setAttempt((n) => n + 1); }} />}
+        {!loadErr && phase === 'empty' && (
           <div role="status" aria-label="New cards are coming soon" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ width: 400, height: 400, borderRadius: 64, overflow: 'hidden', border: '8px solid #EBB7BC', boxSizing: 'border-box' }}>
               <FlowerBack />
