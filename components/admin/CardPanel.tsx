@@ -11,7 +11,7 @@ import { Pic } from '@/components/Pic';
 import { EditLock } from './EditLock';
 import { ShareToggle } from './ShareToggle';
 import { VisibilityBadge } from './VisibilityBadge';
-import type { Visibility } from '@/lib/review';
+import { lockedOwn, type Visibility } from '@/lib/review';
 
 export const WORD_MAX = 40;
 /** Accepted picture and pronunciation files (A11). */
@@ -57,7 +57,7 @@ export function CardPanel({ c, n, duplicate, message, autoFocus, groups, weakGro
   onVisibility?: (v: Visibility) => void;
 }) {
   // Under review or global: read-only (V2, V3). Only the sharing row below stays usable.
-  const locked = !!c.visibility && c.visibility !== 'private';
+  const locked = lockedOwn(c.visibility, c.superOwned);
   const [svg, setSvg] = useState('');
   const len = c.word.trim().length;
   const img = mediaUrl(c.image);
@@ -120,8 +120,8 @@ export function CardPanel({ c, n, duplicate, message, autoFocus, groups, weakGro
       </EditLock>
       {!c.isNew && c.visibility && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start', borderTop: '1px solid #F1E7DA', paddingTop: 10 }}>
-          <VisibilityBadge visibility={c.visibility} />
-          <ShareToggle table="memory_cards" id={c.id} visibility={c.visibility} onChanged={onVisibility} />
+          <VisibilityBadge visibility={c.visibility} copied={c.copied} />
+          <ShareToggle table="memory_cards" id={c.id} visibility={c.visibility} superOwned={c.superOwned} onChanged={onVisibility} />
         </div>
       )}
     </article>

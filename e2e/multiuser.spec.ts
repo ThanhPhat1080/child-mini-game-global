@@ -91,11 +91,15 @@ test('share, approve, ban: the whole review loop', async ({ browser }) => {
   await parent.reload();
   await expect(parent.getByText('Under review').first()).toBeVisible();
 
-  // The Super Admin approves it from the queue.
+  // The Super Admin approves it from the Cards tab "Review queue": the parent's card goes back to private,
+  // and a global copy the Super Admin owns appears (V8).
   const sa = await signedOut(browser);
   await signInAsSuper(sa);
+  await sa.goto('/admin/cards');
+  await sa.getByRole('tab', { name: /Review queue/ }).click();
   await sa.getByRole('button', { name: /^Approve/ }).first().click();
   await expect.poll(async () => (await getState()).memory_cards.filter((c) => c.visibility === 'global').length).toBe(1);
+  await expect.poll(async () => (await getState()).memory_cards.filter((c) => c.visibility === 'pending').length).toBe(0);
 
   // The child plays: own content first, then global, with no switch on the games page.
   const child = await signedOut(browser);

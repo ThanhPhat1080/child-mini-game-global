@@ -15,7 +15,7 @@ import { Pic } from '@/components/Pic';
 import { EditLock } from './EditLock';
 import { ShareToggle } from './ShareToggle';
 import { VisibilityBadge } from './VisibilityBadge';
-import type { Visibility } from '@/lib/review';
+import { lockedOwn, type Visibility } from '@/lib/review';
 
 /** Accepted level pictures (A14). */
 export const SPOT_IMG_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
@@ -71,7 +71,7 @@ export function SpotLevelPanel({ l, n, message, shapeWarning, startCrop, onCropp
 }) {
   const [open, setOpen] = useState(l.isNew); // a saved level starts collapsed: only its header shows
   // Under review or global: read-only (V2, V3). Only the sharing row below stays usable.
-  const locked = !!l.visibility && l.visibility !== 'private';
+  const locked = lockedOwn(l.visibility, l.superOwned);
   const problem = checkDifferences(l.differences);
   const missing = !l.a || !l.b ? 'two pictures' : problem ? 'at least 3 spots (up to 10)' : '';
   return (
@@ -118,8 +118,8 @@ export function SpotLevelPanel({ l, n, message, shapeWarning, startCrop, onCropp
       </EditLock>
       {!l.isNew && l.visibility && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start', borderTop: '1px solid #F1E7DA', paddingTop: 10 }}>
-          <VisibilityBadge visibility={l.visibility} />
-          <ShareToggle table="spot_levels" id={l.id} visibility={l.visibility} onChanged={onVisibility} />
+          <VisibilityBadge visibility={l.visibility} copied={l.copied} />
+          <ShareToggle table="spot_levels" id={l.id} visibility={l.visibility} superOwned={l.superOwned} onChanged={onVisibility} />
         </div>
       )}
     </article>

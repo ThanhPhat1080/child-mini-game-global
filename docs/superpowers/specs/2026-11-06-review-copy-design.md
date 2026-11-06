@@ -1,6 +1,6 @@
 # Review per game, approve creates a global copy (Spec 2)
 
-Date: 2026-11-06. Status: **not started**. It is implemented only when the user asks.
+Date: 2026-11-06. Status: **implemented** on branch `claude/phase4/review-copy` (V8-V13 in `spec.md` section 4f).
 Source: `Feedback-phase04` (Super Admin section, "Review queue" bullets).
 Requirement IDs: V8–V13 (to be listed in `spec.md`; check the next free IDs first, since V1–V7 are in the phase 3 spec).
 Depends on: Spec 1 (`2026-11-06-super-admin-people-design.md`). Spec 1 changes the Super Admin pages and the children policies that this spec relies on.

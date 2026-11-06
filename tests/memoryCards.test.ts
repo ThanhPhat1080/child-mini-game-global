@@ -54,7 +54,7 @@ describe('fetchActiveCards', () => {
     h.result = { data: rows, error: null };
     await expect(fetchActiveCards()).resolves.toEqual(rows.map((r) => ({ ...r, family: false })));
     expect(h.from).toHaveBeenCalledWith('memory_cards');
-    expect(h.select).toHaveBeenCalledWith('id, word, image_path, audio_path, active, owner_id');
+    expect(h.select).toHaveBeenCalledWith('id, word, image_path, audio_path, active, owner_id, source_id');
     expect(h.eq).toHaveBeenCalledWith('active', true);
     expect(h.order).toHaveBeenCalledWith('created_at');
   });

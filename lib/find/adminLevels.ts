@@ -4,11 +4,17 @@ import { commitPendingMap, isPending, removeMedia } from '@/lib/media';
 import { isBucketPath, pathsToDelete } from '@/lib/mediaPaths';
 import { DEFAULT_R, MAX_OBJECTS, MAX_R, MIN_R, SMALL_R, checkObjects } from '@/lib/find/validate';
 import type { FindObject } from '@/lib/find/types';
-import { getMyUserId, type Visibility } from '@/lib/review';
+import { copiedIds, getMyRole, getMyUserId, lockedOwn, type Visibility } from '@/lib/review';
 
 export type EObject = FindObject;
 
-export type ELevel = { id: string; isNew: boolean; image: string | null; objects: EObject[]; active: boolean; visibility?: Visibility };
+export type ELevel = {
+  id: string; isNew: boolean; image: string | null; objects: EObject[]; active: boolean; visibility?: Visibility;
+  /** The signed-in user is a Super Admin and owns the row (V8): it stays editable. */
+  superOwned?: boolean;
+  /** A parent's row with a global copy of a Super Admin (V10): shows the "Global copy" badge. */
+  copied?: boolean;
+};
 
 type Row = { id: string; image_path: string; objects: EObject[]; active: boolean; owner_id: string | null; visibility: Visibility };
 
@@ -64,14 +70,19 @@ export async function loadFindLevels(): Promise<ELevel[]> {
     .order('created_at')
     .order('sort_order');
   if (error) throw new Error(error.message);
-  const me = await getMyUserId();
-  return ((data ?? []) as Row[]).filter((r) => r.owner_id === me).map((r) => ({
+  const [me, role] = await Promise.all([getMyUserId(), getMyRole()]);
+  const mine = ((data ?? []) as Row[]).filter((r) => r.owner_id === me);
+  const superOwned = role === 'super_admin';
+  const copies = superOwned ? new Set<string>() : await copiedIds('find_levels', mine.map((r) => r.id));
+  return mine.map((r) => ({
     id: r.id,
     isNew: false,
     image: r.image_path,
     objects: Array.isArray(r.objects) ? r.objects : [],
     active: r.active,
     visibility: r.visibility,
+    superOwned,
+    copied: copies.has(r.id),
   }));
 }
 
@@ -112,7 +123,7 @@ export async function saveFindLevels(saved: ELevel[], draft: ELevel[]): Promise<
     if (error) return fail(error.message);
   }
   // Rows under review or global are locked (V2, V3): they are not written here.
-  const writable = final.map((l, i) => ({ l, i })).filter(({ l }) => !l.visibility || l.visibility === 'private');
+  const writable = final.map((l, i) => ({ l, i })).filter(({ l }) => !lockedOwn(l.visibility, l.superOwned));
   if (writable.length) {
     const { error } = await sb.from('find_levels').upsert(
       writable.map(({ l, i }) => ({ id: l.id, image_path: l.image, objects: l.objects, active: l.active, sort_order: i })),

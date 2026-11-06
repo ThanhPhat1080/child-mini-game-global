@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { getMyProfile, type Role } from '@/lib/auth/roles';
-import { pendingMessageCount } from '@/lib/superAdmin';
+import { pendingMessageCount, usePendingCounts } from '@/lib/superAdmin';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { RedDot } from '@/components/admin/RedDot';
 import styles from '@/app/admin/admin.module.css';
@@ -19,7 +19,6 @@ type Item = { href: string; text: string; glyph: ReactNode };
 
 const CHILDREN: Item = { href: '/admin/children', text: 'Children', glyph: <g><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" /><circle cx="18" cy="9" r="2.5" /><path d="M17.5 14.2c2.4.2 3.8 1.7 4.3 4.3" /></g> };
 const SUPER: Item[] = [
-  { href: '/admin/queue', text: 'Review queue', glyph: <path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /> },
   { href: '/admin/parents', text: 'Parents', glyph: <g><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" /></g> },
   { href: '/admin/all-children', text: 'Children', glyph: <g><circle cx="12" cy="8" r="3" /><path d="M6 20c.5-3 2.7-4.5 6-4.5s5.5 1.5 6 4.5" /></g> },
   { href: '/admin/messages', text: 'Messages', glyph: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
@@ -45,6 +44,14 @@ export function AdminNav() {
   const [tip, setTip] = useState<{ text: string; top: number } | null>(null);
   // Unresolved parent messages for the red dot on Messages (Super Admin only, N18).
   const [pending, setPending] = useState(0);
+  // Waiting shares per game for the red dots on the game icons (V3, V8). Counted on load, page change and each change.
+  const counts = usePendingCounts(role, pathname);
+  const waitingFor = (href: string): number => {
+    if (href === '/admin/messages') return pending;
+    if (role !== 'super_admin') return 0;
+    const byHref: Record<string, number> = { '/admin/sets': counts.sets, '/admin/cards': counts.cards, '/admin/spot': counts.spot, '/admin/find': counts.find };
+    return byHref[href] ?? 0;
+  };
 
   useEffect(() => {
     let live = true;
@@ -95,14 +102,15 @@ export function AdminNav() {
   // The label stays in the DOM when collapsed (clipped by the rail), so each link keeps its accessible name.
   const link = ({ href, text, glyph }: Item) => {
     const active = pathname.startsWith(href);
-    // The dot sits on the icon, so it shows on the collapsed rail too. The name says the count (N18).
-    const alert = href === '/admin/messages' && pending > 0;
+    // The dot sits on the icon, so it shows on the collapsed rail too. The name says the count (N18, V3).
+    const waiting = waitingFor(href);
+    const alert = waiting > 0;
     return (
       <Link
         key={href}
         href={href}
         aria-current={active ? 'page' : undefined}
-        aria-label={alert ? `${text}, ${pending} pending` : undefined}
+        aria-label={alert ? `${text}, ${waiting} pending` : undefined}
         className={cls(active)}
         {...tipProps(text)}
       >

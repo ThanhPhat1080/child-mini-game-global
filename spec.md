@@ -200,3 +200,12 @@ Spec: `docs/superpowers/specs/2026-11-06-super-admin-people-design.md`. Parents 
 - N16 SA adds/edits children with non-media fields only; media is hidden.
 - N17 Messages: Pending and History tabs, search and sort by parent.
 - N18 Sidebar: All content removed; "Children" renamed; red dot on Messages.
+
+## 4f. Phase 4: review per game and Super Admin copies (2026-11-06)
+Spec: `docs/superpowers/specs/2026-11-06-review-copy-design.md`. Review tab per game, approve creates a Super Admin copy, parents' published tab.
+- V8 Approve creates a global copy owned by the Super Admin; the parent's original goes back to private (the parent keeps editing it). The family sees only the original.
+- V9 Super Admin tabs per game: Mine, Review queue (red dot with count), Parent published (view only, every parent's published or active row with the owner's name). A family never sees its own original twice (the copy is dropped for that family).
+- V10 Super Admin publishes own private rows without review (publish_own) and unpublishes them; a parent's row shows "Global copy" when a copy exists.
+- V11 The copy references the parent's media paths and adds 0 bytes to the Super Admin's quota. The owner cannot rename a file a copy uses; delete is refused while a copy uses it.
+- V12 A quiz copy is inserted as draft, then its questions and answers are copied, then the status is set (publish gate).
+- V13 One-time backfill: null-owner rows go to the first Super Admin; each global row a parent owns becomes a copy and the parent's row goes back to private.

@@ -285,13 +285,31 @@ function rpc(req, res, name, args) {
     case 'request_edit':
       event('edit_requested');
       return send(res, 200, null);
-    case 'review_approve':
+    case 'review_approve': {
+      // V8: the original goes back to private; the Super Admin gets a global copy that points at it.
+      if (myRole !== 'super_admin') return bad(res, 'forbidden', '42501');
+      const orig = find();
+      if (!orig || orig.visibility !== 'pending') return bad(res, 'not_found');
+      orig.visibility = 'private';
+      const copy = { ...orig, id: randomUUID(), owner_id: me.id, visibility: 'global', source_id: orig.id, source_owner_id: orig.owner_id };
+      state[args.p_table].push(copy);
+      event(name);
+      return send(res, 200, copy.id);
+    }
+    case 'publish_own': {
+      if (myRole !== 'super_admin') return bad(res, 'forbidden', '42501');
+      const row = find();
+      if (!row || row.owner_id !== me.id || row.visibility !== 'private') return bad(res, 'not_found');
+      row.visibility = 'global';
+      event(name);
+      return send(res, 200, null);
+    }
     case 'review_reject':
     case 'unpublish_item':
     case 'delete_item': {
       if (myRole !== 'super_admin') return bad(res, 'forbidden', '42501');
       if (name === 'delete_item') state[args.p_table] = state[args.p_table].filter((r) => String(r.id) !== String(args.p_id));
-      else if (!setVis(name === 'review_approve' ? 'global' : 'private')) return bad(res, 'not_found');
+      else if (!setVis('private')) return bad(res, 'not_found');
       event(name);
       return send(res, 200, null);
     }
