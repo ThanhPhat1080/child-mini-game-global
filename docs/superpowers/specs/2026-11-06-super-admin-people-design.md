@@ -81,14 +81,19 @@ Differences from the design above, and why:
 
 Not yet verified (section 9): the flows against a real Supabase instance.
 
-## 9. Manual check on local Supabase (to do)
+## 9. Manual check on local Supabase (done 2026-11-06)
 
-Run after `npx supabase migration up` (see `docs/local-setup.md`). Use the local Super Admin only.
+Run on a local Supabase reset from all migrations (29 applied, including `20261106000000`), against `npm run dev`, in Chrome, as the local Super Admin. The script was a throwaway driver outside the repo; the results are:
 
-1. Create a parent. The detail page opens with initials.
-2. Add a child as the Super Admin. The form has no picture or sound fields; the card shows the first letter.
-3. Change the child's PIN. Ban the parent, then Unban.
-4. As the parent, send a message. A red dot shows on Messages in the menu and on the parent's row. The filter shows only that parent.
-5. Resolve the message. It moves to History and the dot clears.
-6. Children page: two columns; search by parent name; the parent link opens the detail page.
-7. `/admin/super`: lists Super Admins, adds one, and offers no edit or remove.
+1. Create a parent: the detail page opens with initials "LT". PASS
+2. Add a child as the Super Admin: the dialog has no avatar, welcome-sound or celebration fields; the card shows the first letter. PASS
+3. Edit the PIN; Ban (reason from the dialog), then the Unban button appears after step 5b. PASS
+4. The banned parent sends a message from `/admin/suspended`. PASS
+   - Deviation from the plan: the message form exists only on the suspended page, so a parent can message only while banned. The check ran in this order: ban, message, unban.
+5. The Super Admin sees "Messages, N pending" on the sidebar and the red dot on the parent row. PASS
+6. The Messages toggle filters the list: 3 parents, 2 with pending messages, and both show the dot. PASS
+7. Mark resolved moves the message to History and the count drops by one. PASS
+8. Children page: the child card is listed, search by parent name keeps it, and the parent link opens the detail page. PASS
+9. `/admin/super`: lists Super Admins with no edit or remove buttons; adds a second Super Admin. PASS
+
+Test data left in the local DB: three parents, each with one child, a few support messages, and two Super Admins (`thanhphat.994@gmail.com`, `second.admin@test.local`). Not production.
