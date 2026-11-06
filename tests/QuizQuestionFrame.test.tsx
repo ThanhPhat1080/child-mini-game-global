@@ -1,4 +1,4 @@
-import { cleanup, render, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({ questions: [] as unknown[] }));
@@ -40,5 +40,15 @@ describe('Quiz question picture frame (ADR-032)', () => {
     const frame = container.querySelector<HTMLElement>('img[src="/media/q.svg"]')!.parentElement!;
     expect(frame.style.width).toBe('300px');
     expect(frame.style.height).toBe('300px');
+  });
+
+  it('Back on a question asks "Leave now?" first; No stays on the question', async () => {
+    const { container } = render(<QuestionPage />);
+    await waitFor(() => expect(container.querySelector('img[src="/media/q.svg"]')).not.toBeNull());
+    fireEvent.click(screen.getByRole('link', { name: 'Back to quiz sets' }));
+    expect(screen.getByRole('dialog', { name: 'Leave now?' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'No' }));
+    expect(screen.queryByRole('dialog', { name: 'Leave now?' })).toBeNull();
+    expect(container.querySelector('img[src="/media/q.svg"]')).not.toBeNull();
   });
 });

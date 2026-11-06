@@ -204,7 +204,7 @@ export default function MemoryPlay() {
           <>
             <Hills />
             <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', alignItems: 'center' }}>
-              <BackButton href="/games/memory" />
+              <BackButton href="/games/memory" game="memory" />
             </div>
           </>
         )}

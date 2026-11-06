@@ -444,9 +444,12 @@ describe('Sort It play screen (R1-R6, R8-R10)', () => {
     expect(document.querySelector('[data-basket]')).toBeNull();
   });
 
-  it('Esc goes back to the game list', async () => {
+  it('Esc asks "Leave now?"; Yes goes back to the game list', async () => {
     await ready();
     fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Leave now?' })).toBeTruthy();
+    expect(h.push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     expect(h.push).toHaveBeenCalledWith('/games');
   });
 

@@ -280,9 +280,12 @@ describe('Listen & Pick play screen (L1-L5, L8, L10)', () => {
     expect(h.yay).toHaveBeenCalledTimes(1);
   });
 
-  it('Esc goes back to the game list', async () => {
+  it('Esc asks "Leave now?"; Yes goes back to the game list', async () => {
     await ready();
     fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Leave now?' })).toBeTruthy();
+    expect(h.push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     expect(h.push).toHaveBeenCalledWith('/games');
   });
 
