@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({ applause: vi.fn(), speakKid: vi.fn(), playFile: vi.fn(), push: vi.fn() }));
@@ -42,12 +42,11 @@ describe('MemoryDone (M7)', () => {
     expect(screen.queryByLabelText(/flips$/)).toBeNull();
   });
 
-  it('shows the shared celebration: 3 stars and both characters', () => {
+  it('shows the shared celebration: 3 stars and the built-in princess (no child chosen in the test)', async () => {
     setup();
     expect(screen.getByRole('img', { name: '3 stars earned' })).toBeTruthy();
-    const srcs = [...document.querySelectorAll('img')].map((i) => i.getAttribute('src'));
-    expect(srcs).toContain('/images/girl.webp');
-    expect(srcs).toContain('/images/girl-beret.webp');
+    await waitFor(() => expect(document.querySelector('img[src="/images/princess.webp"]')).not.toBeNull());
+    expect(document.querySelector('img[src*="girl"]')).toBeNull();
   });
 
   it('has exactly two picture-only buttons', () => {

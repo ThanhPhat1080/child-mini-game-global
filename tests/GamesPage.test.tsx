@@ -33,9 +33,9 @@ describe('games list decorative icons', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('every game card (Quiz, Memory, Listen, Sort, Spot, Find) has a decorative 130 px icon at the same spot', () => {
+  it('every game card (Quiz, Memory, Listen, Sort, Spot, Find, Caro) has a decorative 130 px icon at the same spot', () => {
     render(<Games />);
-    for (const id of ['quiz', 'memory', 'listen', 'sort', 'spot', 'find']) {
+    for (const id of ['quiz', 'memory', 'listen', 'sort', 'spot', 'find', 'caro']) {
       const el = icon(id);
       expect(el).toBeTruthy();
       expect(el.getAttribute('aria-hidden')).toBe('true');
@@ -56,7 +56,7 @@ describe('games list decorative icons', () => {
     expect(icon('spot').style.top).toBe(icon('quiz').style.top);
     expect(icon('find').style.left).toBe(icon('quiz').style.left);
     expect(icon('find').style.top).toBe(icon('quiz').style.top);
-    expect(document.querySelectorAll('[data-game-icon]')).toHaveLength(6);
+    expect(document.querySelectorAll('[data-game-icon]')).toHaveLength(7);
   });
 
   it('the Memory icon is two flower cards, different from the Quiz question mark', () => {
