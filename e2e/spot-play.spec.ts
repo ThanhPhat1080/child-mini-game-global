@@ -70,16 +70,20 @@ test('a tap just inside the radius counts', async ({ page }) => {
   await expect(lit(page)).toHaveCount(1);
 });
 
-test('Esc returns to the level grid', async ({ page }) => {
+test('Esc asks "Leave now?"; Yes goes back to the level grid', async ({ page }) => {
   await open(page);
   await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Leave now?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Yes' }).click();
   await expect(page).toHaveURL(/\/games\/spot$/);
 });
 
-test('an unknown level id shows the friendly status', async ({ page }) => {
+test('an unknown level id shows the friendly status; Esc asks first', async ({ page }) => {
   await page.goto('/games/spot/00000000-0000-4000-a000-0000000000ff');
   await expect(page.getByRole('status', { name: 'This picture is not available' })).toBeVisible();
   await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Leave now?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Yes' }).click();
   await expect(page).toHaveURL(/\/games\/spot$/);
 });
 

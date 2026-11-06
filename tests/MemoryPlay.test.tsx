@@ -290,10 +290,13 @@ describe('Memory play screen (M2-M6, M8-M10)', () => {
     expect(tile(1).getAttribute('data-face-up')).toBe('true');
   });
 
-  it('Esc goes back to the level screen', async () => {
+  it('Esc asks "Leave now?"; Yes goes back to the level screen', async () => {
     await ready();
     expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/games/memory');
     fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Leave now?' })).toBeTruthy();
+    expect(h.push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     expect(h.push).toHaveBeenCalledWith('/games/memory');
   });
 

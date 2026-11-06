@@ -326,7 +326,7 @@ export default function ListenPlay() {
         <>
         <Hills />
         <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <BackButton href="/games" label="Back to games" />
+          <BackButton href="/games" label="Back to games" game="listen" />
           {!done && (
             <button
               ref={helpBtn}

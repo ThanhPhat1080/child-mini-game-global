@@ -149,6 +149,20 @@ describe('Caro X O page (X1-X8)', () => {
     expect(playAgain()?.style.background).toBe('rgb(79, 143, 216)');
   });
 
+  it('after the round the board is inert, Play again? carries its text, and Back and Guide stay clickable', async () => {
+    await renderBoy();
+    vi.useFakeTimers();
+    play(...CHILD_WINS);
+    act(() => { vi.advanceTimersByTime(RESULT_DELAY_MS); });
+    act(() => { vi.advanceTimersByTime(HOORAY_MS); });
+    expect(playAgain()?.textContent).toContain('Play again?');
+    expect(screen.getByLabelText('Caro board').hasAttribute('inert')).toBe(true);
+    expect(screen.getByRole('link', { name: 'Back to games' }).hasAttribute('inert')).toBe(false);
+    expect(screen.getByRole('button', { name: /What is Caro/ }).hasAttribute('inert')).toBe(false);
+    fireEvent.click(square(6));
+    expect(square(6).getAttribute('aria-label')).toBe('Square 6, empty');
+  });
+
   it('the opponent wins: after a second the Oh-oh toast, then the board stays with Play again, and no popup', async () => {
     await renderBoy();
     vi.useFakeTimers();
