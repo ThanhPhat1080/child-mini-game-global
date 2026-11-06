@@ -1,16 +1,15 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { CelebrationScene } from '@/components/CelebrationScene';
 
 afterEach(cleanup);
 
 describe('CelebrationScene', () => {
-  it('renders the greeting, 3 stars and both characters', () => {
+  it('renders the greeting, 3 stars and one built-in character (a princess when no child is chosen)', async () => {
     render(<CelebrationScene greeting="You did it, Mi!"><button>a</button></CelebrationScene>);
     expect(screen.getByRole('heading').textContent).toBe('You did it, Mi!');
     expect(screen.getByRole('img', { name: '3 stars earned' })).toBeTruthy();
-    const srcs = [...document.querySelectorAll('img')].map((i) => i.getAttribute('src'));
-    expect(srcs).toEqual(['/images/girl.webp', '/images/girl-beret.webp']);
+    await waitFor(() => expect([...document.querySelectorAll('img')].map((i) => i.getAttribute('src'))).toEqual(['/images/princess.webp']));
   });
 
   it('renders the extra node and the children', () => {

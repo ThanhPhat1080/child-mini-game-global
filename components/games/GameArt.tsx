@@ -1,4 +1,5 @@
 import type { Game } from '@/lib/games/registry';
+import { O_RED, X_BLUE } from '@/components/caro/CaroMark';
 
 /** The Memory Match green: card title text and the game-list icon ring/card strokes. */
 export const MEMORY_GREEN = '#5E8F69';
@@ -11,6 +12,9 @@ export const LISTEN_PURPLE = '#7B6BAE';
 
 /** The Sort It gold: card title text and the game-list icon ring. */
 export const SORT_GOLD = '#A8842F';
+
+/** The Caro teal: card title text and the Caro help button. */
+export const CARO_TEAL = '#3C8A7E';
 
 /** The Find It peach: card title text and the game-list icon ring. */
 export const FIND_PEACH = '#B5703A';
@@ -25,6 +29,25 @@ const miniCard = (bg: string, children?: React.ReactNode) => (
 
 /** The drawing and title shown on a game's card in the game list. */
 export function GameArt({ id }: { id: Game['id'] }) {
+  if (id === 'caro') {
+    return (
+      <>
+        <span aria-hidden="true" style={{ display: 'flex', alignItems: 'center', height: 190 }}>
+          <svg width="230" height="230" viewBox="0 0 120 120" fill="none" strokeLinecap="round">
+            <rect x="3" y="3" width="114" height="114" rx="16" fill="#FFFDF8" stroke="#D9C7B0" strokeWidth="3" />
+            <path d="M43 10V110M77 10V110M10 43H110M10 77H110" stroke="#D9C7B0" strokeWidth="3" />
+            <g stroke={X_BLUE} strokeWidth="8">
+              <path d="M16 16L37 37M37 16L16 37" />
+              <path d="M82 82L103 103M103 82L82 103" />
+            </g>
+            <circle cx="60" cy="60" r="11" stroke={O_RED} strokeWidth="8" />
+          </svg>
+        </span>
+        <span aria-hidden="true" style={{ width: 110, height: 110 }} />
+        <span style={{ fontSize: 64, fontWeight: 600, color: CARO_TEAL, lineHeight: 1, textAlign: 'center' }}>Caro</span>
+      </>
+    );
+  }
   if (id === 'quiz') {
     return (
       <>
@@ -156,6 +179,15 @@ const flowerCard = ({ dx, dy, rot }: (typeof MEMORY_ICON.cards)[number]) => (
 
 /** Decorative round icon on a game's card (no meaning of its own, not a button). */
 export function GameIcon({ id }: { id: Game['id'] }) {
+  if (id === 'caro') {
+    return (
+      <svg aria-hidden="true" width="110" height="110" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" fill="#FBF4E9" stroke={X_BLUE} strokeWidth="2" />
+        <path d="M7.4 7.4L11 11M11 7.4L7.4 11" stroke={X_BLUE} strokeWidth="1.6" strokeLinecap="round" />
+        <circle cx="16.5" cy="15.5" r="2.4" stroke={O_RED} strokeWidth="1.6" />
+      </svg>
+    );
+  }
   if (id === 'memory') {
     return (
       <svg aria-hidden="true" width="110" height="110" viewBox="0 0 24 24" fill="none">

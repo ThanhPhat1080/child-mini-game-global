@@ -15,13 +15,12 @@ import Done from '@/app/games/quiz/[setId]/done/page';
 afterEach(cleanup);
 
 describe('Quiz done page', () => {
-  it('shows the greeting, stars, both characters and its three links', async () => {
+  it('shows the greeting, stars, the built-in character and its three links', async () => {
     render(<Done />);
     await waitFor(() => expect(screen.getByRole('heading').textContent).toBe('You did it, Mi!'));
     expect(screen.getByRole('img', { name: '3 stars earned' })).toBeTruthy();
-    const srcs = [...document.querySelectorAll('img')].map((i) => i.getAttribute('src'));
-    expect(srcs).toContain('/images/girl.webp');
-    expect(srcs).toContain('/images/girl-beret.webp');
+    await waitFor(() => expect(document.querySelector('img[src="/images/princess.webp"]')).not.toBeNull());
+    expect(document.querySelector('img[src*="girl"]')).toBeNull();
     expect(screen.getByRole('link', { name: 'Play this set again' }).getAttribute('href')).toBe('/games/quiz/s1');
     expect(screen.getByRole('link', { name: 'Choose another set' }).getAttribute('href')).toBe('/games/quiz');
     expect(screen.getByRole('link', { name: 'Go home' }).getAttribute('href')).toBe('/');

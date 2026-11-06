@@ -51,6 +51,11 @@ export function ChildModal({ mode, child, parentId, onClose, onSaved, onNotice }
   const [busy, setBusy] = useState(false);
   const [more, setMore] = useState(false);
   const [playing, setPlaying] = useState(false);
+  /** The child this modal just added: the modal stays open and becomes an edit of it, so the sounds can be added (N16). */
+  const [created, setCreated] = useState<Child | null>(null);
+  const moreBtn = useRef<HTMLButtonElement>(null);
+  const target = child ?? created ?? undefined;
+  const editMode = mode === 'edit' || created !== null;
   const audio = useRef<HTMLAudioElement | null>(null);
   const theme = GENDER_THEME[gender];
 
@@ -71,6 +76,11 @@ export function ChildModal({ mode, child, parentId, onClose, onSaved, onNotice }
     );
     return () => { live = false; };
   }, [mode, child]);
+
+  // Just after adding: the "More sounds" button takes focus, so the parent can go straight to the sounds.
+  useEffect(() => {
+    if (created) moreBtn.current?.focus();
+  }, [created]);
 
   // focus moves into the dialog and returns to the opener on close
   useEffect(() => {
@@ -119,12 +129,12 @@ export function ChildModal({ mode, child, parentId, onClose, onSaved, onNotice }
   async function save() {
     setFormError(null);
     const input: NewChild = { child_name: loginName, display_name: displayName, avatar_path: avatarShown, celebrate_a_path: celAShown, celebrate_b_path: celBShown, gender, age_band: age, pin };
-    const found = validateChild(input, mode);
+    const found = validateChild(input, editMode ? 'edit' : 'create');
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     setBusy(true);
     try {
-      if (mode === 'create') await doCreate(input); else await doEdit(input);
+      if (!editMode) await doCreate(input); else await doEdit(input);
     } finally {
       setBusy(false);
     }
@@ -144,11 +154,21 @@ export function ChildModal({ mode, child, parentId, onClose, onSaved, onNotice }
     }
     onSaved(res.child);
     if (warn) onNotice?.('warning', 'Child added, but the welcome sound was not saved. Edit the child to add it again.');
-    onClose();
+    // The modal stays open on the new child, so the parent can add the sounds (More sounds).
+    setSavedAvatar(avatarShown);
+    setAvatarDraft(null);
+    setSavedCelA(celAShown);
+    setCelADraft(null);
+    setSavedCelB(celBShown);
+    setCelBDraft(null);
+    setSavedGreeting(greetingDraft ?? savedGreeting);
+    setGreetingDraft(null);
+    setCreated(res.child);
   }
 
   async function doEdit(input: NewChild) {
-    if (!child) return;
+    if (!target) return;
+    const child = target;
     const { child_name: _login, ...patch } = input;
     if (parentId) {
       // Super Admin mode: the pictures and sounds are never sent, so nothing there can change or be removed.
@@ -203,7 +223,7 @@ export function ChildModal({ mode, child, parentId, onClose, onSaved, onNotice }
         onKeyDown={onKeyDown}
       >
         <ModalClose onClick={requestClose} disabled={busy} />
-        <h2 id={titleId} style={{ color: theme.text }}>{mode === 'create' ? 'Add child' : 'Edit child'}</h2>
+        <h2 id={titleId} style={{ color: theme.text }}>{editMode ? 'Edit child' : 'Add child'}</h2>
 
         <div className={s.modalCols} style={parentId ? { gridTemplateColumns: '1fr' } : undefined}>
           <div className={s.modalCol}>
@@ -235,7 +255,7 @@ export function ChildModal({ mode, child, parentId, onClose, onSaved, onNotice }
         </div>
 
         <div className={s.modalField}>
-          {mode === 'create' ? (
+          {!editMode ? (
             <>
               <label htmlFor={`${titleId}-ln`}>Login name</label>
               <input id={`${titleId}-ln`} className={s.modalInput} value={loginName} maxLength={40} autoCapitalize="none" aria-invalid={!!errors.child_name} onChange={(e) => setLoginName(e.target.value)} />
@@ -245,7 +265,7 @@ export function ChildModal({ mode, child, parentId, onClose, onSaved, onNotice }
             <>
               <span className={s.modalLabel}>Login name</span>
               <span style={{ fontWeight: 700 }}>
-                <span role="img" aria-label="Login name locked">🔒</span> {child?.child_name}
+                <span role="img" aria-label="Login name locked">🔒</span> {target?.child_name}
               </span>
             </>
           )}
@@ -271,7 +291,7 @@ export function ChildModal({ mode, child, parentId, onClose, onSaved, onNotice }
 
         <div className={s.modalField}>
           <span className={s.modalLabel}>Celebration pictures</span>
-          <span style={{ fontSize: 13 }}>Two pictures of {displayName.trim() || 'your child'}. They sway on the screen after a game is finished.</span>
+          <span style={{ fontSize: 13, overflowWrap: 'anywhere' }}>Two pictures of {displayName.trim() || 'your child'}. They sway on the screen after a game is finished.</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             {([
               ['A', celAShown, setCelADraft, celADraft],
@@ -300,12 +320,19 @@ export function ChildModal({ mode, child, parentId, onClose, onSaved, onNotice }
           </div>}
         </div>
 
-        {mode === 'edit' && child && !parentId && (
+        {editMode && target && !parentId && (
           <div>
-            <button type="button" className={s.moreToggle} aria-expanded={more} onClick={() => setMore((v) => !v)}>
+            {created && !more && <span style={{ fontSize: 13 }}>Child added. Add the sounds now, or press Save to finish.</span>}
+            <button
+              ref={moreBtn}
+              type="button"
+              className={`${s.moreToggle} ${created && !more ? s.morePulse : ''}`}
+              aria-expanded={more}
+              onClick={() => setMore((v) => !v)}
+            >
               {more ? '▾' : '▸'} More sounds
             </button>
-            {more && <div className={s.modalSounds}><ChildSounds childId={child.id} /></div>}
+            {more && <div className={s.modalSounds}><ChildSounds childId={target.id} /></div>}
           </div>
         )}
 

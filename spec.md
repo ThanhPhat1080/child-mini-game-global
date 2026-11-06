@@ -41,7 +41,7 @@ Details for G1 and M1-M10: `docs/superpowers/specs/2026-10-29-memory-match-desig
 | M4 | Match: both cards stay up with a gentle bounce/sparkle, a "ting ting" chime, then the English word is spoken once. |
 | M5 | No match: both visible about 1.2 s, then flip back; no penalty sound, no timer, no counter on screen; new flips are ignored meanwhile. |
 | M6 | Replay: clicking a matched card plays its word again; the single face-up unmatched card does nothing. |
-| M7 | Completion: the shared celebration scene (also used by the Quiz set-done page: hills, confetti, both characters, 3 stars), "You did it, <name>!", and "Total N times" with N highlighted instead of a card icon, shown ONLY at the end (face-down to face-up turns only; the fewest possible flips equal the number of cards: 12, 16, 20, 24, 30; not saved, no best score), play again / choose level. |
+| M7 | Completion: the shared celebration scene (also used by the Quiz set-done page: hills, confetti, the child's character (see 4h), 3 stars), "You did it, <name>!", and "Total N times" with N highlighted instead of a card icon, shown ONLY at the end (face-down to face-up turns only; the fewest possible flips equal the number of cards: 12, 16, 20, 24, 30; not saved, no best score), play again / choose level. |
 | M8 | Keyboard: all four arrows move over the grid, Enter or Space flips or replays, Esc goes back (`lib/keynav.ts`). |
 | M9 | Reduced motion: no 3D flip and no bounce, the face just fades; sounds stay. |
 | M10 | Robustness: missing picture shows a placeholder; no English voice means no spoken word; leaving the page cancels timers and speech; a third quick click is ignored; deck images are preloaded. |
@@ -50,7 +50,7 @@ Details for G1 and M1-M10: `docs/superpowers/specs/2026-10-29-memory-match-desig
 | L3 | Voice: the word is said automatically when a question appears and again on speaker button / key R. Recorded file if the card has one, else `speakKid`. |
 | L4 | Wrong pick: "Oh-Oh", the picture dims, wobbles and is disabled (wobble + Oh-oh popup), the word is said again after a short pause. |
 | L5 | Right pick: "Hooray" (grow + ring + Hooray popup with confetti), the word is said once, then the next question. After question 10 the finish screen shows. |
-| L6 | Finish screen: shared celebration scene (3 stars, both characters, confetti), "Wrong N times" with N highlighted, and two picture buttons: play again (new 10 questions), back to games. If any picks were wrong, a row of small round pictures with the English word and count ("apple x2"); tapping one says the word. No row when there were none. |
+| L6 | Finish screen: shared celebration scene (3 stars, the child's character (see 4h), confetti), "Wrong N times" with N highlighted, and two picture buttons: play again (new 10 questions), back to games. If any picks were wrong, a row of small round pictures with the English word and count ("apple x2"); tapping one says the word. No row when there were none. |
 | L7 | Wrong-picks log in localStorage under one key (`childPlayer.listen.wrong`), entries `{id, word, count}`. It is written at every wrong pick. Cleared when a round starts (also after a reload, which starts a new round), on play again and on leaving to the game list. Blocked or failing storage: the game works and the list still shows from memory for that page visit. |
 | L8 | Keyboard: 1/2/3 pick, Left/Right move, Enter/Space pick, R replays the word, Esc goes back. Visible focus ring. |
 | L9 | Reduced motion: no bounce or slide, pictures just fade. Sounds stay. |
@@ -61,7 +61,7 @@ Details for G1 and M1-M10: `docs/superpowers/specs/2026-10-29-memory-match-desig
 | R4 | Right drop: "ting ting" (`chime`), the object settles into the next free slot of that basket, then the word is said once. |
 | R5 | Wrong drop: `ohOh` sound, a non-blocking "Oh-oh… try again!" popup with the sad face (the same look as Quiz, 1.4 s), the object slides back to its place in the row. The wrong count goes up by one. Releasing outside both baskets: the object slides back, no sound, no count. |
 | R6 | Voice: picking an object up, tapping an example or an object, and a right drop each say the word through `sayWord`; a newer word cuts the older one. |
-| R7 | Finish: after the 6th right drop and its word (about 1 s pause) the shared celebration scene shows (3 stars, both characters, confetti, "You did it, <child name>!" with the same praise sound as the other games), the line "Wrong N times" with N highlighted (N may be 0), and two picture buttons: play again (a new round) and back to games. Nothing is stored. |
+| R7 | Finish: after the 6th right drop and its word (about 1 s pause) the shared celebration scene shows (3 stars, the child's character (see 4h), confetti, "You did it, <child name>!" with the same praise sound as the other games), the line "Wrong N times" with N highlighted (N may be 0), and two picture buttons: play again (a new round) and back to games. Nothing is stored. |
 | R8 | Reduced motion: no lift animation, no slide or bounce; the object jumps back and the popup just appears. Sounds stay. |
 | R9 | Robustness: a missing picture shows a plain placeholder and the object is still draggable; no English voice means no spoken word, the game still works; leaving the page cancels timers and speech and drops any drag in progress; with pointer capture the drag continues outside the window, and the object slides back when the pointer is released outside the baskets or the browser cancels the pointer (`pointercancel`); a second press during a slide-back or a right-drop settle is ignored; the round's pictures are preloaded. |
 | R10 | Keys and focus: Esc goes to `/games`; every object, example and button is a real element with a visible focus ring, but dragging needs the mouse (see the decision below). |
@@ -94,7 +94,7 @@ Details for every row: `docs/superpowers/specs/2026-10-30-find-it-design.md`.
 | F3 | Prompt: when the level opens (after a short pause) and after every found object, the app says the current object's word and shows it. Recorded file if the object has one, else the browser voice. The speaker button (and key R) says it again. A newer word cuts the older one. |
 | F4 | Right tap: a tap inside the **current** object's circle (hit radius `max(r, 0.04)` of the picture width) plays `chime`, grows a ring (about 0.6 s) that stays on the object, lights its dot, and after about 1 s moves to the next object (prompt says and shows its word). |
 | F5 | Wrong tap: any other tap (empty area, or another object) shows a faint ripple at the tap point (about 0.8 s). No sound, no counter. Repeat taps on a found object do nothing. |
-| F6 | Completion: after the last object is found (about 1 s) the shared `CelebrationScene` shows (3 stars, both characters, confetti, praise sound) with two picture buttons: play again (same level, from object 1) and choose another level. Nothing is stored. |
+| F6 | Completion: after the last object is found (about 1 s) the shared `CelebrationScene` shows (3 stars, the child's character (see 4h), confetti, praise sound) with two picture buttons: play again (same level, from object 1) and choose another level. Nothing is stored. |
 | F7 | Keys: Esc goes back to the level grid (from the grid, to `/games`); R repeats the word; on the completion screen Enter/Space activate the focused button. Playing is by mouse. Visible focus ring. |
 | F8 | Reduced motion: ring and ripple appear without growing or fading, the prompt changes without sliding. Sounds stay. |
 | F9 | Robustness: a missing picture shows a plain placeholder and the level is still leavable; no English voice means no spoken word but the word is still shown; leaving the page cancels timers and speech; both the picture and the level's sounds are preloaded before the first prompt; window resize keeps tap mapping correct (coordinates from the picture's current bounding box); taps during the 1 s pause after a right tap are ignored. |
@@ -209,3 +209,25 @@ Spec: `docs/superpowers/specs/2026-11-06-review-copy-design.md`. Review tab per 
 - V11 The copy references the parent's media paths and adds 0 bytes to the Super Admin's quota. The owner cannot rename a file a copy uses; delete is refused while a copy uses it.
 - V12 A quiz copy is inserted as draft, then its questions and answers are copied, then the status is set (publish gate).
 - V13 One-time backfill: null-owner rows go to the first Super Admin; each global row a parent owns becomes a copy and the parent's row goes back to private.
+## 4g. Phase 2: Caro X O for two players (2026-11-06)
+Spec: `docs/superpowers/specs/2026-11-06-caro-xo-design.md`. A 30x20 board, five in a row wins, two players on one computer. The child is X (boy) or O (girl); the opponent is the other gender's prince or princess.
+- X1 30x20 board of cells (38 px), centred on the stage.
+- X2 Turns alternate, X first; an occupied cell or a finished round does nothing.
+- X3 Two sides: the child on the left (avatar, then mark), the opponent on the right (prince or princess, then the other mark).
+- X4 The side whose turn it is bounces and its mark wiggles; reduced motion stops both.
+- X5 Five in a row wins; the five cells are highlighted. The sound and screen depend on who won (X11, X12).
+- X6 A full board with no five in a row is a draw (no message, no penalty).
+- X7 Play again (drawn arrow, no text, top centre) starts a new board after the round ends.
+- X8 Keyboard: arrows move between cells, Enter or Space place, Esc goes back.
+- X9 Registered on the game registry (ADR-014) with a drawn 3x3 board and the word "Caro" on the card, and the round icon.
+- X10 "? Caro" button at the top right opens the how-to-play popup (3 steps).
+- X11 The child wins: the win line lights for 1 s, then full-screen Hooray for about 3 s, then the board with the win line and a blue Play again.
+- X12 The opponent wins: the win line lights for 1 s, then the Oh-oh toast for about 1.4 s, then the board with the opponent's line lit and a blue Play again. No retry popup.
+
+## 4h. "You did it" characters (parent feedback, 2026-11-06)
+The shared celebration scene (`CelebrationScene`, used by the done screens of Quiz, Memory, Sort It, Spot, Find It and Listen & Pick) shows one or two characters on the left and right, by these rules:
+- No upload: one built-in character on the left: the prince for a boy, the princess for a girl. Nothing on the right.
+- Only one picture uploaded (A or B): the built-in character stays on the left, the uploaded picture goes on the right.
+- Both pictures uploaded: A on the left and B on the right; no built-in character.
+- Nothing is shown until the child's pictures and gender have loaded.
+Rules in `lib/celebration.ts` (`celebrationSlots`).
