@@ -26,7 +26,7 @@ const QUERY: Record<'memory_cards' | 'spot_levels' | 'find_levels', { cols: stri
 };
 
 /** Spot level opened from the Global tab: both pictures larger, with the differences marked (read-only). */
-function SpotViewDialog({ item, onClose }: { item: Item; onClose: () => void }) {
+export function SpotViewDialog({ item, onClose }: { item: Item; onClose: () => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);

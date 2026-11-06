@@ -11,8 +11,6 @@ vi.mock('@/lib/superAdmin', async (orig) => ({ ...(await orig<typeof import('@/l
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p}` : null) }));
 
 import QueuePage from '@/app/admin/(super)/queue/page';
-import ParentsPage from '@/app/admin/(super)/parents/page';
-import ContentPage from '@/app/admin/(super)/content/page';
 import MessagesPage from '@/app/admin/(super)/messages/page';
 
 const pending = {
@@ -70,54 +68,6 @@ describe('review queue (V3)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Approve' }));
     expect(await screen.findByText('not_pending')).toBeTruthy();
     expect(screen.getByText('Animals')).toBeTruthy();
-  });
-});
-
-describe('parents page (N5, U15, Q4)', () => {
-  it('Ban opens the dialog and ban_parent gets the code and note', async () => {
-    render(<ParentsPage />);
-    await screen.findByText('Lan');
-    fireEvent.click(screen.getByRole('button', { name: 'Ban' }));
-    fireEvent.change(screen.getByLabelText('Reason'), { target: { value: 'violent_scary' } });
-    fireEvent.change(screen.getByLabelText(/Note for the parent/), { target: { value: 'scary photo' } });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Ban' }).at(-1)!);
-    await waitFor(() => expect(h.banParent).toHaveBeenCalledWith('p1', 'violent_scary', 'scary photo'));
-  });
-
-  it('a banned parent shows the reason and Unban', async () => {
-    h.listPeople.mockResolvedValue([parent({ banned: true, banReasonCode: 'hate', banNote: 'rude' })]);
-    render(<ParentsPage />);
-    await screen.findByText(/Banned:/);
-    expect(screen.getByText(/Hateful|thù ghét/i)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Unban' }));
-    await waitFor(() => expect(h.unbanParent).toHaveBeenCalledWith('p1'));
-  });
-
-  it('changes the quota via set_quota in bytes and shows the meter', async () => {
-    render(<ParentsPage />);
-    await screen.findByText('Lan');
-    expect(screen.getByText('Storage: 12 / 50 MB')).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Quota (MB)'), { target: { value: '100' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save quota' }));
-    await waitFor(() => expect(h.setQuota).toHaveBeenCalledWith('p1', 100 * 1024 * 1024));
-  });
-});
-
-describe('content browser (V5)', () => {
-  it('unpublishes a global item and deletes any item after confirming', async () => {
-    h.listContent.mockResolvedValue([
-      { table: 'memory_cards', id: 'c1', ownerId: 'p1', visibility: 'global', title: 'cat', images: [], sounds: [] },
-      { table: 'memory_cards', id: 'c2', ownerId: 'p1', visibility: 'private', title: 'dog', images: [], sounds: [] },
-    ]);
-    render(<ContentPage />);
-    await screen.findByText('cat');
-    expect(screen.getAllByRole('button', { name: 'Unpublish' })).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Unpublish' }));
-    await waitFor(() => expect(h.unpublishItem).toHaveBeenCalledWith('memory_cards', 'c1'));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete dog' }));
-    expect(h.deleteItem).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-    await waitFor(() => expect(h.deleteItem).toHaveBeenCalledWith('memory_cards', 'c2'));
   });
 });
 

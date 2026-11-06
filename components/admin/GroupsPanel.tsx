@@ -7,7 +7,7 @@ import s from './admin-ui.module.css';
 import { ghostBtn, inputStyle, panel } from './editor-parts';
 
 const errText = { margin: 0, fontSize: 13, fontWeight: 700, color: '#A8484F' } as const;
-const chip = { display: 'inline-flex', alignItems: 'center', gap: 2, height: 36, padding: '0 4px 0 14px', borderRadius: 18, background: '#FBF4E9', border: '1.5px solid #EADCC8', fontSize: 14, fontWeight: 700 } as const;
+const chip = { display: 'inline-flex', alignItems: 'center', gap: 2, height: 36, maxWidth: '100%', boxSizing: 'border-box', padding: '0 4px 0 14px', borderRadius: 18, background: '#FBF4E9', border: '1.5px solid #EADCC8', fontSize: 14, fontWeight: 700 } as const;
 const iconBtn = { width: 30, height: 30, padding: 0, border: 'none', borderRadius: 15, background: 'transparent', color: '#7A6458', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' } as const;
 const small = { ...ghostBtn, height: 32, padding: '0 10px', fontSize: 13 } as const;
 
