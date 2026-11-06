@@ -2,7 +2,7 @@ export type Gender = 'male' | 'female';
 export type AgeBand = '2-5' | '5-10';
 
 /** Every child card, form and dialog sits on the same pale yellow; gender only changes the text and the border (KT1). */
-export const CHILD_SURFACE = '#FFF7DC';
+export const CHILD_SURFACE = '#fffcf2';
 
 /** Text is darker than the pastel border for contrast. */
 export const GENDER_THEME: Record<Gender, { bg: string; text: string; accent: string; modalBg: string; hero: string; heroAlt: string; icon: '♂' | '♀'; label: 'Boy' | 'Girl' }> = {

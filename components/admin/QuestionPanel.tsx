@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { hasAnswerContent, isQuestionComplete, type EQuestion, type ESet } from '@/lib/sets';
 import s from './admin-ui.module.css';
 import { LibraryButton } from './LibraryButton';
@@ -29,6 +30,14 @@ export function QuestionPanel({ d, cur, q, locked, onSelect, onAdd, onMove, onEd
   /** SVG code pasted for a picture: the page checks it and stores it as a file (A11 rules). */
   onSvg: (t: Pick, code: string) => void; onPlay: (path: string) => void;
 }) {
+  const listRef = useRef<HTMLDivElement>(null);
+  /** Narrow screens: Previous/Next move the question carousel by one card (the CSS snaps it into place). */
+  function slide(dir: -1 | 1) {
+    const el = listRef.current;
+    if (!el) return;
+    const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: reduce ? 'auto' : 'smooth' });
+  }
   const incomplete = d.qs.filter((x) => !isQuestionComplete(x)).length;
   const checks = q ? [
     { label: 'Question text or voice', done: !!q.text.trim() || !!q.voice, optional: false },
@@ -41,7 +50,7 @@ export function QuestionPanel({ d, cur, q, locked, onSelect, onAdd, onMove, onEd
     <div className={s.qLayout}>
       <section className={s.qSide} style={{ ...panel, padding: 16, gap: 6 }} aria-label="Questions">
         <h2 style={{ margin: '4px 8px 8px', fontSize: 16, fontWeight: 700 }}>Questions <span style={{ color: '#7A6458', fontWeight: 600 }}>· {d.qs.length}</span></h2>
-        <div className={s.qList}>
+        <div className={s.qList} ref={listRef} aria-roledescription={d.qs.length > 1 ? 'carousel' : undefined} aria-label={d.qs.length > 1 ? 'Questions carousel' : undefined}>
         {d.qs.map((it, i) => {
           const sel = cur === i;
           const blank = !it.text.trim();
@@ -63,6 +72,12 @@ export function QuestionPanel({ d, cur, q, locked, onSelect, onAdd, onMove, onEd
         })}
         </div>
         {d.qs.length === 0 && <p style={{ margin: '4px 8px 8px', fontSize: 14, color: '#7A6458' }}>No questions yet.</p>}
+        {d.qs.length > 1 && (
+          <div className={s.qNav}>
+            <button type="button" className={`${s.ghost} ${s.btn}`} aria-label="Previous questions" onClick={() => slide(-1)} style={{ ...ghostBtn, height: 34, width: 40, padding: 0, fontSize: 16 }}>‹</button>
+            <button type="button" className={`${s.ghost} ${s.btn}`} aria-label="Next questions" onClick={() => slide(1)} style={{ ...ghostBtn, height: 34, width: 40, padding: 0, fontSize: 16 }}>›</button>
+          </div>
+        )}
         <button type="button" className={`${s.dash} ${s.btn}`} onClick={locked ? undefined : onAdd} style={{ marginTop: 6, height: 46, borderRadius: 12, border: '1.5px dashed #D9C6B2', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, ...(locked ? { visibility: 'hidden' } : {}) }}>
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>Add question
         </button>

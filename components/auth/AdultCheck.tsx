@@ -109,7 +109,7 @@ function CheckDialog({ onPass, onCancel, random, title, icon, hint, centered, su
         aria-modal="true"
         aria-labelledby="adult-title"
         tabIndex={-1}
-        style={centered ? { alignItems: 'center', textAlign: 'center', maxWidth: 580, padding: '40px 48px', background: '#FFF7DC', border: '14px solid #E9D9A6', borderRadius: 56, boxShadow: '0 16px 0 #EADCC8' } : undefined}
+        style={centered ? { alignItems: 'center', textAlign: 'center', maxWidth: 580, padding: '40px 48px', background: '#fffcf2', border: '14px solid #E9D9A6', borderRadius: 56, boxShadow: '0 16px 0 #EADCC8' } : undefined}
       >
         <ModalClose onClick={onCancel} size={centered ? 'child' : 'admin'} />
         {icon}

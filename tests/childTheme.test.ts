@@ -3,8 +3,8 @@ import { GENDER_THEME } from '@/lib/childTheme';
 
 describe('GENDER_THEME (KT1)', () => {
   it('has the male and female entries', () => {
-    expect(GENDER_THEME.male).toEqual({ bg: '#FFF7DC', text: '#3F6285', accent: '#8FB3D1', modalBg: '#FFF7DC', hero: '/images/prince.webp', heroAlt: 'Chibi prince with a crown and cape', icon: '♂', label: 'Boy' });
-    expect(GENDER_THEME.female).toEqual({ bg: '#FFF7DC', text: '#9A4550', accent: '#E59AA1', modalBg: '#FFF7DC', hero: '/images/princess.webp', heroAlt: 'Chibi princess with a magic wand', icon: '♀', label: 'Girl' });
+    expect(GENDER_THEME.male).toEqual({ bg: '#fffcf2', text: '#3F6285', accent: '#8FB3D1', modalBg: '#fffcf2', hero: '/images/prince.webp', heroAlt: 'Chibi prince with a crown and cape', icon: '♂', label: 'Boy' });
+    expect(GENDER_THEME.female).toEqual({ bg: '#fffcf2', text: '#9A4550', accent: '#E59AA1', modalBg: '#fffcf2', hero: '/images/princess.webp', heroAlt: 'Chibi princess with a magic wand', icon: '♀', label: 'Girl' });
   });
 
   it('modal text meets WCAG AA on modalBg (FA2)', () => {

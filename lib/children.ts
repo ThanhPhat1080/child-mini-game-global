@@ -13,6 +13,8 @@ export type Child = {
   gender: Gender;
   age_band: AgeBand;
   pin: string;
+  /** Set by the database; the Super Admin lists sort by it (N10, N15). */
+  created_at?: string;
 };
 export type NewChild = Pick<Child, 'child_name' | 'display_name' | 'avatar_path' | 'gender' | 'age_band' | 'pin'> & Pick<Child, 'celebrate_a_path' | 'celebrate_b_path'>;
 export type ChildError = 'name_taken' | 'child_limit' | 'failed';
@@ -21,7 +23,7 @@ type Client = ReturnType<typeof createSupabaseBrowserClient>;
 
 const MAX_NAME = 40;
 const PIN = /^[A-Za-z0-9]{4}$/;
-const COLUMNS = 'id, parent_id, child_name, display_name, avatar_path, celebrate_a_path, celebrate_b_path, gender, age_band, pin';
+export const CHILD_COLUMNS = 'id, parent_id, child_name, display_name, avatar_path, celebrate_a_path, celebrate_b_path, gender, age_band, pin, created_at';
 
 /** Trim and collapse any run of whitespace (tabs, newlines too) to one space. Matches the DB unique index. */
 export function normalizeChildName(name: string): string {
@@ -54,20 +56,21 @@ function mapError(e: PgError): ChildError {
 
 /** `parentId` limits the list to one parent's children (a Super Admin can read every family's rows through RLS). */
 export async function listMyChildren(client: Client = createSupabaseBrowserClient(), parentId?: string): Promise<Child[]> {
-  let q = client.from('children').select(COLUMNS);
+  let q = client.from('children').select(CHILD_COLUMNS);
   if (parentId) q = q.eq('parent_id', parentId);
   const { data, error } = await q.order('created_at');
   if (error) throw new Error(error.message);
   return (data ?? []) as Child[];
 }
 
-/** `parent_id` is left to the column default (auth.uid()). */
+/** `parent_id` is left to the column default (auth.uid()) unless a Super Admin passes the parent's id (N16). */
 export async function createChild(
   input: NewChild,
   client: Client = createSupabaseBrowserClient(),
+  parentId?: string,
 ): Promise<{ ok: true; child: Child } | { ok: false; error: ChildError }> {
   try {
-    const row = {
+    const row: Record<string, unknown> = {
       child_name: normalizeChildName(input.child_name),
       display_name: input.display_name.trim(),
       avatar_path: input.avatar_path,
@@ -77,7 +80,8 @@ export async function createChild(
       age_band: input.age_band,
       pin: input.pin,
     };
-    const { data, error } = await client.from('children').insert(row).select(COLUMNS).single();
+    if (parentId) row.parent_id = parentId;
+    const { data, error } = await client.from('children').insert(row).select(CHILD_COLUMNS).single();
     if (error || !data) return { ok: false, error: mapError(error) };
     return { ok: true, child: data as Child };
   } catch {
@@ -113,7 +117,7 @@ export async function deleteChild(
 
 /** One child by id, or null when it does not exist or RLS hides it. */
 export async function getChildForPlay(id: string, client: Client = createSupabaseBrowserClient()): Promise<Child | null> {
-  const { data, error } = await client.from('children').select(COLUMNS).eq('id', id).maybeSingle();
+  const { data, error } = await client.from('children').select(CHILD_COLUMNS).eq('id', id).maybeSingle();
   if (error) throw new Error(error.message);
   return (data as Child | null) ?? null;
 }

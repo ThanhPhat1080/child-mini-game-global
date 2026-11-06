@@ -188,3 +188,15 @@ Ground `#FBF4E9`, ink `#5A4038`, rose `#E59AA1`/`#F8DCDF`, sky `#8FB3D1`/`#DCE8F
 - Star progress: localStorage (as built; no identity).
 - No greeting/music uploaded: silent (as built).
 - Replaying a finished set: fixed order (as built).
+
+## 4e. Phase 4: Super Admin people pages (2026-11-06)
+Spec: `docs/superpowers/specs/2026-11-06-super-admin-people-design.md`. Parents list, Parent detail, Children grid, Messages tabs, sidebar dots.
+- N10 Parents list: sort (newest or A–Z), search by parent or child name, storage bar (green <70%, orange 70–85%, red >85%), child count.
+- N11 Parents list: expand/collapse all, expand to children, red "Ban" tag when banned.
+- N12 Parents list: red dot on parents with pending messages; toggle filter.
+- N13 Parents list: create parent (dialog), then open its detail page.
+- N14 Parent detail (`/admin/parents/[id]`): Ban/Unban, quota, children (add/edit/remove), view-only levels.
+- N15 Children page: 2-column grid, parent link with Ban tag, search and sort.
+- N16 SA adds/edits children with non-media fields only; media is hidden.
+- N17 Messages: Pending and History tabs, search and sort by parent.
+- N18 Sidebar: All content removed; "Children" renamed; red dot on Messages.

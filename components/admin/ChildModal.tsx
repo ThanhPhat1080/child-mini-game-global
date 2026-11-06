@@ -23,9 +23,10 @@ const baseName = (p: string | null) => (p ? p.split('/').pop() ?? p : null);
 /**
  * Add or edit one child (KU3-KU8). Not optimistic: Save waits for the request. The colors follow the Boy/Girl choice at once.
  * `onNotice` lets the page show a toast after the modal has closed (for example "sound not saved").
+ * `parentId` is the Super Admin mode (N16): the child belongs to that parent, and only the non-media fields are shown and saved.
  */
-export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
-  mode: 'create' | 'edit'; child?: Child; onClose: () => void; onSaved: (c: Child) => void; onNotice?: Notice;
+export function ChildModal({ mode, child, parentId, onClose, onSaved, onNotice }: {
+  mode: 'create' | 'edit'; child?: Child; parentId?: string; onClose: () => void; onSaved: (c: Child) => void; onNotice?: Notice;
 }) {
   const titleId = useId();
   const dialog = useRef<HTMLDivElement>(null);
@@ -43,7 +44,7 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
   const [celBDraft, setCelBDraft] = useState<string | null>(null);
   const [savedGreeting, setSavedGreeting] = useState<string | null>(null);
   const [greetingDraft, setGreetingDraft] = useState<string | null>(null);
-  const [settingsReady, setSettingsReady] = useState(mode === 'create');
+  const [settingsReady, setSettingsReady] = useState(mode === 'create' || !!parentId);
   const [soundsFailed, setSoundsFailed] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -62,7 +63,7 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
 
   // edit mode: the saved welcome sound, so Save knows which file it replaces
   useEffect(() => {
-    if (mode !== 'edit' || !child) return;
+    if (mode !== 'edit' || !child || parentId) return;
     let live = true;
     getChildSettings(child.id).then(
       (r) => { if (!live) return; setSavedGreeting(r?.greeting_path ?? null); setSettingsReady(true); },
@@ -130,10 +131,10 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
   }
 
   async function doCreate(input: NewChild) {
-    const res = await createChild(input);
+    const res = parentId ? await createChild(input, undefined, parentId) : await createChild(input);
     if (!res.ok) {
       if (res.error === 'name_taken') setErrors({ child_name: 'That name is already used. Choose another.' });
-      else if (res.error === 'child_limit') setFormError('You already have 5 children.');
+      else if (res.error === 'child_limit') setFormError(parentId ? 'This parent already has 5 children.' : 'You already have 5 children.');
       else setFormError('Could not save the child. Try again.');
       return;
     }
@@ -149,6 +150,15 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
   async function doEdit(input: NewChild) {
     if (!child) return;
     const { child_name: _login, ...patch } = input;
+    if (parentId) {
+      // Super Admin mode: the pictures and sounds are never sent, so nothing there can change or be removed.
+      const { avatar_path: _avatar, celebrate_a_path: _a, celebrate_b_path: _b, ...fields } = patch;
+      const saved = await updateChild(child.id, fields);
+      if (!saved.ok) { setFormError('Could not save the child. Try again.'); return; }
+      onSaved({ ...child, ...fields });
+      onClose();
+      return;
+    }
     const res = await updateChild(child.id, patch);
     if (!res.ok) { setFormError('Could not save the child. Try again.'); return; }
     const replaced: string[] = [];
@@ -180,12 +190,23 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
         aria-labelledby={titleId}
         tabIndex={-1}
         className={s.modal}
-        style={{ background: theme.modalBg, color: theme.text, border: `4px solid ${theme.accent}` }}
+        // Prince or princess fills the whole form; a soft wash of the form color keeps the fields readable.
+        style={{
+          backgroundColor: theme.modalBg,
+          backgroundImage: `linear-gradient(${theme.modalBg}CC, ${theme.modalBg}B3), url(${theme.hero})`,
+          backgroundSize: 'contain',
+          backgroundPosition: 'left top',
+          backgroundRepeat: 'no-repeat',
+          color: theme.text,
+          border: `4px solid ${theme.accent}`,
+        }}
         onKeyDown={onKeyDown}
       >
         <ModalClose onClick={requestClose} disabled={busy} />
         <h2 id={titleId} style={{ color: theme.text }}>{mode === 'create' ? 'Add child' : 'Edit child'}</h2>
 
+        <div className={s.modalCols} style={parentId ? { gridTemplateColumns: '1fr' } : undefined}>
+          <div className={s.modalCol}>
         <div className={s.genderAgeRow}>
           <div className={s.modalField} role="group" aria-label="Gender">
             <span className={s.modalLabel}>Gender</span>
@@ -231,9 +252,16 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
         </div>
 
         <div className={s.modalField}>
+          <label htmlFor={`${titleId}-pin`}>PIN</label>
+          <input id={`${titleId}-pin`} className={s.modalInput} value={pin} maxLength={4} autoComplete="off" aria-invalid={!!errors.pin} onChange={(e) => setPin(e.target.value)} />
+          {errors.pin && <span className={s.fieldError}>{errors.pin}</span>}
+        </div>
+          </div>
+          {!parentId && <div className={s.modalCol}>
+        <div className={s.modalField}>
           <span className={s.modalLabel}>Avatar</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <span className={s.childAvatar} style={{ borderColor: theme.accent }}>
+            <span className={`${s.childAvatar} ${s.childAvatarLg}`} style={{ borderColor: theme.accent }}>
               {mediaUrl(avatarShown) ? <Pic src={mediaUrl(avatarShown) ?? ''} alt="Avatar" className={s.childAvatarImg} /> : <span aria-hidden="true" style={{ fontSize: 28 }}>{theme.icon}</span>}
             </span>
             <LibraryButton kind="image" label="avatar" onChoose={setAvatarDraft} />
@@ -250,7 +278,7 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
               ['B', celBShown, setCelBDraft, celBDraft],
             ] as const).map(([k, shown, setDraft, draft]) => (
               <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className={s.childAvatar} style={{ borderColor: theme.accent }}>
+                <span className={`${s.childAvatar} ${s.childAvatarLg}`} style={{ borderColor: theme.accent, borderRadius: 18 }}>
                   {mediaUrl(shown) ? <Pic src={mediaUrl(shown) ?? ''} alt={`Celebration picture ${k}`} className={s.childAvatarImg} /> : <span aria-hidden="true" style={{ fontSize: 22 }}>{k}</span>}
                 </span>
                 <LibraryButton kind="image" label={`celebration picture ${k}`} onChoose={setDraft} />
@@ -261,22 +289,18 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
         </div>
 
         <div className={s.modalField}>
-          <label htmlFor={`${titleId}-pin`}>PIN</label>
-          <input id={`${titleId}-pin`} className={s.modalInput} value={pin} maxLength={4} autoComplete="off" aria-invalid={!!errors.pin} onChange={(e) => setPin(e.target.value)} />
-          {errors.pin && <span className={s.fieldError}>{errors.pin}</span>}
-        </div>
-
-
-        <div className={s.modalField}>
           <span className={s.modalLabel}>Welcome sound</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             {greetingShown && <PlayButton playing={playing} label={playing ? 'Pause welcome sound' : 'Play welcome sound'} onClick={togglePlay} />}
-            <span style={{ fontWeight: 600 }}>{baseName(greetingShown) ?? 'No welcome sound yet'}</span>
+            <span style={{ fontWeight: 600, fontSize: 15 }}>{baseName(greetingShown) ?? 'No welcome sound yet'}</span>
             {soundsFailed ? <span style={{ fontSize: 13 }}>Not available right now.</span> : <LibraryButton kind="audio" label="welcome sound" onChoose={(p) => { audio.current?.pause(); setPlaying(false); setGreetingDraft(p); }} />}
           </div>
         </div>
 
-        {mode === 'edit' && child && (
+          </div>}
+        </div>
+
+        {mode === 'edit' && child && !parentId && (
           <div>
             <button type="button" className={s.moreToggle} aria-expanded={more} onClick={() => setMore((v) => !v)}>
               {more ? '▾' : '▸'} More sounds

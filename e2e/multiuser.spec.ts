@@ -104,9 +104,10 @@ test('share, approve, ban: the whole review loop', async ({ browser }) => {
 
   // The Super Admin bans the parent with a reason: the parent is sent to the suspended page, the child still plays.
   await sa.goto('/admin/parents');
-  await sa.getByRole('button', { name: /^Ban/ }).first().click();
+  await sa.getByRole('link', { name: 'Parent', exact: true }).click();
+  await sa.getByRole('button', { name: 'Ban', exact: true }).click();
   await sa.getByRole('dialog').getByRole('combobox').selectOption({ index: 1 });
-  await sa.getByRole('dialog').getByRole('button', { name: /^Ban/ }).click();
+  await sa.getByRole('dialog').getByRole('button', { name: 'Ban', exact: true }).click();
   await expect.poll(async () => (await getState()).profiles.find((p) => p.user_id === ACCOUNTS.parent.id)?.banned).toBe(true);
   await parent.goto('/admin/cards');
   await expect(parent).toHaveURL(/\/admin\/suspended$/);
