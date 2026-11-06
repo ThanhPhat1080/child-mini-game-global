@@ -49,7 +49,7 @@ export default function SpotLevels() {
     <Stage>
       <Hills />
       <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <BackButton href="/games" label="Back to games" game="spot" />
+        <BackButton href="/games" label="Back to games" />
         <button
           ref={helpBtn}
           type="button"

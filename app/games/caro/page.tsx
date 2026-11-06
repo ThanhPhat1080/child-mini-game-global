@@ -203,18 +203,20 @@ export default function CaroPlay() {
         </button>
       </div>
 
+      {/* Centre bottom, under the board. Only this button takes clicks in the strip (the rest passes through). */}
       {phase === 'done' && (
-        <div style={{ position: 'absolute', top: 14, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 2 }}>
+        <div style={{ position: 'absolute', bottom: 14, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none', zIndex: 2 }}>
           <button
             type="button"
             aria-label="Play again"
             className="hm-tap"
             onClick={restart}
-            style={{ width: 120, height: 120, borderRadius: 60, border: 'none', background: '#4F8FD8', boxShadow: '0 8px 0 #3A6FB0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ pointerEvents: 'auto', height: 100, padding: '0 56px 0 40px', borderRadius: 50, border: 'none', background: '#4F8FD8', boxShadow: '0 8px 0 #3A6FB0', display: 'flex', alignItems: 'center', gap: 20, color: '#fff', fontSize: 48, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            <svg aria-hidden="true" width="68" height="68" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+            <svg aria-hidden="true" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" />
             </svg>
+            Play again?
           </button>
         </div>
       )}
@@ -229,6 +231,7 @@ export default function CaroPlay() {
 
       <div
         aria-label="Caro board"
+        inert={over}
         onKeyDown={(e) => { gridStep(Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>('.caro-cell')), COLS, e); }}
         style={{
           position: 'absolute', top: (1080 - BOARD_H) / 2, left: (1920 - BOARD_W) / 2, width: BOARD_W, height: BOARD_H,

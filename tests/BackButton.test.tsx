@@ -50,10 +50,13 @@ describe('BackButton on a game screen', () => {
     await waitFor(() => expect(document.activeElement).toBe(back()));
   });
 
-  it('Left moves the focus from No to Yes', () => {
+  it('No is on the left and Yes on the right; Right moves the focus from No to Yes', () => {
     renderOnGame();
     fireEvent.click(back());
-    fireEvent.keyDown(ask() as Element, { key: 'ArrowLeft' });
+    const [first, second] = screen.getAllByRole('button').filter((b) => b.textContent === 'No' || b.textContent === 'Yes');
+    expect(first.textContent).toBe('No');
+    expect(second.textContent).toBe('Yes');
+    fireEvent.keyDown(ask() as Element, { key: 'ArrowRight' });
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Yes' }));
   });
 

@@ -35,6 +35,34 @@ test('Back asks "Leave now?": No stays on the board, Yes goes to the games list'
   await expect(page).toHaveURL(/\/games$/);
 });
 
+test('after the round: Play again? is centred at the bottom, the board is off, and Back and Guide still work', async ({ page }) => {
+  await page.goto('/games');
+  await page.getByRole('link', { name: 'Play Caro' }).click();
+  await expect(page).toHaveURL(/\/games\/caro$/);
+  await play(page, [1, 31, 2, 32, 3, 33, 50, 34, 51, 35]);
+
+  await expect(playAgain(page)).toBeVisible({ timeout: 8000 });
+  await expect(playAgain(page)).toContainText('Play again?');
+  const box = await playAgain(page).boundingBox();
+  const vp = page.viewportSize()!;
+  expect(Math.abs(box!.x + box!.width / 2 - vp.width / 2)).toBeLessThan(4);
+  expect(box!.y + box!.height).toBeGreaterThan(vp.height * 0.9);
+
+  await expect(page.getByLabel('Caro board')).toHaveAttribute('inert', '');
+
+  await page.getByRole('button', { name: /What is Caro/ }).click();
+  await expect(page.getByRole('dialog', { name: 'How to play Caro' })).toBeVisible();
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('dialog', { name: 'How to play Caro' })).toHaveCount(0);
+
+  await page.getByRole('link', { name: 'Back to games' }).click();
+  await expect(page.getByRole('dialog', { name: 'Leave now?' })).toBeVisible();
+  await page.getByRole('button', { name: 'No' }).click();
+
+  await playAgain(page).click();
+  await expect(playAgain(page)).toHaveCount(0);
+});
+
 test('the child makes five in a row and sees Hooray; after it, Play again clears the board', async ({ page }) => {
   await page.goto('/games');
   await page.getByRole('link', { name: 'Play Caro' }).click();

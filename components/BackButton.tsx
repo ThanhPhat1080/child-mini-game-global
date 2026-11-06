@@ -15,8 +15,9 @@ const ASK_CSS = `
 
 /**
  * Round back (or home) button; Esc / Back key also goes back (C8).
- * On a game screen (`game` set) a click on the button asks "Leave now?" first: Yes goes back, No, X, Esc or a
- * click outside stays. Esc and the Back key go back straight away, as before.
+ * On a play screen (`game` set) a click on the button asks "Leave now?" first: Yes goes back, No, X, Esc or a
+ * click outside stays. Pickers (the game list, level and set lists) do not pass `game`, so they go back at once.
+ * Esc and the Back key go back straight away, as before.
  */
 export function BackButton({ href, label = 'Back', home = false, game }: { href: string; label?: string; home?: boolean; game?: Game['id'] }) {
   const router = useRouter();
@@ -62,8 +63,8 @@ export function BackButton({ href, label = 'Back', home = false, game }: { href:
 }
 
 /**
- * "Leave now?" over a faint light backdrop: the game's icon, Yes (light pink, goes back) and No (stays).
- * X at the top left, a click outside, Esc and No all stay. Left and Right move between Yes and No.
+ * "Leave now?" over a faint light backdrop: the game's icon, No (stays, on the left) and Yes (light pink, goes back).
+ * X at the top left, a click outside, Esc and No all stay. Left and Right move between No and Yes.
  * The backdrop is `fixed`, so it covers the whole 1920x1080 stage (its transform is the containing block).
  */
 function LeaveAsk({ game, onYes, onNo }: { game: Game['id']; onYes(): void; onNo(): void }) {
@@ -84,7 +85,7 @@ function LeaveAsk({ game, onYes, onNo }: { game: Game['id']; onYes(): void; onNo
     }
     if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
       e.preventDefault();
-      if (yes.current && no.current) stepFocus([yes.current, no.current], e.key === 'ArrowRight' ? 1 : -1);
+      if (yes.current && no.current) stepFocus([no.current, yes.current], e.key === 'ArrowRight' ? 1 : -1);
       return;
     }
     if (panel.current) trapTab(e, panel.current);
@@ -115,15 +116,6 @@ function LeaveAsk({ game, onYes, onNo }: { game: Game['id']; onYes(): void; onNo
         <h2 id={titleId} style={{ margin: 0, fontSize: 60, fontWeight: 600, lineHeight: 1.1, color: '#5A4038', textAlign: 'center' }}>Leave now?</h2>
         <div style={{ display: 'flex', gap: 32 }}>
           <button
-            ref={yes}
-            type="button"
-            className="hm-tap"
-            onClick={onYes}
-            style={{ height: 120, padding: '0 56px', borderRadius: 60, border: 'none', background: '#F8DCDF', color: '#7A3A44', boxShadow: '0 10px 0 #E59AA1', fontSize: 52, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}
-          >
-            Yes
-          </button>
-          <button
             ref={no}
             type="button"
             className="hm-tap"
@@ -131,6 +123,15 @@ function LeaveAsk({ game, onYes, onNo }: { game: Game['id']; onYes(): void; onNo
             style={{ height: 120, padding: '0 56px', borderRadius: 60, border: '6px solid #E3D5C4', background: '#fff', color: '#5A4038', boxShadow: '0 10px 0 #EADCC8', fontSize: 52, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}
           >
             No
+          </button>
+          <button
+            ref={yes}
+            type="button"
+            className="hm-tap"
+            onClick={onYes}
+            style={{ height: 120, padding: '0 56px', borderRadius: 60, border: 'none', background: '#F8DCDF', color: '#7A3A44', boxShadow: '0 10px 0 #E59AA1', fontSize: 52, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer' }}
+          >
+            Yes
           </button>
         </div>
       </div>
