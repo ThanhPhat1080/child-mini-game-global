@@ -252,7 +252,6 @@ export function SetEditor({ setId }: { setId: string }) {
         </section>
       )}
 
-      <EditLock locked={locked}>
       {deleted && (
         <section style={{ ...panel, padding: '56px 28px', alignItems: 'center', gap: 14, textAlign: 'center' }}>
           <span style={{ width: 64, height: 64, borderRadius: 32, background: '#E3EEDD', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -266,6 +265,7 @@ export function SetEditor({ setId }: { setId: string }) {
 
       {!deleted && (
         <>
+          <EditLock locked={locked}>
           <section style={{ ...panel, padding: '26px 28px', flexDirection: 'row', flexWrap: 'wrap', gap: 32, alignItems: 'flex-start' }}>
             <div style={{ flex: '1 1 420px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -339,9 +339,10 @@ export function SetEditor({ setId }: { setId: string }) {
               <span style={{ fontSize: 12, color: '#7A6458', textAlign: 'center' }}>Updates as you type. Draft sets are hidden from the child.</span>
             </div>
           </section>
+          </EditLock>
 
           <QuestionPanel
-            d={d} cur={cur} q={q}
+            d={d} cur={cur} q={q} locked={locked}
             onSelect={setCur}
             onAdd={() => { setD({ ...d, qs: [...d.qs, newQuestion()] }); setCur(d.qs.length); }}
             onMove={move}
@@ -368,7 +369,6 @@ export function SetEditor({ setId }: { setId: string }) {
         />
       )}
       {confirm && <ConfirmDialog title={confirmTitle} body={confirmBody} button={confirmButton} busy={busy} onCancel={() => setConfirm(null)} onConfirm={confirmDelete} />}
-      </EditLock>
       <Toast toast={toast} onClose={closeToast} />
     </Shell>
   );

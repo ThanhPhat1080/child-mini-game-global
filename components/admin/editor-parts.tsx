@@ -34,7 +34,7 @@ export function Eye() {
 export function Shell({ children }: { children: ReactNode }) {
   return (
     <div style={{ minHeight: '100vh', background: '#FBF4E9', fontFamily: 'Nunito, sans-serif', color: '#4A3830', padding: '28px 32px 64px', boxSizing: 'border-box' }}>
-      <div style={{ maxWidth: 1240, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>{children}</div>
+      <div style={{ maxWidth: 1480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 24 }}>{children}</div>
     </div>
   );
 }

@@ -11,8 +11,11 @@ const EDGE = 0.01;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const round3 = (v: number) => Math.round(v * 1000) / 1000;
 
-/** Places and sizes the spots of one level (A15). Click picture A or B to add a spot; click a spot to select it. */
-export function SpotMarkerEditor({ srcA, srcB, differences, onChange }: { srcA: string | null; srcB: string | null; differences: Difference[]; onChange: (next: Difference[]) => void }) {
+/**
+ * Places and sizes the spots of one level (A15). Click picture A or B to add a spot; click a spot to select it.
+ * `readOnly` (View mode): the same pictures and spots, larger, with no way to place or change them.
+ */
+export function SpotMarkerEditor({ srcA, srcB, differences, onChange, readOnly = false }: { srcA: string | null; srcB: string | null; differences: Difference[]; onChange: (next: Difference[]) => void; readOnly?: boolean }) {
   const [showB, setShowB] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -53,18 +56,28 @@ export function SpotMarkerEditor({ srcA, srcB, differences, onChange }: { srcA: 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-        <button type="button" className={`${s.btn} ${s.ghost}`} style={tab(!viewB)} aria-pressed={!viewB} aria-label="Show picture A" onClick={() => setShowB(false)}>Picture A</button>
-        <button type="button" className={`${s.btn} ${s.ghost}`} style={tab(viewB)} aria-pressed={viewB} aria-label="Show picture B" disabled={!srcB} onClick={() => setShowB(true)}>Picture B</button>
+        <button type="button" data-nav className={`${s.btn} ${s.ghost}`} style={tab(!viewB)} aria-pressed={!viewB} aria-label="Show picture A" onClick={() => setShowB(false)}>Picture A</button>
+        <button type="button" data-nav className={`${s.btn} ${s.ghost}`} style={tab(viewB)} aria-pressed={viewB} aria-label="Show picture B" disabled={!srcB} onClick={() => setShowB(true)}>Picture B</button>
         <span style={{ fontSize: 13, color: '#7A6458' }}>
-          {`Click picture A or B to mark a difference (${differences.length}/${MAX_DIFFS}).`}
+          {readOnly ? `${differences.length} ${differences.length === 1 ? 'difference' : 'differences'} marked.` : `Click picture A or B to mark a difference (${differences.length}/${MAX_DIFFS}).`}
         </span>
       </div>
 
       {src ? (
         <div style={{ background: '#FBF4E9', borderRadius: 14, padding: 8, display: 'flex', justifyContent: 'center' }}>
-          <div onClick={place} style={{ position: 'relative', width: '100%', maxWidth: 640, lineHeight: 0, cursor: 'crosshair' }}>
+          <div onClick={readOnly ? undefined : place} style={{ position: 'relative', width: '100%', maxWidth: readOnly ? 960 : 640, lineHeight: 0, cursor: readOnly ? 'default' : 'crosshair' }}>
             <Pic ref={setImgEl} src={src} alt={viewB ? 'Picture B' : 'Picture A'} draggable={false} style={{ display: 'block', width: '100%', height: 'auto', borderRadius: 8 }} />
-            {differences.map((d, i) => (
+            {differences.map((d, i) => (readOnly ? (
+              <span
+                key={i} aria-label={`Spot ${i + 1}`}
+                style={{
+                  position: 'absolute', left: `${d.x * 100}%`, top: `${d.y * 100}%`, width: `${d.r * 200}%`, aspectRatio: '1 / 1', transform: 'translate(-50%, -50%)',
+                  boxSizing: 'border-box', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: '2.5px solid #fff', background: 'rgba(229,154,161,0.35)', boxShadow: '0 0 0 1.5px #A8484F',
+                  color: '#4A3830', fontWeight: 700, fontSize: 15, fontFamily: 'Nunito, sans-serif', lineHeight: 1, pointerEvents: 'none',
+                }}
+              >{i + 1}</span>
+            ) : (
               <button
                 key={i} type="button" aria-label={`Spot ${i + 1}`} aria-pressed={sel === i}
                 onClick={(e) => { e.stopPropagation(); setNotice(null); setSelected(i); }}
@@ -75,7 +88,7 @@ export function SpotMarkerEditor({ srcA, srcB, differences, onChange }: { srcA: 
                   boxShadow: '0 0 0 1.5px #A8484F', color: '#4A3830', fontWeight: 700, fontSize: 13, fontFamily: 'Nunito, sans-serif', lineHeight: 1,
                 }}
               >{i + 1}</button>
-            ))}
+            )))}
           </div>
         </div>
       ) : (
@@ -84,15 +97,15 @@ export function SpotMarkerEditor({ srcA, srcB, differences, onChange }: { srcA: 
         </div>
       )}
 
-      {smallCount > 0 && (
+      {!readOnly && smallCount > 0 && (
         <span role="status" style={{ fontSize: 13, fontWeight: 700, color: '#7A5410' }}>
           {smallCount === 1 ? '1 spot is small' : `${smallCount} spots are small`} and may be hard for a young child to see.
         </span>
       )}
 
-      {notice && <span role="alert" style={{ fontSize: 13, fontWeight: 700, color: '#A8484F' }}>{notice}</span>}
+      {!readOnly && notice && <span role="alert" style={{ fontSize: 13, fontWeight: 700, color: '#A8484F' }}>{notice}</span>}
 
-      {sel !== null && (
+      {!readOnly && sel !== null && (
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ fontSize: 13, fontWeight: 700 }}>Spot {sel + 1}</span>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 700 }}>
