@@ -7,23 +7,24 @@ test.beforeEach(async () => {
   await reset();
 });
 
-const square = (page: Page, n: number) => page.getByRole('button', { name: new RegExp(`^Square ${n},`) });
+// Direct locator by DOM order: a role query computes the name of every cell and is very slow.
+const square = (page: Page, n: number) => page.locator('.caro-cell').nth(n - 1);
 
-test('the game opens from the list and X wins the top row; Play again clears the board', async ({ page }) => {
+test('the game opens from the list and X wins with five in the top row; Play again clears the board', async ({ page }) => {
   await page.goto('/games');
   await page.getByRole('link', { name: 'Play Caro X O' }).click();
   await expect(page).toHaveURL(/\/games\/caro$/);
 
-  // X starts; the moves alternate X, O, X, O, X.
-  await square(page, 1).click();
-  await square(page, 4).click();
-  await square(page, 2).click();
+  // X starts; the moves alternate X, O, X, O, X, O, X, O, X. X makes five in the top row (cells 1-5).
+  for (const [x, o] of [[1, 21], [2, 22], [3, 23], [4, 24]]) {
+    await square(page, x).click();
+    await square(page, o).click();
+  }
   await square(page, 5).click();
-  await square(page, 3).click();
 
   await expect(square(page, 1)).toHaveAttribute('aria-label', 'Square 1, X');
-  await expect(page.getByRole('button', { name: 'Play again' })).toBeVisible();
-  await page.getByRole('button', { name: 'Play again' }).click();
+  await expect(page.locator('[aria-label="Play again"]')).toBeVisible();
+  await page.locator('[aria-label="Play again"]').click();
   await expect(square(page, 1)).toHaveAttribute('aria-label', 'Square 1, empty');
 });
 

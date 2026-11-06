@@ -1,5 +1,5 @@
 import type { Game } from '@/lib/games/registry';
-import { CaroMark, O_SKY, X_ROSE as CARO_ROSE } from '@/components/caro/CaroMark';
+import { CaroMark, O_RED, X_BLUE } from '@/components/caro/CaroMark';
 
 /** The Memory Match green: card title text and the game-list icon ring/card strokes. */
 export const MEMORY_GREEN = '#5E8F69';
@@ -27,16 +27,14 @@ const miniCard = (bg: string, children?: React.ReactNode) => (
 /** The drawing and title shown on a game's card in the game list. */
 export function GameArt({ id }: { id: Game['id'] }) {
   if (id === 'caro') {
-    // Text-free card (the child cannot read): a small board with X and O marks.
-    const cell = (mark: 'X' | 'O' | null, i: number) => (
-      <span key={i} style={{ width: 104, height: 104, borderRadius: 26, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 0 #EADCC8' }}>
-        {mark && <CaroMark player={mark} size={84} />}
-      </span>
-    );
-    const marks: ('X' | 'O' | null)[] = ['X', null, null, null, 'O', null, null, null, 'X'];
+    // Text-free card (the child cannot read): a row of five marks, the winning line.
     return (
-      <span aria-hidden="true" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 104px)', gap: 14 }}>
-        {marks.map(cell)}
+      <span aria-hidden="true" style={{ display: 'flex', gap: 10 }}>
+        {[0, 1, 2, 3, 4].map((i) => (
+          <span key={i} style={{ width: 96, height: 96, borderRadius: 24, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 0 #EADCC8' }}>
+            <CaroMark player="X" size={76} />
+          </span>
+        ))}
       </span>
     );
   }
@@ -174,9 +172,9 @@ export function GameIcon({ id }: { id: Game['id'] }) {
   if (id === 'caro') {
     return (
       <svg aria-hidden="true" width="110" height="110" viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="10" fill="#FBF4E9" stroke={CARO_ROSE} strokeWidth="2" />
-        <path d="M7.4 7.4L11 11M11 7.4L7.4 11" stroke={CARO_ROSE} strokeWidth="1.6" strokeLinecap="round" />
-        <circle cx="16.5" cy="15.5" r="2.4" stroke={O_SKY} strokeWidth="1.6" />
+        <circle cx="12" cy="12" r="10" fill="#FBF4E9" stroke={X_BLUE} strokeWidth="2" />
+        <path d="M7.4 7.4L11 11M11 7.4L7.4 11" stroke={X_BLUE} strokeWidth="1.6" strokeLinecap="round" />
+        <circle cx="16.5" cy="15.5" r="2.4" stroke={O_RED} strokeWidth="1.6" />
       </svg>
     );
   }

@@ -1,10 +1,10 @@
 import type { Player } from '@/lib/caro/rules';
 
-/** X is rose and O is sky (the child's two player colours; the same blue as Spot). */
-export const X_ROSE = '#D9707C';
-export const O_SKY = '#5F86A8';
+/** X is blue and O is red: the two player colours of Caro X O. */
+export const X_BLUE = '#3D7DD8';
+export const O_RED = '#E0555F';
 
-export const markColor = (p: Player): string => (p === 'X' ? X_ROSE : O_SKY);
+export const markColor = (p: Player): string => (p === 'X' ? X_BLUE : O_RED);
 
 /** A drawn X (two crossed strokes) or O (a ring) in a `size` box. Text-free: the child cannot read. */
 export function CaroMark({ player, size = 180 }: { player: Player; size?: number }) {
