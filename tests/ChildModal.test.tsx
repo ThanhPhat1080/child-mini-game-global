@@ -78,12 +78,12 @@ describe('ChildModal (KU3-KU8)', () => {
     const title = screen.getByRole('heading');
     expect(screen.getByRole('button', { name: 'Boy' }).getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Girl' }));
-    expect(dlg.getAttribute('style')).toContain('rgb(255 252 242)'); // pale yellow stays
+    expect(dlg.getAttribute('style')).toContain('rgb(255, 252, 242)'); // pale yellow stays
     expect(dlg.getAttribute('style')).toContain('rgb(229, 154, 161)'); // pink border
     expect(title.getAttribute('style')).toContain('rgb(154, 69, 80)');
     expect(screen.getByRole('button', { name: 'Girl' }).getAttribute('aria-pressed')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Boy' }));
-    expect(dlg.getAttribute('style')).toContain('rgb(255 252 242)'); // pale yellow stays
+    expect(dlg.getAttribute('style')).toContain('rgb(255, 252, 242)'); // pale yellow stays
     expect(dlg.getAttribute('style')).toContain('rgb(143, 179, 209)'); // blue border
     expect(title.getAttribute('style')).toContain('rgb(63, 98, 133)');
     expect(screen.getByRole('button', { name: 'Girl' }).getAttribute('aria-pressed')).toBe('false');

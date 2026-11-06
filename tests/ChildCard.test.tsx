@@ -44,7 +44,7 @@ describe('ChildCard (KU1, KU2)', () => {
     expect(screen.getByText('♂')).toBeTruthy();
     const card = screen.getByTestId('child-card');
     expect(card.style.background).not.toBe('');
-    expect(card.getAttribute('style')).toContain('rgb(255 252 242)'); // same pale yellow for both
+    expect(card.getAttribute('style')).toContain('rgb(255, 252, 242)'); // same pale yellow for both
     expect(card.getAttribute('style')).toContain('rgb(143, 179, 209)'); // blue border
   });
   it('shows a girl with female colors', () => {
