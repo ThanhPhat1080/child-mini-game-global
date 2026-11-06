@@ -1,4 +1,4 @@
-/** Caro X O rules (X1-X5): a 20x20 board, X starts, five in a row wins. Pure functions, no DOM. */
+/** Caro X O rules (X1-X5): a 30x20 board (30 columns, 20 rows), X starts, five in a row wins. Pure functions, no DOM. */
 
 export type Player = 'X' | 'O';
 /** Index = row * COLS + column. */
@@ -7,7 +7,7 @@ export type RoundStatus = 'playing' | 'won' | 'draw';
 export type RoundState = { status: RoundStatus; winner: Player | null; line: readonly number[] | null };
 
 /** Columns and rows of the board. */
-export const COLS = 20;
+export const COLS = 30;
 export const ROWS = 20;
 /** How many in a row win. */
 export const WIN = 5;

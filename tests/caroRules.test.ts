@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CELLS, COLS, ROWS, WIN, emptyBoard, place, roundState, turnOf, windows, type Board } from '@/lib/caro/rules';
 
-// X1-X5: a 20x20 board, five in a row wins, X starts, occupied cells and finished rounds do nothing.
+// X1-X5: a 30x20 board, five in a row wins, X starts, occupied cells and finished rounds do nothing.
 
 /** A board from a string of CELLS characters: 'X', 'O' or '.' per cell, row by row. */
 const board = (s: string): Board => [...s].map((c) => (c === 'X' ? 'X' : c === 'O' ? 'O' : null));
@@ -12,12 +12,12 @@ const at = (cells: number[], mark: 'X' | 'O') => {
 };
 
 describe('caro rules (X1-X5)', () => {
-  it('a 20x20 board where five in a row wins', () => {
-    expect(COLS).toBe(20);
+  it('a 30x20 board (30 columns, 20 rows) where five in a row wins', () => {
+    expect(COLS).toBe(30);
     expect(ROWS).toBe(20);
     expect(WIN).toBe(5);
-    expect(emptyBoard()).toHaveLength(400);
-    expect(CELLS).toBe(400);
+    expect(emptyBoard()).toHaveLength(600);
+    expect(CELLS).toBe(600);
   });
 
   it('counts every window of five: rows, columns and both diagonals', () => {
@@ -34,9 +34,9 @@ describe('caro rules (X1-X5)', () => {
   });
 
   it('places a mark on an empty cell and hands the turn over', () => {
-    const b = place(emptyBoard(), 210);
+    const b = place(emptyBoard(), 300);
     expect(b).not.toBeNull();
-    expect(b![210]).toBe('X');
+    expect(b![300]).toBe('X');
     expect(turnOf(b!)).toBe('O');
   });
 
@@ -51,13 +51,13 @@ describe('caro rules (X1-X5)', () => {
     // Row 0, columns 0-3: four only.
     expect(roundState(at([0, 1, 2, 3], 'X')).status).toBe('playing');
     // Row 2, columns 10-14.
-    expect(roundState(at([50, 51, 52, 53, 54], 'O'))).toMatchObject({ status: 'won', winner: 'O' });
-    // Column 19, rows 0-4.
-    expect(roundState(at([19, 39, 59, 79, 99], 'X'))).toMatchObject({ status: 'won', winner: 'X' });
+    expect(roundState(at([70, 71, 72, 73, 74], 'O'))).toMatchObject({ status: 'won', winner: 'O' });
+    // Column 29, rows 0-4.
+    expect(roundState(at([29, 59, 89, 119, 149], 'X'))).toMatchObject({ status: 'won', winner: 'X' });
     // Diagonal down-right from cell 0.
-    expect(roundState(at([0, 21, 42, 63, 84], 'X'))).toMatchObject({ status: 'won', winner: 'X' });
+    expect(roundState(at([0, 31, 62, 93, 124], 'X'))).toMatchObject({ status: 'won', winner: 'X' });
     // Anti-diagonal from column 4 of row 0.
-    expect(roundState(at([4, 23, 42, 61, 80], 'O'))).toMatchObject({ status: 'won', winner: 'O' });
+    expect(roundState(at([4, 33, 62, 91, 120], 'O'))).toMatchObject({ status: 'won', winner: 'O' });
   });
 
   it('the winning line is the five cells, and the winner is the mark that made it', () => {

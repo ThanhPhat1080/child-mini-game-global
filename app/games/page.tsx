@@ -17,7 +17,7 @@ import { GameArt, GameIcon } from '@/components/games/GameArt';
 
 const PITCH = 712;
 const N = GAMES.length;
-const TITLE = { quiz: 'Quiz', memory: 'Memory Match', listen: 'Listen & Pick', sort: 'Sort It', spot: 'Spot the Differences', find: 'Find It', caro: 'Caro X O' } as const;
+const TITLE = { quiz: 'Quiz', memory: 'Memory Match', listen: 'Listen & Pick', sort: 'Sort It', spot: 'Spot the Differences', find: 'Find It', caro: 'Caro' } as const;
 const BORDER = { quiz: '#EBB7BC', memory: '#A9CDB1', listen: '#C9BFE4', sort: '#EAD9A0', spot: '#A9C6DE', find: '#F2C9A8', caro: '#9FD3C7' } as const;
 
 /** Game list carousel (C2) — mirrors the GameList board: drag/arrows/keys, 120px swipe threshold. */

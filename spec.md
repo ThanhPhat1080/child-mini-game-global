@@ -202,12 +202,16 @@ Spec: `docs/superpowers/specs/2026-11-06-super-admin-people-design.md`. Parents 
 - N18 Sidebar: All content removed; "Children" renamed; red dot on Messages.
 
 ## 4g. Phase 2: Caro X O for two players (2026-11-06)
-Spec: `docs/superpowers/specs/2026-11-06-caro-xo-design.md`. A 20x20 board, five in a row wins, two players on one computer, drawn X (blue) and O (red), no text.
-- X1 20x20 board of cells (40 px), centred on the stage.
+Spec: `docs/superpowers/specs/2026-11-06-caro-xo-design.md`. A 30x20 board, five in a row wins, two players on one computer. The child is X (boy) or O (girl); the opponent is the other gender's prince or princess.
+- X1 30x20 board of cells (38 px), centred on the stage.
 - X2 Turns alternate, X first; an occupied cell or a finished round does nothing.
-- X3 The player whose turn it is is enlarged and ringed (the chips at the top).
-- X4 Five in a row wins; the five cells are highlighted and applause plays.
-- X5 A full board with no five in a row is a draw (no message, no penalty).
-- X6 Play again (drawn arrow, no text, top right) starts a new board after the round ends.
-- X7 Keyboard: arrows move between cells, Enter or Space place, Esc goes back.
-- X8 Registered on the game registry (ADR-014) with a drawn card and icon; reduced motion removes the win pulse.
+- X3 Two sides: the child on the left (avatar, then mark), the opponent on the right (prince or princess, then the other mark).
+- X4 The side whose turn it is bounces and its mark wiggles; reduced motion stops both.
+- X5 Five in a row wins; the five cells are highlighted. The sound and screen depend on who won (X11, X12).
+- X6 A full board with no five in a row is a draw (no message, no penalty).
+- X7 Play again (drawn arrow, no text, top centre) starts a new board after the round ends.
+- X8 Keyboard: arrows move between cells, Enter or Space place, Esc goes back.
+- X9 Registered on the game registry (ADR-014) with a drawn 3x3 board and the word "Caro" on the card, and the round icon.
+- X10 "? Caro" button at the top right opens the how-to-play popup (3 steps).
+- X11 The child wins: full-screen Hooray for about 3 seconds, then the board with the win line and Play again.
+- X12 The opponent wins: Oh-oh toast, then the "Let's try again?" popup over a blurred board (child's avatar, Yes starts a new board, No goes back to the game list).

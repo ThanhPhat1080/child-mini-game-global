@@ -1,5 +1,5 @@
 import type { Game } from '@/lib/games/registry';
-import { CaroMark, O_RED, X_BLUE } from '@/components/caro/CaroMark';
+import { O_RED, X_BLUE } from '@/components/caro/CaroMark';
 
 /** The Memory Match green: card title text and the game-list icon ring/card strokes. */
 export const MEMORY_GREEN = '#5E8F69';
@@ -12,6 +12,9 @@ export const LISTEN_PURPLE = '#7B6BAE';
 
 /** The Sort It gold: card title text and the game-list icon ring. */
 export const SORT_GOLD = '#A8842F';
+
+/** The Caro teal: card title text and the Caro help button. */
+export const CARO_TEAL = '#3C8A7E';
 
 /** The Find It peach: card title text and the game-list icon ring. */
 export const FIND_PEACH = '#B5703A';
@@ -27,15 +30,22 @@ const miniCard = (bg: string, children?: React.ReactNode) => (
 /** The drawing and title shown on a game's card in the game list. */
 export function GameArt({ id }: { id: Game['id'] }) {
   if (id === 'caro') {
-    // Text-free card (the child cannot read): a row of five marks, the winning line.
     return (
-      <span aria-hidden="true" style={{ display: 'flex', gap: 10 }}>
-        {[0, 1, 2, 3, 4].map((i) => (
-          <span key={i} style={{ width: 96, height: 96, borderRadius: 24, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 0 #EADCC8' }}>
-            <CaroMark player="X" size={76} />
-          </span>
-        ))}
-      </span>
+      <>
+        <span aria-hidden="true" style={{ display: 'flex', alignItems: 'center', height: 190 }}>
+          <svg width="230" height="230" viewBox="0 0 120 120" fill="none" strokeLinecap="round">
+            <rect x="3" y="3" width="114" height="114" rx="16" fill="#FFFDF8" stroke="#D9C7B0" strokeWidth="3" />
+            <path d="M43 10V110M77 10V110M10 43H110M10 77H110" stroke="#D9C7B0" strokeWidth="3" />
+            <g stroke={X_BLUE} strokeWidth="8">
+              <path d="M16 16L37 37M37 16L16 37" />
+              <path d="M82 82L103 103M103 82L82 103" />
+            </g>
+            <circle cx="60" cy="60" r="11" stroke={O_RED} strokeWidth="8" />
+          </svg>
+        </span>
+        <span aria-hidden="true" style={{ width: 110, height: 110 }} />
+        <span style={{ fontSize: 64, fontWeight: 600, color: CARO_TEAL, lineHeight: 1, textAlign: 'center' }}>Caro</span>
+      </>
     );
   }
   if (id === 'quiz') {
