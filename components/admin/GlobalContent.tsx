@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { getMyUserId, type ContentTable } from '@/lib/review';
+import { getMyUserId, type ContentTable, type Visibility } from '@/lib/review';
+import { parentNames } from '@/lib/superAdmin';
 import { mediaUrl } from '@/lib/media';
 import { Pic } from '@/components/Pic';
 import { VisibilityBadge } from './VisibilityBadge';
@@ -11,7 +12,11 @@ import { SpotMarkerEditor } from './SpotMarkerEditor';
 import { ModalClose } from '@/components/ModalClose';
 import type { Difference } from '@/lib/spot/types';
 
-type Item = { id: string; title: string; images: (string | null)[]; differences?: Difference[] };
+type Item = {
+  id: string; title: string; images: (string | null)[]; differences?: Difference[];
+  /** Parents' view only: the owner's name and the row's status (V9). */
+  owner?: string; visibility?: Visibility;
+};
 
 const QUERY: Record<'memory_cards' | 'spot_levels' | 'find_levels', { cols: string; map: (r: Record<string, unknown>) => Omit<Item, 'id'> }> = {
   memory_cards: { cols: 'id, owner_id, word, image_path', map: (r) => ({ title: String(r.word ?? ''), images: [r.image_path as string | null] }) },
@@ -43,8 +48,12 @@ export function SpotViewDialog({ item, onClose }: { item: Item; onClose: () => v
   );
 }
 
-/** Approved content of other families, read-only (N3): no edit, delete or save controls. Spot levels open to view (View mode). */
-export function GlobalContent({ table }: { table: Exclude<ContentTable, 'quiz_sets' | 'card_groups'> }) {
+/**
+ * Read-only lists (N3, V9). `global` (default): approved content of other families; no edit, delete or save controls.
+ * `parents`: every active row a parent owns, of any status, with the owner's name and a status badge (Super Admin only).
+ * Spot levels open to view (View mode) in both.
+ */
+export function GlobalContent({ table, mode = 'global' }: { table: Exclude<ContentTable, 'quiz_sets' | 'card_groups'>; mode?: 'global' | 'parents' }) {
   const [items, setItems] = useState<Item[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [opened, setOpened] = useState<Item | null>(null);
@@ -53,6 +62,23 @@ export function GlobalContent({ table }: { table: Exclude<ContentTable, 'quiz_se
     let live = true;
     const q = QUERY[table];
     (async () => {
+      if (mode === 'parents') {
+        const sb = createSupabaseBrowserClient();
+        const names = await parentNames(sb);
+        const ids = [...names.keys()];
+        const res = ids.length === 0
+          ? { data: [], error: null }
+          : await sb.from(table).select(`${q.cols}, visibility`).in('owner_id', ids).eq('active', true).order('created_at');
+        if (!live) return;
+        if (res.error) return setError(res.error.message);
+        const rows = (res.data ?? []) as unknown as Record<string, unknown>[];
+        setItems(rows.map((r) => ({
+          id: String(r.id), ...q.map(r),
+          owner: names.get(String(r.owner_id)) || 'Parent',
+          visibility: r.visibility as Visibility,
+        })));
+        return;
+      }
       const [me, res] = await Promise.all([
         getMyUserId(),
         createSupabaseBrowserClient().from(table).select(q.cols).eq('visibility', 'global').order('created_at'),
@@ -63,18 +89,19 @@ export function GlobalContent({ table }: { table: Exclude<ContentTable, 'quiz_se
       setItems(rows.filter((r) => r.owner_id !== me).map((r) => ({ id: String(r.id), ...q.map(r) })));
     })().catch((e: Error) => live && setError(e.message));
     return () => { live = false; };
-  }, [table]);
+  }, [table, mode]);
 
   if (error) return <p role="alert" style={{ color: '#A8484F', fontWeight: 700 }}>{error}</p>;
   if (!items) return <p style={{ color: '#7A6458' }}>Loading…</p>;
-  if (items.length === 0) return <p style={{ color: '#7A6458' }}>Nothing has been shared with everyone yet.</p>;
+  if (items.length === 0) return <p style={{ color: '#7A6458' }}>{mode === 'parents' ? 'No parent has shared anything yet.' : 'Nothing has been shared with everyone yet.'}</p>;
   const card = (it: Item) => (
     <>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'center', height: 96, alignItems: 'center', background: '#FBF4E9', borderRadius: 12 }}>
         {it.images.map((p, i) => (mediaUrl(p) ? <Pic key={i} src={mediaUrl(p) ?? ''} alt="" style={{ maxWidth: 88, maxHeight: 88, objectFit: 'contain' }} /> : null))}
       </div>
       <strong>{it.title}</strong>
-      <VisibilityBadge visibility="global" />
+      {it.owner && <span style={{ fontSize: 13, color: '#7A6458', fontWeight: 700 }}>{it.owner}</span>}
+      <VisibilityBadge visibility={it.visibility ?? 'global'} />
     </>
   );
   return (

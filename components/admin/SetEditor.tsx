@@ -19,7 +19,7 @@ import { RevertButton, SaveButton } from './SaveButtons';
 import { EditLock } from './EditLock';
 import { ShareToggle } from './ShareToggle';
 import { VisibilityBadge } from './VisibilityBadge';
-import { getMyUserId, isLocked } from '@/lib/review';
+import { getMyUserId, isLocked, useMyRole } from '@/lib/review';
 import { SvgPaste } from './SvgPaste';
 import { checkSvg } from '@/lib/quizImport';
 import { CheckOption, panel, inputStyle, ghostBtn, dangerBtn, fileName, Img, PicIcon, Eye, Shell } from './editor-parts';
@@ -42,6 +42,7 @@ export function SetEditor({ setId }: { setId: string }) {
   const [missing, setMissing] = useState(false);
   const [me, setMe] = useState<string | null | undefined>(undefined);
   useEffect(() => { void getMyUserId().then(setMe, () => setMe(null)); }, []);
+  const role = useMyRole();
   const { toast, show: showToast, close: closeToast } = useToast();
   // a file renamed in the library: edits not saved yet follow it
   useMediaRenamed(useCallback((from: string, to: string) => {
@@ -205,8 +206,9 @@ export function SetEditor({ setId }: { setId: string }) {
     confirmButton = 'Delete set';
   }
 
-  // Only the owner edits, and only while the set is private (V1-V3). Until the user id is known, only the state counts.
-  const locked = !d.isNew && isLocked(d.visibility, d.ownerId ?? null, me === undefined ? d.ownerId ?? null : me);
+  // Only the owner edits, and only while the set is private (V1-V3); a Super Admin's own copies stay editable (V8).
+  // Until the user id is known, only the state counts.
+  const locked = !d.isNew && isLocked(d.visibility, d.ownerId ?? null, me === undefined ? d.ownerId ?? null : me, role);
   const cardTitleColor = d.name.trim() ? d.color : '#B0A094';
 
   return (
@@ -242,9 +244,9 @@ export function SetEditor({ setId }: { setId: string }) {
 
       {!d.isNew && d.visibility && !deleted && (
         <section style={{ ...panel, padding: '16px 24px', flexDirection: 'row', flexWrap: 'wrap', gap: 24, alignItems: 'center' }} aria-label="Sharing">
-          <VisibilityBadge visibility={d.visibility} />
+          <VisibilityBadge visibility={d.visibility} copied={d.copied} />
           {d.ownerId === me || me === undefined ? (
-            <ShareToggle table="quiz_sets" id={d.id} visibility={d.visibility}
+            <ShareToggle table="quiz_sets" id={d.id} visibility={d.visibility} superOwned={d.superOwned}
               onChanged={(v) => { setD((x) => (x ? { ...x, visibility: v } : x)); setSaved((x) => (x ? { ...x, visibility: v } : x)); }} />
           ) : (
             <span style={{ fontSize: 14, color: '#7A6458' }}>Shared by another family. You can look but not change it.</span>

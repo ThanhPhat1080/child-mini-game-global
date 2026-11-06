@@ -155,10 +155,10 @@ export async function signInAsAdmin(page: Page): Promise<void> {
   await page.waitForURL('**/admin/children');
 }
 
-/** Signs in through the real admin form as the Super Admin; the landing page is the review queue. */
+/** Signs in through the real admin form as the Super Admin; the landing page is the parents list (V8, N5). */
 export async function signInAsSuper(page: Page): Promise<void> {
   await signInAdminForm(page, ACCOUNTS.super);
-  await page.waitForURL('**/admin/queue');
+  await page.waitForURL('**/admin/parents');
 }
 
 async function signInAdminForm(page: Page, who: { email: string; password: string }): Promise<void> {

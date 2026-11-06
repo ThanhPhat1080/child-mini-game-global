@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { ContentTable, Visibility } from '@/lib/review';
+import type { Role } from '@/lib/auth/roles';
 import { CHILD_COLUMNS, type Child } from '@/lib/children';
 import type { Difference } from '@/lib/spot/types';
 
@@ -25,15 +27,76 @@ async function rpc(client: Client, name: string, args: Record<string, unknown>):
   if (error) throw new Error(error.message);
 }
 
-// ---- review (V3, V5) ----
-export const approveItem = (table: ContentTable, id: string, client: Client = createSupabaseBrowserClient()) =>
-  rpc(client, 'review_approve', { p_table: table, p_id: id });
-export const rejectItem = (table: ContentTable, id: string, note: string, client: Client = createSupabaseBrowserClient()) =>
-  rpc(client, 'review_reject', { p_table: table, p_id: id, p_note: note });
+// ---- review (V3, V5, V8-V13) ----
+
+/** Tells the admin nav (red dots) and the review tabs that the pending lists changed. */
+export const PENDING_CHANGED = 'cp:pending-changed';
+function announcePendingChanged(): void {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(PENDING_CHANGED));
+}
+
+/**
+ * V8: approve. The original goes back to private and a Super Admin global copy is created; returns the copy's id.
+ */
+export async function approveItem(table: ContentTable, id: string, client: Client = createSupabaseBrowserClient()): Promise<string> {
+  const { data, error } = await client.rpc('review_approve', { p_table: table, p_id: id });
+  announcePendingChanged();
+  if (error) throw new Error(error.message);
+  return String(data);
+}
+export async function rejectItem(table: ContentTable, id: string, note: string, client: Client = createSupabaseBrowserClient()): Promise<void> {
+  try {
+    await rpc(client, 'review_reject', { p_table: table, p_id: id, p_note: note });
+  } finally {
+    announcePendingChanged();
+  }
+}
 export const unpublishItem = (table: ContentTable, id: string, client: Client = createSupabaseBrowserClient()) =>
   rpc(client, 'unpublish_item', { p_table: table, p_id: id });
+/** V10: a Super Admin publishes their own private row, without a review. */
+export const publishOwn = (table: ContentTable, id: string, client: Client = createSupabaseBrowserClient()) =>
+  rpc(client, 'publish_own', { p_table: table, p_id: id });
 export const deleteItem = (table: ContentTable, id: string, client: Client = createSupabaseBrowserClient()) =>
   rpc(client, 'delete_item', { p_table: table, p_id: id });
+
+/** Waiting rows per game for the red dots (V3, V8): quiz sets; cards (cards and their groups); spot; find. */
+export type PendingCounts = { sets: number; cards: number; spot: number; find: number };
+
+export async function pendingCounts(client: Client = createSupabaseBrowserClient()): Promise<PendingCounts> {
+  const count = async (table: ContentTable): Promise<number> => {
+    const { count: n, error } = await client.from(table).select('id', { count: 'exact', head: true }).eq('visibility', 'pending');
+    if (error) throw new Error(error.message);
+    return n ?? 0;
+  };
+  const [sets, cardsOnly, groups, spot, find] = await Promise.all([
+    count('quiz_sets'), count('memory_cards'), count('card_groups'), count('spot_levels'), count('find_levels'),
+  ]);
+  return { sets, cards: cardsOnly + groups, spot, find };
+}
+
+/**
+ * The pending counts for a Super Admin, refreshed on mount, on `key` (the page path for the nav) and on every
+ * PENDING_CHANGED. For anyone else the counts stay zero and nothing is read.
+ */
+export function usePendingCounts(role: Role | null | undefined, key?: string): PendingCounts {
+  const [counts, setCounts] = useState<PendingCounts>({ sets: 0, cards: 0, spot: 0, find: 0 });
+  useEffect(() => {
+    if (role !== 'super_admin') return;
+    let live = true;
+    const refresh = () => { pendingCounts().then((c) => { if (live) setCounts(c); }, () => undefined); };
+    refresh();
+    window.addEventListener(PENDING_CHANGED, refresh);
+    return () => { live = false; window.removeEventListener(PENDING_CHANGED, refresh); };
+  }, [role, key]);
+  return counts;
+}
+
+/** Parent accounts by id, for the "Parent published" tab (owner names and whether they are banned). */
+export async function parentNames(client: Client = createSupabaseBrowserClient()): Promise<Map<string, string>> {
+  const { data, error } = await client.from('profiles').select('user_id, display_name').eq('role', 'parent');
+  if (error) throw new Error(error.message);
+  return new Map(((data ?? []) as { user_id: string; display_name: string | null }[]).map((p) => [p.user_id, p.display_name ?? '']));
+}
 
 // ---- parents (U15, Q4) ----
 export const banParent = (userId: string, code: string, note: string, client: Client = createSupabaseBrowserClient()) =>
@@ -92,11 +155,11 @@ const SELECT: Record<ContentTable, { cols: string; map: (r: Raw) => Pick<Content
 /** Content of every table, optionally one visibility and/or one owner only. A Super Admin reads all rows (RLS). */
 export async function listContent(
   visibility?: Visibility,
-  options: { ownerId?: string } = {},
+  options: { ownerId?: string; tables?: ContentTable[] } = {},
   client: Client = createSupabaseBrowserClient(),
 ): Promise<ContentItem[]> {
   const out: ContentItem[] = [];
-  for (const table of TABLES) {
+  for (const table of options.tables ?? TABLES) {
     let q = client.from(table).select(SELECT[table].cols);
     if (visibility) q = q.eq('visibility', visibility);
     if (options.ownerId) q = q.eq('owner_id', options.ownerId);
@@ -108,7 +171,7 @@ export async function listContent(
   }
   return out;
 }
-export const listPending = (client?: Client) => listContent('pending', {}, client);
+export const listPending = (client?: Client, tables?: ContentTable[]) => listContent('pending', { tables }, client);
 
 // ---- people ----
 export type PersonRow = {

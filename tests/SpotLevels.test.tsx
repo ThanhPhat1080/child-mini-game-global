@@ -44,12 +44,16 @@ describe('Spot level select (S1)', () => {
     expect(screen.queryByRole('link', { name: /Play level/ })).toBeNull();
   });
 
-  it('a load failure shows the same friendly status', async () => {
-    h.fetchActiveLevels.mockRejectedValue(new Error('boom'));
+  it('a load failure shows a retry screen, not "coming soon", and Try again reloads', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    h.fetchActiveLevels.mockRejectedValueOnce(new Error('boom')).mockResolvedValue([]);
     render(<SpotLevels />);
-    expect(await screen.findByRole('status', { name: 'New levels are coming soon' })).toBeTruthy();
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(await screen.findByRole('alert', { name: /went wrong/ })).toBeTruthy();
+    expect(screen.queryByRole('status', { name: 'New levels are coming soon' })).toBeNull();
     expect(screen.queryByRole('link', { name: /Play level/ })).toBeNull();
+    const calls = h.fetchActiveLevels.mock.calls.length;
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+    await waitFor(() => expect(h.fetchActiveLevels.mock.calls.length).toBe(calls + 1));
   });
 
   it('the first level is focused on arrival', async () => {

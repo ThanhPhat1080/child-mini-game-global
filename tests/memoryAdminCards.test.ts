@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.mock('@/lib/review', async (orig) => ({ ...(await orig<typeof import('@/lib/review')>()), getMyRole: async () => 'parent' }));
 vi.mock('@/lib/media/refs', () => ({ referencedPaths: async () => new Set<string>() })); // nothing else uses these files
 
 const h = vi.hoisted(() => ({
@@ -89,7 +90,7 @@ describe('loadCards', () => {
   });
   it('reads all cards ordered by created_at and maps the columns', async () => {
     h.selectResult = { data: [{ id: 'a', word: 'cat', image_path: 'cards/a.png', audio_path: null, active: false, group_id: null, owner_id: 'me', visibility: 'private' }], error: null };
-    await expect(loadCards()).resolves.toEqual([{ id: 'a', isNew: false, word: 'cat', image: 'cards/a.png', audio: null, active: false, groupId: null, visibility: 'private' }]);
+    await expect(loadCards()).resolves.toEqual([{ id: 'a', isNew: false, word: 'cat', image: 'cards/a.png', audio: null, active: false, groupId: null, visibility: 'private', superOwned: false, copied: false }]);
     expect(h.from).toHaveBeenCalledWith('memory_cards');
     expect(h.order).toHaveBeenCalledWith('created_at', { ascending: false });
   });

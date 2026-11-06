@@ -2,9 +2,15 @@ import { randomId } from '@/lib/randomId';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { commitPendingMap, isPending, removeMedia } from '@/lib/media';
 import { isBucketPath, pathsToDelete } from '@/lib/mediaPaths';
-import { getMyUserId, type Visibility } from '@/lib/review';
+import { copiedIds, getMyRole, getMyUserId, lockedOwn, type Visibility } from '@/lib/review';
 
-export type ECard = { id: string; isNew: boolean; word: string; image: string | null; audio: string | null; active: boolean; groupId: string | null; visibility?: Visibility };
+export type ECard = {
+  id: string; isNew: boolean; word: string; image: string | null; audio: string | null; active: boolean; groupId: string | null; visibility?: Visibility;
+  /** The signed-in user is a Super Admin and owns the row (V8): it stays editable. */
+  superOwned?: boolean;
+  /** A parent's card with a global copy of a Super Admin (V10): shows the "Global copy" badge. */
+  copied?: boolean;
+};
 
 type Row = { id: string; word: string; image_path: string | null; audio_path: string | null; active: boolean; group_id: string | null; owner_id: string | null; visibility: Visibility };
 
@@ -38,8 +44,11 @@ export async function loadCards(): Promise<ECard[]> {
     .select('id, word, image_path, audio_path, active, group_id, owner_id, visibility')
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
-  const me = await getMyUserId();
-  return ((data ?? []) as Row[]).filter((r) => r.owner_id === me).map((r) => ({ id: r.id, isNew: false, word: r.word, image: r.image_path, audio: r.audio_path, active: r.active, groupId: r.group_id ?? null, visibility: r.visibility }));
+  const [me, role] = await Promise.all([getMyUserId(), getMyRole()]);
+  const mine = ((data ?? []) as Row[]).filter((r) => r.owner_id === me);
+  const superOwned = role === 'super_admin';
+  const copies = superOwned ? new Set<string>() : await copiedIds('memory_cards', mine.map((r) => r.id));
+  return mine.map((r) => ({ id: r.id, isNew: false, word: r.word, image: r.image_path, audio: r.audio_path, active: r.active, groupId: r.group_id ?? null, visibility: r.visibility, superOwned, copied: copies.has(r.id) }));
 }
 
 /**
@@ -75,7 +84,7 @@ export async function saveCards(saved: ECard[], draft: ECard[]): Promise<{ error
     if (error) return fail(error.message);
   }
   // Rows under review or global are locked (V2, V3): they are not written here.
-  const writable = final.filter((c) => !c.visibility || c.visibility === 'private');
+  const writable = final.filter((c) => !lockedOwn(c.visibility, c.superOwned));
   if (writable.length) {
     const { error } = await sb.from('memory_cards').upsert(
       writable.map((c) => ({ id: c.id, word: c.word.trim(), image_path: c.image, audio_path: c.audio, active: c.active, group_id: c.groupId })),

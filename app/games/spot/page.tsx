@@ -7,6 +7,7 @@ import { BackButton } from '@/components/BackButton';
 import { MusicButton } from '@/components/MusicButton';
 import { SpotHelp } from '@/components/SpotHelp';
 import { SpotLevelTile } from '@/components/spot/SpotLevelTile';
+import { LoadError } from '@/components/LoadError';
 import { fetchActiveLevels } from '@/lib/spot/levels';
 import type { SpotLevel } from '@/lib/spot/types';
 import { gridStep } from '@/lib/keynav';
@@ -20,11 +21,15 @@ export default function SpotLevels() {
   const [help, setHelp] = useState(false);
   const helpBtn = useRef<HTMLButtonElement>(null);
 
+  const [failed, setFailed] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
     let live = true;
-    fetchActiveLevels().then((l) => live && setLevels(l), () => live && setLevels([]));
+    setFailed(null);
+    fetchActiveLevels().then((l) => live && setLevels(l), (e) => { if (live) { setFailed(e ?? true); setLevels([]); } });
     return () => { live = false; };
-  }, []);
+  }, [attempt]);
 
   const any = !!levels && levels.length > 0;
 
@@ -62,7 +67,8 @@ export default function SpotLevels() {
           <span style={{ fontSize: 44, fontWeight: 600, color: '#5F88AB', lineHeight: 1 }}>Spot the Differences</span>
         </button>
       </div>
-      {levels !== null && levels.length === 0 && (
+      {!!failed && <LoadError error={failed} onRetry={() => { setLevels(null); setAttempt((n) => n + 1); }} />}
+      {!failed && levels !== null && levels.length === 0 && (
         <div role="status" aria-label="New levels are coming soon" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg aria-hidden="true" width="480" height="480" viewBox="0 0 24 24">
             <rect x="3" y="3" width="18" height="18" rx="4" fill="#E3EEF7" stroke="#A9C6DE" strokeWidth="0.6" />

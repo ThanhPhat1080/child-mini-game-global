@@ -1,10 +1,14 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({ getMyProfile: vi.fn(), pendingMessageCount: vi.fn() }));
+const h = vi.hoisted(() => ({
+  getMyProfile: vi.fn(),
+  pendingMessageCount: vi.fn(),
+  counts: { sets: 0, cards: 0, spot: 0, find: 0 },
+}));
 vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ auth: { signOut: vi.fn() } }) }));
 vi.mock('@/lib/auth/roles', () => ({ getMyProfile: h.getMyProfile }));
-vi.mock('@/lib/superAdmin', () => ({ pendingMessageCount: h.pendingMessageCount }));
+vi.mock('@/lib/superAdmin', () => ({ pendingMessageCount: h.pendingMessageCount, usePendingCounts: () => h.counts }));
 vi.mock('next/navigation', () => ({ usePathname: () => '/admin/sets', useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 vi.mock('next/link', () => ({ default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }));
 
@@ -13,6 +17,7 @@ import { AdminNav } from '@/components/AdminNav';
 beforeEach(() => {
   h.getMyProfile.mockReset();
   h.pendingMessageCount.mockReset().mockResolvedValue(0);
+  h.counts = { sets: 0, cards: 0, spot: 0, find: 0 };
 });
 afterEach(cleanup);
 
@@ -24,6 +29,7 @@ describe('AdminNav (N2)', () => {
     expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
     for (const n of ['Media', 'Quiz sets', 'Cards', 'Spot', 'Find']) expect(screen.getByRole('link', { name: n })).toBeTruthy();
     for (const n of ['Review queue', 'Parents', 'Messages']) expect(screen.queryByRole('link', { name: n })).toBeNull();
+    expect(screen.queryByRole('link', { name: /pending/ })).toBeNull();
     expect(h.pendingMessageCount).not.toHaveBeenCalled();
   });
 
@@ -32,11 +38,31 @@ describe('AdminNav (N2)', () => {
     render(<AdminNav />);
     await waitFor(() => expect(screen.getByText('Super Admin')).toBeTruthy());
     expect(screen.getByRole('link', { name: 'Quiz sets' })).toBeTruthy();
-    for (const [name, href] of [['Review queue', '/admin/queue'], ['Parents', '/admin/parents'], ['Children', '/admin/all-children'], ['Messages', '/admin/messages']]) {
+    for (const [name, href] of [['Parents', '/admin/parents'], ['Children', '/admin/all-children'], ['Messages', '/admin/messages']]) {
       expect(screen.getByRole('link', { name })).toHaveProperty('pathname', href);
     }
+    // V3: the review queue lives in each game's own tab now, not in the menu.
+    expect(screen.queryByRole('link', { name: 'Review queue' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'All content' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'All children' })).toBeNull();
+  });
+
+  it('a Super Admin sees a red dot with the count on each game with waiting shares; a parent sees none', async () => {
+    h.getMyProfile.mockResolvedValue({ role: 'super_admin' });
+    h.counts = { sets: 2, cards: 0, spot: 1, find: 0 };
+    render(<AdminNav />);
+    expect(await screen.findByRole('link', { name: 'Quiz sets, 2 pending' })).toHaveProperty('pathname', '/admin/sets');
+    expect(screen.getByRole('link', { name: 'Spot, 1 pending' })).toHaveProperty('pathname', '/admin/spot');
+    expect(screen.getByRole('link', { name: 'Cards' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Find' })).toBeTruthy();
+  });
+
+  it('a parent never gets review dots', async () => {
+    h.getMyProfile.mockResolvedValue({ role: 'parent' });
+    h.counts = { sets: 2, cards: 1, spot: 1, find: 1 };
+    render(<AdminNav />);
+    expect(await screen.findByRole('link', { name: 'Quiz sets' })).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /pending/ })).toBeNull();
   });
 
   it('shows a red dot on Messages with the pending count, and none at zero', async () => {

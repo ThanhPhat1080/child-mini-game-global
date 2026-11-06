@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
+import { dropOwnCopies, familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
 import { Stage } from '@/components/Stage';
 import { Hills } from '@/components/Hills';
 import { BackButton } from '@/components/BackButton';
 import { SetCard, type SetCardData } from '@/components/SetCard';
 import { MusicButton } from '@/components/MusicButton';
+import { LoadError } from '@/components/LoadError';
 import { QuizHelp } from '@/components/QuizHelp';
 import { handleChoiceKey } from '@/lib/keynav';
 import { hasAnswerContent } from '@/lib/sets';
@@ -26,6 +27,8 @@ function isComplete(q: Row['questions'][number]): boolean {
 /** Quiz set selection (C3/C11). Only published sets are visible to anon (RLS). */
 export default function QuizSets() {
   const [sets, setSets] = useState<SetCardData[] | null>(null);
+  const [failed, setFailed] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
   const [done, setDone] = useState<Record<string, boolean>>({});
   const [help, setHelp] = useState(false);
   const [idx, setIdx] = useState(0);
@@ -40,22 +43,28 @@ export default function QuizSets() {
   const n = sets?.length ?? 0;
 
   useEffect(() => {
+    let live = true;
+    setFailed(null);
     playerId()
       .then(async (me) => {
-        const { data } = await familyOrGlobal(
+        const { data, error } = await familyOrGlobal(
           createSupabaseBrowserClient()
             .from('quiz_sets')
-            .select('id, title, subtitle, heading_color, cover_path, owner_id, questions(prompt_text, prompt_audio_path, answers(image_path, text, is_correct))')
+            .select('id, title, subtitle, heading_color, cover_path, owner_id, source_id, questions(prompt_text, prompt_audio_path, answers(image_path, text, is_correct))')
             .eq('status', 'published'),
           me,
         ).order('position');
-        const rows = ownerFirst((data as unknown as Row[]) ?? [], me).map((r) => ({ ...r, count: r.questions.filter(isComplete).length })).filter((r) => r.count > 0);
+        if (error) throw new Error(error.message);
+        const rows = ownerFirst(dropOwnCopies((data as unknown as Row[]) ?? [], me), me).map((r) => ({ ...r, count: r.questions.filter(isComplete).length })).filter((r) => r.count > 0);
+        if (!live) return;
         setSets(rows);
         const d: Record<string, boolean> = {};
         try { rows.forEach((r) => { if (localStorage.getItem(`childPlayer:done:${r.id}`)) d[r.id] = true; }); } catch { /* storage blocked */ }
         setDone(d);
-      });
-  }, []);
+      })
+      .catch((e) => { if (live) { setFailed(e ?? true); setSets([]); } });
+    return () => { live = false; };
+  }, [attempt]);
 
   // keyboard: start on the first set; arrows move between sets; Enter or Space opens the focused one
   useEffect(() => {
@@ -99,7 +108,8 @@ export default function QuizSets() {
           <span style={{ fontSize: 44, fontWeight: 600, color: '#B8737B', lineHeight: 1 }}>Quiz</span>
         </button>
       </div>
-      {sets && sets.length === 0 && (
+      {!!failed && <LoadError error={failed} onRetry={() => { setSets(null); setAttempt((n) => n + 1); }} />}
+      {!failed && sets && sets.length === 0 && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 72, fontWeight: 600, color: '#8A6A5E' }}>
           New quizzes are coming soon!
         </div>

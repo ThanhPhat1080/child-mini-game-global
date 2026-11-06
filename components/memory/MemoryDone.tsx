@@ -21,8 +21,7 @@ export function MemoryDone({ flips, childName, completeUrl, onAgain, levelsHref 
     if (spoken.current) return;
     spoken.current = true;
     if (completeUrl) { playFile(completeUrl); return; }
-    applause(3);
-    speakKid(greeting, { pitch: 1.9, rate: 0.9 });
+    applause(3, () => speakKid(greeting, { pitch: 1.9, rate: 0.9 }));
   }, [completeUrl, greeting]);
 
   useEffect(() => {

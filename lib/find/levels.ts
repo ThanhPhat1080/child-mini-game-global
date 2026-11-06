@@ -1,10 +1,10 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
+import { dropOwnCopies, familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
 import type { FindLevel } from '@/lib/find/types';
 import { isPlayable } from '@/lib/find/validate';
 
 const COLUMNS = 'id, image_path, objects, active, sort_order';
-const LIST_COLUMNS = `${COLUMNS}, owner_id`;
+const LIST_COLUMNS = `${COLUMNS}, owner_id, source_id`;
 
 /**
  * Active levels only, in play order (`sort_order`, then `created_at`). Rows that are not playable
@@ -19,7 +19,7 @@ export async function fetchActiveFindLevels(): Promise<FindLevel[]> {
     .order('sort_order')
     .order('created_at');
   if (error) throw new Error(error.message);
-  return ownerFirst(((data ?? []) as FindLevel[]).filter(isPlayable), me);
+  return ownerFirst(dropOwnCopies(((data ?? []) as FindLevel[]).filter(isPlayable), me), me);
 }
 
 /**

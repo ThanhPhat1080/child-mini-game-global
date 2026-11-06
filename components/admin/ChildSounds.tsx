@@ -128,8 +128,7 @@ export function ChildSounds({ childId }: { childId: string }) {
     if (kind === 'hooray') h = yay();
     else if (kind === 'ohoh') h = ohOh();
     else {
-      h = applause(3);
-      speakKid('You did it!', { pitch: 1.9, rate: 0.9 });
+      h = applause(3, () => speakKid('You did it!', { pitch: 1.9, rate: 0.9 }));
     }
     if (!h) return;
     builtIn.current = h;
@@ -220,7 +219,7 @@ export function ChildSounds({ childId }: { childId: string }) {
         {([
           { kind: 'hooray', title: 'Hooray', hint: 'Plays when the child picks the correct answer.' },
           { kind: 'ohoh', title: 'Oh-oh', hint: 'Plays when the child picks a wrong answer.' },
-          { kind: 'complete', title: 'You did it', hint: 'Plays when a quiz set is finished (replaces the applause and spoken praise).' },
+          { kind: 'complete', title: 'You did it', hint: 'Plays when a quiz set is finished (replaces the default "You did it" sound).' },
         ] as const).map((it) => {
           const path = shown(it.kind);
           const on = playing === (path ? fileKey(it.kind) : `builtin:${it.kind}`);
