@@ -23,8 +23,9 @@ const SUPER: Item[] = [
   { href: '/admin/all-children', text: 'Children', glyph: <g><circle cx="12" cy="11" r="7" /><path d="M10.5 4.4c.4-1.2 1.3-1.8 2.5-1.6" /><path d="M9.5 11h.01M14.5 11h.01" /><path d="M9.6 14.4c1.5 1.2 3.3 1.2 4.8 0" /><path d="M7.5 21.5c0-2.2 2-3.5 4.5-3.5s4.5 1.3 4.5 3.5" /></g> },
   { href: '/admin/parents', text: 'Parents', glyph: <g><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" /></g> },
   { href: '/admin/messages', text: 'Messages', glyph: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
-  { href: '/admin/puzzle', text: 'Puzzle', glyph: <path d="M4 7h4a2.5 2.5 0 0 1 5 0h4v3a2.5 2.5 0 0 1 0 5v5H4z" /> },
 ];
+/** A32: Super Admin only, shown last in the Game settings group (after Find). */
+const PUZZLE: Item = { href: '/admin/puzzle', text: 'Puzzle', glyph: <path d="M4 7h4a2.5 2.5 0 0 1 5 0h4v3a2.5 2.5 0 0 1 0 5v5H4z" /> };
 const SHARED: Item[] = [
   { href: '/admin/media', text: 'Media', glyph: <g><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></g> },
   { href: '/admin/sets', text: 'Quiz sets', glyph: <g><circle cx="12" cy="12" r="10" /><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3" /><path d="M12 17h.01" /></g> },
@@ -160,6 +161,7 @@ export function AdminNav() {
       <div role="group" aria-labelledby="admin-nav-games" className={styles.navGroup}>
         <span id="admin-nav-games" className={styles.navGroupTitle}>Game settings</span>
         {SHARED.slice(1).map(link)}
+        {role === 'super_admin' && link(PUZZLE)}
       </div>
       <div className={styles.divider} />
       <Link href="/" className={cls(false, styles.navGreen)} {...tipProps('Open child app')}>
