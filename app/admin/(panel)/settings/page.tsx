@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 
-/** The singleton settings page is gone (U4); a child's settings live on the Children page. */
+/** The singleton settings page is gone (U4). A parent's details and children live on Profile (PR11). */
 export default function SettingsRedirect() {
-  redirect('/admin/children');
+  redirect('/admin/profile');
 }
