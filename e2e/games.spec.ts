@@ -70,6 +70,14 @@ test('Enter on the sixth game opens /games/find', async ({ page }) => {
   await expect(page).toHaveURL(/\/games\/find$/);
 });
 
+test('Enter on the eighth game (Puzzle Pairs) opens /games/pairs', async ({ page }) => {
+  await openGames(page);
+  for (let i = 0; i < 7; i++) await page.keyboard.press('ArrowRight');
+  await current(page, 8);
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/games\/pairs$/);
+});
+
 test('the game list has no "?" help buttons and never shows a dialog', async ({ page }) => {
   await openGames(page);
   await expect(page.getByRole('button', { name: /What is .*Show how to play/ })).toHaveCount(0);
