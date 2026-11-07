@@ -1,0 +1,76 @@
+/* Puzzle Pairs board (spec section 6). A half is a 336 x 336 box clipped to its half; the box itself
+   takes no pointer events, only the clipped shape does. clip-path cuts box-shadow, so shadows and the
+   glow are drop-shadow filters on the outer box. */
+.board { position: absolute; inset: 0; pointer-events: none; }
+
+.piece {
+  position: absolute; left: 0; top: 0; width: 336px; height: 336px;
+  transform-origin: 0 0; pointer-events: none; z-index: 1;
+  transition: transform .6s cubic-bezier(.3, .75, .3, 1), filter .3s ease;
+  filter: drop-shadow(0 10px 0 #E3CFC0) drop-shadow(0 14px 18px rgba(90, 64, 56, .14));
+}
+.piece[data-dragging='true'] {
+  transition: filter .3s ease; z-index: 20;
+  filter: drop-shadow(0 28px 30px rgba(90, 64, 56, .3));
+}
+.piece[data-target='true'] {
+  filter: drop-shadow(0 0 6px #9CC3A4) drop-shadow(0 0 14px #9CC3A4) drop-shadow(0 0 22px #9CC3A4);
+}
+.piece[data-joining='true'] { z-index: 15; transition: transform .6s cubic-bezier(.3, .75, .3, 1); }
+.piece:has(.hit:focus-visible) {
+  filter: drop-shadow(0 0 0 #5A4038) drop-shadow(0 0 5px #8FB3D1) drop-shadow(0 0 5px #8FB3D1) drop-shadow(0 0 5px #8FB3D1);
+}
+
+.hit {
+  position: absolute; inset: 0; pointer-events: auto; outline: none;
+  touch-action: none; user-select: none; -webkit-user-select: none; cursor: pointer;
+}
+.hit[data-side='L'] {
+  clip-path: path('M27,0 H168 V135 A33,33 0 0 1 168,201 V336 H27 Q0,336 0,309 V27 Q0,0 27,0 Z');
+  transform-origin: 84px 50%;
+}
+.hit[data-side='R'] {
+  clip-path: path('M168,0 H309 Q336,0 336,27 V309 Q336,336 309,336 H168 V201 A33,33 0 0 0 168,135 Z');
+  transform-origin: 252px 50%;
+}
+.hit[data-up='true'] { cursor: grab; }
+.piece[data-dragging='true'] .hit { cursor: grabbing; }
+
+.front { position: absolute; inset: 0; background: #fff; }
+.front img { position: absolute; left: 18px; top: 18px; width: 300px; height: 300px; object-fit: contain; pointer-events: none; }
+.missing { position: absolute; left: 18px; top: 18px; width: 300px; height: 300px; border-radius: 28px; background: #F7ECCB; }
+
+.back {
+  position: absolute; inset: 0; background-color: #F5D9C4;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, .55) 9px, transparent 10px);
+  background-size: 56px 56px; background-position: 14px 14px;
+}
+.back::after {
+  content: '?'; position: absolute; top: 108px; width: 120px; height: 120px; border-radius: 50%;
+  background: rgba(255, 255, 255, .6); color: #E9B99A; font: 800 84px/120px 'Baloo 2', system-ui, sans-serif; text-align: center;
+}
+.hit[data-side='L'] .back::after { left: 24px; }
+.hit[data-side='R'] .back::after { left: 192px; }
+
+/* H7: a 0.56 s horizontal flip; the face swaps half way. */
+.flipping { animation: pp-flip .56s ease-in-out; }
+.flipping .back { animation: pp-hide .56s linear forwards; }
+@keyframes pp-flip { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(0); } }
+@keyframes pp-hide { 0%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes pp-fade { from { opacity: 1; } to { opacity: 0; } }
+
+.shelf { position: absolute; left: 0; top: 0; pointer-events: none; }
+.place {
+  position: absolute; width: 168px; height: 168px; box-sizing: border-box; border-radius: 28px;
+  border: 5px dashed #EBD3C2; background: rgba(255, 255, 255, .45);
+}
+.place[data-filled='true'] { border: 9px solid #fff; background: #fff; box-shadow: 0 8px 0 #E3CFC0; animation: pp-land .5s ease-out; }
+.place img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+@keyframes pp-land { 0% { transform: scale(.85); } 60% { transform: scale(1.06); } 100% { transform: scale(1); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .piece, .piece[data-joining='true'] { transition: opacity .4s ease, filter .3s ease; }
+  .flipping { animation: none; }
+  .flipping .back { animation: pp-fade .56s ease forwards; }
+  .place[data-filled='true'] { animation: none; }
+}
