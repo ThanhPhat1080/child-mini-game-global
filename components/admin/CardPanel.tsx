@@ -5,6 +5,7 @@ import { isCardComplete, type ECard, type EGroup } from '@/lib/memory/adminCards
 import { mediaUrl } from '@/lib/media';
 import { LEVELS, levelsAvailable, pairsOf } from '@/lib/memory/deck';
 import s from './admin-ui.module.css';
+import { selectArrowStyle } from './selectArrow';
 import { LibraryButton } from './LibraryButton';
 import { PicIcon, dangerBtn, fileName, ghostBtn, inputStyle, panel } from './editor-parts';
 import { Pic } from '@/components/Pic';
@@ -106,7 +107,7 @@ export function CardPanel({ c, n, duplicate, message, autoFocus, groups, weakGro
       <label htmlFor={`cg-${c.id}`} style={{ fontSize: 13, fontWeight: 700 }}>Group</label>
       <select id={`cg-${c.id}`} className={s.in} aria-label={`Group for card ${n}`} value={groupValue}
         onChange={(e) => onEdit({ groupId: e.target.value || null })}
-        style={{ ...inputStyle, height: 40, width: '100%', boxSizing: 'border-box', padding: '0 10px', fontSize: 15, cursor: 'pointer' }}>
+        style={{ ...inputStyle, height: 40, width: '100%', boxSizing: 'border-box', padding: '0 10px', fontSize: 15, cursor: 'pointer', ...selectArrowStyle }}>
         <option value="">No group</option>
         {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
       </select>

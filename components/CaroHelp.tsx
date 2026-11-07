@@ -19,7 +19,7 @@ const SLIDES: Slide[] = [
     text: 'A board game for two. Put five of your marks in a row: across, down, or on a slant. X is blue and O is red.',
     art: (
       <span style={{ display: 'flex', gap: 10 }}>
-        {(['X', 'X', 'X', 'X', 'X'] as const).map((m, i) => <Square key={i} mark={m} win />)}
+        {(['O', 'X', 'O', 'X', 'O'] as const).map((m, i) => <Square key={i} mark={m} />)}
       </span>
     ),
   },

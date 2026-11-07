@@ -1,19 +1,21 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { GENDER_THEME } from '@/lib/childTheme';
 import type { Child } from '@/lib/children';
 import { mediaUrl } from '@/lib/media';
 import { Pic } from '@/components/Pic';
+import { BanTag } from '@/components/admin/BanTag';
 import s from './admin-ui.module.css';
 
 /**
  * One child on the parent's Children page: gender colors, avatar, names, age band, Edit and Remove (KU1, KU2).
- * `size="lg"` is the larger card of the Super Admin's Children page; `footer` adds a row under the names (N15).
- * Without `onEdit` / `onRemove` the card is read-only and shows no buttons (N11).
+ * `size="lg"` is the larger card of the Super Admin's Children page; `parent` adds the parent line under the age,
+ * linking to the parent's page (N15). Without `onEdit` / `onRemove` the card is read-only and shows no buttons (N11).
  */
-export function ChildCard({ child, onEdit, onRemove, size, footer }: {
-  child: Child; onEdit?: () => void; onRemove?: () => void; size?: 'lg'; footer?: ReactNode;
+export function ChildCard({ child, onEdit, onRemove, size, parent }: {
+  child: Child; onEdit?: () => void; onRemove?: () => void; size?: 'lg';
+  parent?: { id: string; name: string; banned: boolean };
 }) {
   const t = GENDER_THEME[child.gender];
   const src = mediaUrl(child.avatar_path);
@@ -34,8 +36,17 @@ export function ChildCard({ child, onEdit, onRemove, size, footer }: {
           <span aria-hidden="true">{t.icon}</span>
           <span className={s.childBand}>{child.age_band}</span>
         </div>
+        {parent && (
+          <div className={s.childParent}>
+            <span>Parent:</span>
+            <Link href={`/admin/parents/${parent.id}`} className={s.parentLink}>
+              {parent.name || 'Unknown parent'}
+              <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M14 4h6v6" /><path d="M20 4l-9 9" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></svg>
+            </Link>
+            {parent.banned && <BanTag />}
+          </div>
+        )}
       </div>
-      {footer && <div className={s.childFooter}>{footer}</div>}
       {(onEdit || onRemove) && (
         <div className={s.childActions}>
           {onEdit && (

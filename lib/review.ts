@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { getMyProfile, type Role } from '@/lib/auth/roles';
+import { isGuestPlay } from '@/lib/childSession';
 
 /** The tables a parent can share (spec V2). questions/answers follow their set. */
 export type ContentTable = 'quiz_sets' | 'memory_cards' | 'spot_levels' | 'card_groups' | 'find_levels';
@@ -124,18 +125,23 @@ export function useContentScope(role?: Role | null): { scope: Scope; setScope: (
   return { scope, setScope };
 }
 
-/** The signed-in parent's id for the play screens, or null when there is no session or it cannot be read. */
+/**
+ * The signed-in parent's id for the play screens, or null when there is no session, it cannot be read, or the
+ * device is in guest play (no child: only global content is listed).
+ */
 export async function playerId(): Promise<string | null> {
+  if (isGuestPlay()) return null;
   try { return await getMyUserId(); } catch { return null; }
 }
 
 /**
  * FG2: a child's list shows the signed-in parent's own rows (any visibility) and global rows, nothing else.
- * RLS alone is not enough: a Super Admin can read every family's rows. Call it before `.order()`.
+ * With no parent id (guest play) it shows global rows only. RLS alone is not enough: a Super Admin can read every
+ * family's rows. Call it before `.order()`.
  */
 export function familyOrGlobal<Q>(query: Q, me: string | null): Q {
-  if (!me) return query;
-  return (query as unknown as { or(filter: string): unknown }).or(`owner_id.eq.${me},visibility.eq.global`) as Q;
+  const q = query as unknown as { or(filter: string): unknown; eq(column: string, value: string): unknown };
+  return (me ? q.or(`owner_id.eq.${me},visibility.eq.global`) : q.eq('visibility', 'global')) as Q;
 }
 
 /** FG4: the family's rows first, then the rest; each part keeps its order. */

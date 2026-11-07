@@ -38,9 +38,12 @@ describe('AdminNav (N2)', () => {
     render(<AdminNav />);
     await waitFor(() => expect(screen.getByText('Super Admin')).toBeTruthy());
     expect(screen.getByRole('link', { name: 'Quiz sets' })).toBeTruthy();
-    for (const [name, href] of [['Parents', '/admin/parents'], ['Children', '/admin/all-children'], ['Messages', '/admin/messages']]) {
+    for (const [name, href] of [['Children', '/admin/all-children'], ['Parents', '/admin/parents'], ['Messages', '/admin/messages']]) {
       expect(screen.getByRole('link', { name })).toHaveProperty('pathname', href);
     }
+    // Children is the first link of the Super Admin section (the baby icon).
+    const superLinks = ['Children', 'Parents', 'Messages'].map((n) => screen.getByRole('link', { name: n }));
+    expect(superLinks[0].compareDocumentPosition(superLinks[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // V3: the review queue lives in each game's own tab now, not in the menu.
     expect(screen.queryByRole('link', { name: 'Review queue' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'All content' })).toBeNull();

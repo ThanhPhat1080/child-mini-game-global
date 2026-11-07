@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const h = vi.hoisted(() => ({
   result: { data: null as unknown, error: null as { message: string } | null },
   eq: vi.fn(),
+  eqGlobal: vi.fn(),
   order: vi.fn(),
   select: vi.fn(),
   from: vi.fn(),
@@ -43,7 +44,9 @@ beforeEach(() => {
   window.Audio = FakeAudio as unknown as typeof Audio;
   h.result = { data: null, error: null };
   h.order.mockImplementation(() => Promise.resolve(h.result));
-  h.eq.mockImplementation(() => ({ order: h.order }));
+  // no player (guest play): the list is narrowed to global rows
+  h.eq.mockImplementation(() => ({ order: h.order, eq: h.eqGlobal }));
+  h.eqGlobal.mockImplementation(() => ({ order: h.order }));
   h.select.mockImplementation(() => ({ eq: h.eq }));
   h.from.mockImplementation(() => ({ select: h.select }));
 });
@@ -56,6 +59,7 @@ describe('fetchActiveCards', () => {
     expect(h.from).toHaveBeenCalledWith('memory_cards');
     expect(h.select).toHaveBeenCalledWith('id, word, image_path, audio_path, active, owner_id, source_id');
     expect(h.eq).toHaveBeenCalledWith('active', true);
+    expect(h.eqGlobal).toHaveBeenCalledWith('visibility', 'global');
     expect(h.order).toHaveBeenCalledWith('created_at');
   });
 

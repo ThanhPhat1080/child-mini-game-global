@@ -161,23 +161,21 @@ export default function ParentDetail({ id }: { id: string }) {
           : <button type="button" className={styles.ghost} disabled={busy} onClick={() => setBanning(true)}>Ban</button>}
       </div>
 
-      <section className={styles.section} aria-label="Storage">
-        <h2>Storage</h2>
-        <UsageBar used={used} quota={person.quotaBytes} />
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div className={styles.fieldGroup}>
-            <label htmlFor="quota-mb">Quota (MB)</label>
-            <input
-              id="quota-mb"
-              className={styles.input}
-              type="number"
-              min={0}
-              style={{ width: 120 }}
-              value={quotaText ?? String(mb(person.quotaBytes))}
-              onChange={(e) => setQuotaText(e.target.value)}
-            />
-          </div>
-          <button type="button" className={styles.primary} disabled={savingQuota || !quotaValid} onClick={saveQuota}>Save</button>
+      <section className={styles.section} aria-label="Storage" style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 14, padding: '16px 20px' }}>
+        <h2 style={{ marginRight: 4 }}>Storage</h2>
+        <UsageBar inline used={used} quota={person.quotaBytes} />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <label htmlFor="quota-mb" style={{ fontSize: 14, fontWeight: 700 }}>Quota (MB)</label>
+          <input
+            id="quota-mb"
+            className={styles.input}
+            type="number"
+            min={0}
+            style={{ width: 110, height: 40 }}
+            value={quotaText ?? String(mb(person.quotaBytes))}
+            onChange={(e) => setQuotaText(e.target.value)}
+          />
+          <button type="button" className={styles.primary} style={{ height: 40, padding: '0 16px', fontSize: 14 }} disabled={savingQuota || !quotaValid} onClick={saveQuota}>Save</button>
         </div>
       </section>
 

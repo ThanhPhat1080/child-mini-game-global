@@ -21,8 +21,25 @@ import { FIND_PEACH, LISTEN_PURPLE, MEMORY_GREEN, MEMORY_ICON, SORT_GOLD, SPOT_B
 const icon = (id: string) => document.querySelector(`[data-game-icon="${id}"]`) as HTMLElement;
 const frame = (name: string) => screen.getByRole('link', { name }) as HTMLElement;
 
-beforeEach(() => h.push.mockReset());
+beforeEach(() => { h.push.mockReset(); sessionStorage.clear(); });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
+
+describe('games carousel position', () => {
+  it('opens on the game that was centered when the child left', () => {
+    sessionStorage.setItem('childPlayer:games:index', '2');
+    render(<Games />);
+    expect(screen.getByRole('button', { name: 'Go to game 3' }).getAttribute('aria-current')).toBe('true');
+  });
+
+  it('remembers each move, so leaving and coming back keeps it', () => {
+    render(<Games />);
+    fireEvent.click(screen.getByRole('button', { name: 'Go to game 4' }));
+    expect(sessionStorage.getItem('childPlayer:games:index')).toBe('3');
+    cleanup();
+    render(<Games />);
+    expect(screen.getByRole('button', { name: 'Go to game 4' }).getAttribute('aria-current')).toBe('true');
+  });
+});
 
 describe('games list decorative icons', () => {
   it('has no help buttons and no dialog; clicking an icon never opens a popup', () => {

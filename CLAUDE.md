@@ -22,6 +22,7 @@ For an admin action that is fast and rarely fails (rename, reorder, toggle): upd
 
 ## Workflow
 Each ticket has acceptance criteria; do not mark it done until they pass. When Claude makes the same mistake twice, add the fix here. Keep this file under one page.
+E2E is run only for what changed: `PW_CHROMIUM_PATH=<chrome> npx playwright test e2e/<spec>.spec.ts` for the specs that touch the changed screens (the full `npm run e2e` is a ~9 min run, only for a release or when the user asks). Locally the Chrome path is `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`. The Homebrew Postgres for `npm run test:rls` needs `PG_BIN=/opt/homebrew/bin` and `LC_ALL=C`.
 
 ## Git
 `main` = production, `develop` = integration. Branch from latest `develop`, PR into `develop`, merge only after the user's OK; `develop` -> `main` only when asked. Never push or force-push to `main`/`develop`. Tell the user each new branch name (`git fetch origin && git checkout <branch>`). Production deploys and Vercel settings only when asked. On "release": merge once, do not poll the Vercel check, and report only a failure.

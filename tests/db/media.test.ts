@@ -76,6 +76,12 @@ describe('media folders, quota and delete guard (Q1-Q6)', () => {
       await expect(upload(a, `${a}/2.png`, 101)).resolves.toHaveLength(1);
     });
 
+    it('a Super Admin has no quota; a parent still has one', async () => {
+      const big = JSON.stringify({ mimetype: 'audio/mpeg', size: 60 * MB });
+      await expect(upload(sa, `${sa}/big.mp3`, 60 * MB, big)).resolves.toHaveLength(1);
+      await expect(upload(a, `${a}/big.mp3`, 60 * MB, big)).rejects.toThrow(/quota_exceeded/);
+    });
+
     it('two concurrent uploads that together exceed it: one fails', async () => {
       await superQuery(`update public.profiles set quota_bytes = 1000 where user_id = $1`, [a]);
       const ins = async (name: string) => {

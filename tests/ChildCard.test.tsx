@@ -28,10 +28,17 @@ describe('ChildCard size and footer (N15)', () => {
     expect(screen.queryByRole('button', { name: 'Edit Mia' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Remove Mia' })).toBeNull();
   });
-  it('renders a footer inside the card, below the name', () => {
-    render(<ChildCard child={base} onEdit={() => {}} onRemove={() => {}} footer={<a href="/admin/parents/p">Lan</a>} />);
+  it('shows the parent line under the age, linked to the parent page (N15)', () => {
+    render(<ChildCard child={base} size="lg" onEdit={() => {}} onRemove={() => {}} parent={{ id: 'p', name: 'Lan', banned: false }} />);
     const link = screen.getByRole('link', { name: 'Lan' });
+    expect(link.getAttribute('href')).toBe('/admin/parents/p');
     expect(screen.getByTestId('child-card').contains(link)).toBe(true);
+    expect(screen.getByText('Parent:')).toBeTruthy();
+    expect(screen.queryByText('Ban')).toBeNull();
+  });
+  it('tags a banned parent next to the name', () => {
+    render(<ChildCard child={base} size="lg" parent={{ id: 'p', name: 'Lan', banned: true }} />);
+    expect(screen.getByText('Ban')).toBeTruthy();
   });
 });
 

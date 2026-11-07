@@ -1,10 +1,8 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listAllChildren, removeChild, type AdminChild } from '@/lib/superAdmin';
 import { matches, sortBy, type SortOrder } from '@/lib/people';
-import { BanTag } from '@/components/admin/BanTag';
 import { ChildCard } from '@/components/admin/ChildCard';
 import { ChildModal } from '@/components/admin/ChildModal';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
@@ -84,12 +82,7 @@ export default function AllChildrenPage() {
               size="lg"
               onEdit={() => setEditing(k)}
               onRemove={() => setTarget(k)}
-              footer={(
-                <>
-                  <Link href={`/admin/parents/${k.parent_id}`} style={{ fontWeight: 600, color: '#8A5560' }}>{k.parent_name || 'Unknown parent'}</Link>
-                  {k.parent_banned && <BanTag />}
-                </>
-              )}
+              parent={{ id: k.parent_id, name: k.parent_name ?? '', banned: !!k.parent_banned }}
             />
           </li>
         ))}
@@ -98,6 +91,7 @@ export default function AllChildrenPage() {
       {editing && (
         <ChildModal
           mode="edit"
+          compact
           child={editing}
           parentId={editing.parent_id}
           onClose={() => setEditing(null)}

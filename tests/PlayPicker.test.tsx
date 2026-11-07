@@ -10,6 +10,7 @@ const h = vi.hoisted(() => ({
   session: vi.fn(),
   signOut: vi.fn(),
   setActive: vi.fn(),
+  setGuest: vi.fn(),
   clear: vi.fn(),
   router: {} as Record<string, unknown>,
 }));
@@ -17,7 +18,7 @@ h.router = { push: h.push, replace: h.replace, refresh: h.refresh };
 
 vi.mock('next/navigation', () => ({ useRouter: () => h.router }));
 vi.mock('@/lib/children', () => ({ listMyChildren: h.list }));
-vi.mock('@/lib/childSession', () => ({ setActiveChild: h.setActive, clearActiveChild: h.clear }));
+vi.mock('@/lib/childSession', () => ({ setActiveChild: h.setActive, setGuestPlay: h.setGuest, clearActiveChild: h.clear }));
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p}` : null) }));
 vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ auth: { getSession: h.session, signOut: h.signOut } }) }));
 
@@ -29,7 +30,7 @@ const kid = (n: number, over: Partial<Child> = {}): Child => ({
 });
 
 beforeEach(() => {
-  [h.push, h.replace, h.refresh, h.list, h.session, h.signOut, h.setActive, h.clear].forEach((f) => f.mockReset());
+  [h.push, h.replace, h.refresh, h.list, h.session, h.signOut, h.setActive, h.setGuest, h.clear].forEach((f) => f.mockReset());
   h.session.mockResolvedValue({ data: { session: { user: { id: 'p1' } } } });
   h.list.mockResolvedValue([kid(1), kid(2, { avatar_path: 'a/b.png' })]);
   h.signOut.mockResolvedValue({ error: null });
@@ -65,14 +66,30 @@ describe('Play picker (K7-K12, KU9-KU12)', () => {
     h.session.mockResolvedValue({ data: { session: { user: { id: 'admin1' } } } });
     h.list.mockResolvedValue([kid(1), kid(2, { parent_id: 'other' })]);
     await ready();
-    expect(cardNames()).toEqual(['Parent configuration']);
+    // no child of their own: the Guest card shows
+    expect(cardNames()).toEqual(['Guest', 'Parent configuration']);
     expect(h.list).toHaveBeenCalledWith(undefined, 'admin1');
   });
 
-  it('still shows Parent Configuration with zero children', async () => {
+  it('with zero children shows a Guest card, then Parent Configuration', async () => {
     h.list.mockResolvedValue([]);
     await ready();
-    expect(cardNames()).toEqual(['Parent configuration']);
+    expect(cardNames()).toEqual(['Guest', 'Parent configuration']);
+  });
+
+  it('Guest plays without a PIN and goes to the welcome screen', async () => {
+    h.list.mockResolvedValue([]);
+    await ready();
+    fireEvent.click(screen.getByRole('button', { name: 'Guest' }));
+    expect(h.setGuest).toHaveBeenCalled();
+    expect(h.setActive).not.toHaveBeenCalled();
+    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+    expect(h.push).toHaveBeenCalledWith('/');
+  });
+
+  it('no Guest card once a child exists', async () => {
+    await ready();
+    expect(cardNames()).not.toContain('Guest');
   });
 
   it('without a session goes to /play/sign-in', async () => {

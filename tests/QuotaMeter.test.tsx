@@ -27,6 +27,12 @@ describe('QuotaMeter (N4, Q4)', () => {
     expect(screen.getByRole('status').textContent).toMatch(/Almost full/);
   });
 
+  it('shows the total of all families and no bar for a Super Admin', () => {
+    render(<QuotaMeter used={12 * MB} quota={null} />);
+    expect(screen.getByText('Storage, all families: 12 MB')).toBeTruthy();
+    expect(screen.queryByRole('progressbar')).toBeNull();
+  });
+
   it('caps the bar at 100% and treats a zero quota as full', () => {
     const { rerender } = render(<QuotaMeter used={60 * MB} quota={50 * MB} />);
     expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('100');
