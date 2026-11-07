@@ -16,6 +16,8 @@ export const SHELF_Y = 60;
 export const COLS = 4;
 export const ROWS = 2;
 export const SHELF_PLACES = 4;
+/** H8, H9: a dragged half whose visible centre is this close (stage px) to its face-up partner's centre joins (magnet). */
+export const MAGNET_PX = 240;
 
 const PITCH_X = SLOT_W + GAP_X;
 const PITCH_Y = SLOT_H + GAP_Y;

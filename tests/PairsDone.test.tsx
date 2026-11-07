@@ -7,9 +7,12 @@ const h = vi.hoisted(() => ({
   applause: vi.fn((_s?: number, speak?: () => void) => { speak?.(); return undefined as unknown; }),
   speakKid: vi.fn(),
   playFile: vi.fn(),
+  sayWord: vi.fn(),
+  stopWord: vi.fn(),
 }));
 vi.mock('@/lib/sfx', () => ({ applause: h.applause, speakKid: h.speakKid, playFile: h.playFile }));
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null | undefined) => (p ? `/media/${p}` : null) }));
+vi.mock('@/lib/memory/cards', () => ({ sayWord: h.sayWord, stopWord: h.stopWord }));
 
 import { PairsDone } from '@/components/pairs/PairsDone';
 
@@ -139,5 +142,68 @@ describe('PairsDone (H10)', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(onHome).toHaveBeenCalledTimes(1);
     expect(onAgain).not.toHaveBeenCalled();
+  });
+
+  it('the Left/Right keys go across the pictures, then New level and Back to games (H10, H11)', () => {
+    setup();
+    pictures()[0].focus();
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(pictures()[1]);
+    pictures()[3].focus();
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(again());
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(home());
+  });
+});
+
+describe('PairsDone finished pictures say their word (H10)', () => {
+  const WORDS = [
+    { id: 'fish', word: 'fish', image_path: 'seed/fish.svg', audio_path: 'seed/fish.mp3' },
+    { id: 'house', word: 'house', image_path: 'seed/house.svg', audio_path: null },
+    { id: 'triangle', word: 'triangle', image_path: 'seed/triangle.svg', audio_path: null },
+    { id: 'apple', word: 'apple', image_path: 'seed/apple.svg', audio_path: null },
+  ];
+
+  it('each finished picture is a button named by its word, with no visible text', () => {
+    setup({ pictures: WORDS });
+    expect(pictures()[0].tagName).toBe('BUTTON');
+    expect(pictures()[0].getAttribute('type')).toBe('button');
+    expect(screen.getByRole('button', { name: 'Hear fish' })).toBe(pictures()[0]);
+    expect(pictures()[0].textContent).toBe('');
+  });
+
+  it('a click says that picture\'s word and stops the praise sound first', () => {
+    const stop = vi.fn();
+    h.applause.mockImplementation((_s?: number, speak?: () => void) => { speak?.(); return { stop, ms: 3000 }; });
+    setup({ pictures: WORDS });
+    fireEvent.click(pictures()[0]);
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(h.sayWord).toHaveBeenCalledTimes(1);
+    expect(h.sayWord).toHaveBeenCalledWith({ word: 'fish', audio_path: 'seed/fish.mp3' });
+    fireEvent.click(pictures()[1]);
+    expect(h.sayWord).toHaveBeenLastCalledWith({ word: 'house', audio_path: null });
+  });
+
+  it('Enter or Space on a focused picture says its word', () => {
+    setup({ pictures: WORDS });
+    pictures()[2].focus();
+    fireEvent.keyDown(pictures()[2], { key: 'Enter' });
+    expect(h.sayWord).toHaveBeenLastCalledWith({ word: 'triangle', audio_path: null });
+    fireEvent.keyDown(pictures()[3], { key: ' ' });
+    expect(h.sayWord).toHaveBeenLastCalledWith({ word: 'apple', audio_path: null });
+    expect(h.sayWord).toHaveBeenCalledTimes(2);
+  });
+
+  it('leaving the finish stops the word; mounting under StrictMode does not', () => {
+    const { unmount } = setup({ pictures: WORDS });
+    expect(h.stopWord).not.toHaveBeenCalled();
+    fireEvent.click(pictures()[0]);
+    unmount();
+    expect(h.stopWord).toHaveBeenCalledTimes(1);
+    cleanup();
+    h.stopWord.mockReset();
+    render(<StrictMode><PairsDone pictures={WORDS} childName="" completeUrl={null} onAgain={vi.fn()} onHome={vi.fn()} /></StrictMode>);
+    expect(h.stopWord).not.toHaveBeenCalled();
   });
 });

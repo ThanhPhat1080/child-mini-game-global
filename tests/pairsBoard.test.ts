@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  dealPieces, drawLevel, dropIntent, isPair, moveTo, parsePieceId, pieceId, removePair,
+  dealPieces, drawLevel, dropIntent, isPair, magnetTarget, moveTo, parsePieceId, pieceId, removePair,
 } from '@/lib/pairs/board';
 import { SLOT_H, SLOT_W, slotXY } from '@/lib/pairs/geometry';
 import type { PuzzlePicture } from '@/lib/pairs/types';
@@ -104,5 +104,33 @@ describe('dropIntent (H8, H9)', () => {
 
   it('outside the grid is nothing', () => {
     expect(dropIntent(order, up, 'a:L', { x: 50, y: 50 })).toEqual({ kind: 'none' });
+  });
+});
+
+describe('magnetTarget (H8, H9)', () => {
+  const order = ['a:L', 'b:R', 'a:R', 'c:L', 'b:L', 'c:R'];
+  const up = new Set(['a:L', 'a:R', 'b:R']);
+  // a:R sits in slot 2; its visible centre is the slot centre
+  const near = (dx: number) => ({ x: center(2).x + dx, y: center(2).y });
+
+  it('returns the partner when the centre is within 240 px of it and the partner is face up', () => {
+    expect(magnetTarget(order, up, 'a:L', near(-200))).toBe('a:R');
+    expect(magnetTarget(order, up, 'a:L', near(0))).toBe('a:R');
+    expect(magnetTarget(order, up, 'a:L', near(-240))).toBe('a:R');
+    // the other way round: a:R dragged near a:L's slot (slot 0)
+    expect(magnetTarget(order, up, 'a:R', { x: center(0).x + 100, y: center(0).y })).toBe('a:L');
+  });
+
+  it('is null when the partner is face down', () => {
+    expect(magnetTarget(order, new Set(['a:L', 'b:R']), 'a:L', near(-200))).toBeNull();
+  });
+
+  it('is null when the centre is farther than 240 px from the partner', () => {
+    expect(magnetTarget(order, up, 'a:L', near(-241))).toBeNull();
+    expect(magnetTarget(order, up, 'a:L', near(-400))).toBeNull();
+  });
+
+  it('is null when the partner is not on the board', () => {
+    expect(magnetTarget(['a:L', 'b:R', 'c:L'], up, 'a:L', near(-200))).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-import { slotAt } from './geometry';
+import { MAGNET_PX, SLOT_H, SLOT_W, slotAt, slotXY } from './geometry';
 import type { Pt, PuzzlePicture, Side } from './types';
 
 export const LEVEL_SIZE = 4;
@@ -75,6 +75,18 @@ export function removePair(order: readonly string[], a: string, b: string): stri
 }
 
 export type DropIntent = { kind: 'join'; targetId: string } | { kind: 'room'; index: number } | { kind: 'none' };
+
+/**
+ * H8, H9 magnet: the partner's id when the dragged half's visible centre `center` is within MAGNET_PX of the partner's
+ * visible centre (its slot centre in `order`) and the partner is face up; otherwise null.
+ */
+export function magnetTarget(order: readonly string[], up: ReadonlySet<string>, dragId: string, center: Pt): string | null {
+  const partner = order.find((id) => isPair(id, dragId));
+  if (!partner || !up.has(partner)) return null;
+  const s = slotXY(order.indexOf(partner));
+  const dist = Math.hypot(center.x - (s.x + SLOT_W / 2), center.y - (s.y + SLOT_H / 2));
+  return dist <= MAGNET_PX ? partner : null;
+}
 
 /** What a dragged half would do at stage point `p` (H8, H9). */
 export function dropIntent(order: readonly string[], up: ReadonlySet<string>, dragId: string, p: Pt): DropIntent {

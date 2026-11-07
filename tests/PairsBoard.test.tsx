@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PairsBoard, type BoardProps } from '@/components/pairs/PairsBoard';
 import { PairsShelf } from '@/components/pairs/PairsShelf';
+import { DWELL_MS } from '@/components/pairs/usePairsDrag';
 import { moveTo } from '@/lib/pairs/board';
 import { SLOT_H, SLOT_W, pieceXY, slotXY, wholeXY, shelfXY } from '@/lib/pairs/geometry';
 import type { PuzzlePicture } from '@/lib/pairs/types';
@@ -154,11 +155,23 @@ describe('PairsBoard drag (H8, H9)', () => {
     expect(box('a:L').style.transform).toBe(tr(pieceXY('L', 0)));
   });
 
-  it('resting 200 ms over a face-down half makes room there', () => {
-    const { down, move, up, cb, box } = setup();
+  it('the dwell before the halves make room is 0.6 s', () => {
+    expect(DWELL_MS).toBe(600);
+  });
+
+  it('resting 200 ms over a face-down half does not make room yet', () => {
+    const { down, move, box } = setup();
     down('a:L', center(0));
     move(center(3));
     act(() => { vi.advanceTimersByTime(200); });
+    expect(box('c:L').style.transform).toBe(tr(pieceXY('L', 3)));
+  });
+
+  it('resting 600 ms over a face-down half makes room there', () => {
+    const { down, move, up, cb, box } = setup();
+    down('a:L', center(0));
+    move(center(3));
+    act(() => { vi.advanceTimersByTime(600); });
     // the others slide: c:L moved one slot to the left
     expect(box('c:L').style.transform).toBe(tr(pieceXY('L', 2)));
     up(center(3));
@@ -166,11 +179,11 @@ describe('PairsBoard drag (H8, H9)', () => {
     expect(cb.onJoin).not.toHaveBeenCalled();
   });
 
-  it('releasing before 200 ms makes no room', () => {
+  it('releasing before the dwell makes no room', () => {
     const { down, move, up, cb } = setup();
     down('a:L', center(0));
     move(center(3));
-    act(() => { vi.advanceTimersByTime(100); });
+    act(() => { vi.advanceTimersByTime(DWELL_MS - 1); });
     up(center(3));
     expect(cb.onMove).not.toHaveBeenCalled();
     expect(cb.onJoin).not.toHaveBeenCalled();
@@ -183,6 +196,59 @@ describe('PairsBoard drag (H8, H9)', () => {
     up({ x: 40, y: 40 });
     expect(cb.onMove).not.toHaveBeenCalled();
     expect(box('a:L').style.transform).toBe(tr(pieceXY('L', 0)));
+  });
+});
+
+describe('PairsBoard aim and magnet (H8, H9)', () => {
+  // a:R is in slot 2; a:L is grabbed at its slot centre, so the pointer offset is the grab offset
+  const at = (x: number) => ({ x, y: center(0).y });
+
+  it('aims by the drawn centre: grabbed near its left edge, the half joins a:R when its centre is on a:R', () => {
+    const { down, move, up, cb } = setup();
+    down('a:L', { x: center(0).x - 60, y: center(0).y });
+    move({ x: center(2).x - 60, y: center(2).y });
+    up({ x: center(2).x - 60, y: center(2).y });
+    expect(cb.onJoin).toHaveBeenCalledWith('a:L', 'a:R');
+    expect(cb.onMove).not.toHaveBeenCalled();
+  });
+
+  it('the pointer may be over b:R while the half is centred on a:R: it joins a:R', () => {
+    const { down, move, up, cb, box } = setup();
+    // grabbed 60 px left of the centre; the centre sits 130 px left of a:R's centre, the pointer over b:R (slot 1)
+    down('a:L', { x: center(0).x - 60, y: center(0).y });
+    move({ x: center(2).x - 130 - 60, y: center(2).y });
+    expect(box('a:R').getAttribute('data-target')).toBe('true');
+    up({ x: center(2).x - 130 - 60, y: center(2).y });
+    expect(cb.onJoin).toHaveBeenCalledWith('a:L', 'a:R');
+  });
+
+  it('releasing with the drawn centre 200 px from its partner, over another slot, joins (magnet)', () => {
+    const { down, move, up, cb } = setup();
+    down('a:L', center(0));
+    move(at(center(2).x - 200));
+    up(at(center(2).x - 200));
+    expect(cb.onJoin).toHaveBeenCalledWith('a:L', 'a:R');
+    expect(cb.onMove).not.toHaveBeenCalled();
+  });
+
+  it('within the magnet the partner glows (data-target), even over another face-up half', () => {
+    const { down, move, box } = setup();
+    down('a:L', center(0));
+    move(at(center(2).x - 200)); // over b:R (slot 1), face up
+    expect(box('a:R').getAttribute('data-target')).toBe('true');
+    expect(box('b:R').getAttribute('data-target')).toBeNull();
+  });
+
+  it('within the magnet the halves never make room, however long the rest', () => {
+    const { down, move, up, cb, box } = setup();
+    down('a:L', center(0));
+    // over the face-down c:L (slot 3), 195 px from a:R
+    move(at(center(3).x - 150));
+    act(() => { vi.advanceTimersByTime(1000); });
+    expect(box('c:L').style.transform).toBe(tr(pieceXY('L', 3)));
+    up(at(center(3).x - 150));
+    expect(cb.onJoin).toHaveBeenCalledWith('a:L', 'a:R');
+    expect(cb.onMove).not.toHaveBeenCalled();
   });
 });
 

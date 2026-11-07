@@ -2,11 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { dragDelta, moved, stageScale } from '@/lib/sort/drag';
-import { dropIntent, isPair, moveTo } from '@/lib/pairs/board';
-import type { Pt } from '@/lib/pairs/types';
+import { dropIntent, isPair, magnetTarget, moveTo, parsePieceId, type DropIntent } from '@/lib/pairs/board';
+import { CARD, HALF, pieceXY } from '@/lib/pairs/geometry';
+import type { Pt, Side } from '@/lib/pairs/types';
 
-/** H8: how long the pointer rests over a face-down half or an empty slot before the halves make room. */
-export const DWELL_MS = 200;
+/**
+ * H8: how long the dragged half must rest over a face-down half or an empty slot before the halves make room.
+ * 0.6 s (0.2 s before the PO's play-test).
+ */
+export const DWELL_MS = 600;
 
 export type PairsDragOptions = {
   stageRef: React.RefObject<HTMLElement | null>;
@@ -21,6 +25,9 @@ export type PairsDragging = { id: string; dx: number; dy: number };
 
 type Live = {
   id: string;
+  side: Side;
+  /** The box position of the dragged half at press (`pieceXY`). */
+  home: Pt;
   pointerId: number;
   start: Pt;
   lifted: boolean;
@@ -31,6 +38,19 @@ type Live = {
 };
 
 const client = (e: { clientX: number; clientY: number }): Pt => ({ x: e.clientX, y: e.clientY });
+
+/** The stage point of the dragged half's visible centre (H8): its box at press, moved by the drag. */
+const centreOf = (d: Pick<Live, 'side' | 'home'>, delta: Pt): Pt => ({
+  x: d.home.x + delta.x + (d.side === 'L' ? HALF / 2 : CARD - HALF / 2),
+  y: d.home.y + delta.y + CARD / 2,
+});
+
+/** What the dragged half would do where it is drawn (H8, H9): the magnet to its partner first, else the slot under it. */
+function aimAt(cur: readonly string[], up: ReadonlySet<string>, d: Pick<Live, 'id' | 'side' | 'home'>, delta: Pt): DropIntent {
+  const centre = centreOf(d, delta);
+  const partner = magnetTarget(cur, up, d.id, centre);
+  return partner ? { kind: 'join', targetId: partner } : dropIntent(cur, up, d.id, centre);
+}
 
 /**
  * Pointer drag of one face-up half (H8, H9): primary pointer only, starts after the tap slop.
@@ -48,14 +68,7 @@ export function usePairsDrag(opts: PairsDragOptions) {
     optsRef.current = opts;
   });
 
-  const scaleOf = () => {
-    const r = optsRef.current.stageRef.current?.getBoundingClientRect();
-    return { scale: stageScale(r?.width ?? 0), left: r?.left ?? 0, top: r?.top ?? 0 };
-  };
-  const stagePoint = (c: Pt): Pt => {
-    const { scale, left, top } = scaleOf();
-    return { x: (c.x - left) / scale, y: (c.y - top) / scale };
-  };
+  const scaleOf = () => stageScale(optsRef.current.stageRef.current?.getBoundingClientRect().width ?? 0);
 
   const end = useCallback((): Live | null => {
     const d = live.current;
@@ -75,6 +88,8 @@ export function usePairsDrag(opts: PairsDragOptions) {
       if (o.busy || live.current || e.button !== 0 || e.isPrimary === false) return;
       const pointerId = e.pointerId;
       const el = e.currentTarget;
+      const { side } = parsePieceId(id);
+      const home = pieceXY(side, o.order.indexOf(id));
 
       const onMove = (ev: PointerEvent) => {
         const d = live.current;
@@ -82,10 +97,10 @@ export function usePairsDrag(opts: PairsDragOptions) {
         const c = client(ev);
         if (!d.lifted && !moved(d.start, c)) return;
         d.lifted = true;
-        const delta = dragDelta(d.start, c, scaleOf().scale);
+        const delta = dragDelta(d.start, c, scaleOf());
         setDragging({ id: d.id, dx: delta.x, dy: delta.y });
         const cur = d.preview ?? optsRef.current.order;
-        const intent = dropIntent(cur, optsRef.current.up, d.id, stagePoint(c));
+        const intent = aimAt(cur, optsRef.current.up, d, delta);
         setTarget(intent.kind === 'join' ? intent.targetId : null);
         if (intent.kind !== 'room') {
           if (d.timer) clearTimeout(d.timer);
@@ -112,7 +127,7 @@ export function usePairsDrag(opts: PairsDragOptions) {
         const c = client(ev);
         const lifted = d.lifted || moved(d.start, c);
         const cur = d.preview ?? optsRef.current.order;
-        const intent = lifted ? dropIntent(cur, optsRef.current.up, d.id, stagePoint(c)) : { kind: 'none' as const };
+        const intent: DropIntent = lifted ? aimAt(cur, optsRef.current.up, d, dragDelta(d.start, c, scaleOf())) : { kind: 'none' };
         const changed = !!d.preview && d.preview.join() !== optsRef.current.order.join();
         end();
         if (!lifted) return;
@@ -133,7 +148,7 @@ export function usePairsDrag(opts: PairsDragOptions) {
         window.removeEventListener('lostpointercapture', onCancel);
       };
 
-      live.current = { id, pointerId, start: client(e), lifted: false, preview: null, dwellIndex: null, timer: null, detach };
+      live.current = { id, side, home, pointerId, start: client(e), lifted: false, preview: null, dwellIndex: null, timer: null, detach };
       window.addEventListener('pointermove', onMove);
       window.addEventListener('pointerup', onUp);
       window.addEventListener('pointercancel', onCancel);
