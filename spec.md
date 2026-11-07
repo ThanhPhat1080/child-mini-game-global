@@ -235,3 +235,18 @@ The shared celebration scene (`CelebrationScene`, used by the done screens of Qu
 - Both pictures uploaded: A on the left and B on the right; no built-in character.
 - Nothing is shown until the child's pictures and gender have loaded.
 Rules in `lib/celebration.ts` (`celebrationSlots`).
+
+## 4i. Parent Profile and Inbox (2026-11-07)
+Spec: `docs/superpowers/specs/2026-11-07-parent-profile-inbox-design.md`. Plan: `docs/superpowers/plans/2026-11-07-parent-profile-inbox.md`. A parent's own details (name, phone, picture) and their children, and an Inbox to contact the Super Admin.
+- PR1 `profiles.phone`: optional; after trim, 8 to 20 characters of digits, spaces, `+ ( ) . -`, at least 8 digits. No country-code check.
+- PR2 `profiles.avatar_path`: the parent's picture (square, A24), counted in the parent's quota. The path must sit in the parent's own folder (checked by the database).
+- PR3 `profiles.display_name` is 1 to 40 characters after trim (checked on new writes).
+- PR4 A parent may update only `display_name`, `phone` and `avatar_path`. `role`, `banned` and `quota_bytes` stay out of reach.
+- PR5 The update policy covers the own row only, and a banned parent cannot update it.
+- PR6 Name: required, 1 to 40 characters. PR7 Phone: optional, validated as PR1. PR8 Email: read only, from the sign-in account. PR9 Picture: chosen from the library with a square crop; the initials show when there is no picture. PR10 One Save writes all fields; not optimistic.
+- PR11 The children section is part of Profile (the same cards and dialogs as the old Children page). `/admin/children` and `/admin/settings` redirect to `/admin/profile`.
+- PR12 Parent sidebar: Profile and Inbox, in place of Children. PR13 The Super Admin also has Profile (name, phone, picture; no children section). PR14 The collapsed sidebar keeps tooltips and names.
+- IN1 Inbox page `/admin/inbox` for parents. IN2 A highlight: this is a feedback mailbox; the Super Admin replies as soon as possible, by email or by phone. IN3 Contact line: email and phone, or a link to add a phone number. IN4 Compose form, at most 5 messages in 24 hours (form off at the limit, rate-limit text on refusal). IN5 The form is shared with the suspended page. IN6 The parent's messages with status: Sent, Read, Resolved. IN7 Empty state text. IN8 The list shows only the parent's own rows (RLS).
+- SA1 `super_admin_parent_contacts()`: the parents with their sign-in email and phone, for a Super Admin only; the email is read from the account, never stored in `profiles`.
+- SA2 Messages page: the sender's email (mailto) and phone (tel) beside each message, or "No phone number". SA3 The contacts are read once with the page; if they fail, the messages still show with a note.
+- PT1-PT3 Tests: unit (validation, data, form, Inbox, sidebar, redirects), database (RLS, column grant, policy, function), e2e (`parent-profile`, `admin-parent-inbox`).

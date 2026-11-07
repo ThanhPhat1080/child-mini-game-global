@@ -22,10 +22,12 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('AdminNav (N2)', () => {
-  it('shows only links allowed for the role: a parent gets Children, no Settings', async () => {
+  it('shows only links allowed for the role: a parent gets Profile and Inbox, no Children, no Settings', async () => {
     h.getMyProfile.mockResolvedValue({ role: 'parent' });
     render(<AdminNav />);
-    expect(await screen.findByRole('link', { name: 'Children' })).toHaveProperty('pathname', '/admin/children');
+    expect(await screen.findByRole('link', { name: 'Profile' })).toHaveProperty('pathname', '/admin/profile');
+    expect(screen.getByRole('link', { name: 'Inbox' })).toHaveProperty('pathname', '/admin/inbox');
+    expect(screen.queryByRole('link', { name: 'Children' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
     for (const n of ['Media', 'Quiz sets', 'Cards', 'Spot', 'Find']) expect(screen.getByRole('link', { name: n })).toBeTruthy();
     for (const n of ['Review queue', 'Parents', 'Messages']) expect(screen.queryByRole('link', { name: n })).toBeNull();
@@ -41,6 +43,8 @@ describe('AdminNav (N2)', () => {
     for (const [name, href] of [['Children', '/admin/all-children'], ['Parents', '/admin/parents'], ['Messages', '/admin/messages']]) {
       expect(screen.getByRole('link', { name })).toHaveProperty('pathname', href);
     }
+    // Profile is the first link of the Super Admin section, for the Super Admin's own details (PR13).
+    expect(screen.getByRole('link', { name: 'Profile' })).toHaveProperty('pathname', '/admin/profile');
     // Children is the first link of the Super Admin section (the baby icon).
     const superLinks = ['Children', 'Parents', 'Messages'].map((n) => screen.getByRole('link', { name: n }));
     expect(superLinks[0].compareDocumentPosition(superLinks[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -96,7 +100,8 @@ describe('AdminNav (N2)', () => {
     h.getMyProfile.mockResolvedValue(null);
     render(<AdminNav />);
     await waitFor(() => expect(h.getMyProfile).toHaveBeenCalled());
-    expect(screen.queryByRole('link', { name: 'Children' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Profile' })).toBeNull();
+    expect(screen.queryByRole('link', { name: 'Inbox' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Media' })).toBeTruthy();
   });
 });
