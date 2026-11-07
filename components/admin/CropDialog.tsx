@@ -17,11 +17,13 @@ type Drag = { x: number; y: number; scale: number; apply: (dx: number, dy: numbe
 const bgPos = (a: number, b: number): number => (b >= 1 ? 0 : (100 * a) / (1 - b));
 
 /**
- * Admin crop window (A24): a square over the picture that the parent moves and resizes, then saves.
- * It only chooses the square; the caller crops the file and uploads it.
+ * Admin crop window (A24, A32): a frame over the picture that the parent moves and resizes, then saves.
+ * The frame is a square unless `aspect` (width / height) says otherwise. It only chooses the frame; the caller crops
+ * the file and uploads it.
  */
-export function CropDialog({ file, start, onCancel, onSave }: {
-  file: File; start?: Crop; onCancel: () => void; onSave: (crop: Crop) => void;
+export function CropDialog({ file, start, aspect = 1, onCancel, onSave }: {
+  file: File; start?: Crop; /** Width divided by height of the saved picture; 1 is a square. */ aspect?: number;
+  onCancel: () => void; onSave: (crop: Crop) => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   const [size, setSize] = useState<{ W: number; H: number } | null>(null);
@@ -49,7 +51,7 @@ export function CropDialog({ file, start, onCancel, onSave }: {
     const W = e.currentTarget.naturalWidth;
     const H = e.currentTarget.naturalHeight;
     setSize({ W, H });
-    setCrop(startCropFor(start, W, H));
+    setCrop(startCropFor(start, W, H, aspect));
   }
 
   function beginDrag(e: PointerEvent<HTMLElement>, apply: Drag['apply']) {
@@ -88,7 +90,7 @@ export function CropDialog({ file, start, onCancel, onSave }: {
     if (!d) return;
     e.preventDefault();
     const step = Math.round(KEY_STEP * Math.min(W, H));
-    setCrop(e.shiftKey ? resizeCrop(crop, step * (d[0] + d[1]), W, H) : moveCrop(crop, step * d[0], step * d[1], W, H));
+    setCrop(e.shiftKey ? resizeCrop(crop, step * (d[0] + d[1]), W, H, aspect) : moveCrop(crop, step * d[0], step * d[1], W, H));
   }
 
   const W = size?.W ?? 1;
@@ -151,7 +153,7 @@ export function CropDialog({ file, start, onCancel, onSave }: {
             >
               <span
                 aria-hidden="true"
-                onPointerDown={(e) => beginDrag(e, (dx, dy) => setCrop((c) => c && resizeCrop(c, (dx + dy) / 2, W, H)))}
+                onPointerDown={(e) => beginDrag(e, (dx, dy) => setCrop((c) => c && resizeCrop(c, (dx + dy) / 2, W, H, aspect)))}
                 style={{ position: 'absolute', right: -8, bottom: -8, width: 16, height: 16, background: '#fff', border: '2px solid #5a4038', borderRadius: 3, boxSizing: 'border-box', cursor: 'nwse-resize' }}
               />
             </div>
@@ -165,18 +167,19 @@ export function CropDialog({ file, start, onCancel, onSave }: {
             <div
               aria-hidden="true"
               style={{
-                width: PREVIEW_PX, height: PREVIEW_PX, borderRadius: 12, border: '2px solid #EADCC8', boxSizing: 'border-box',
+                width: aspect >= 1 ? PREVIEW_PX : PREVIEW_PX * aspect, height: aspect >= 1 ? PREVIEW_PX / aspect : PREVIEW_PX,
+                borderRadius: 12, border: '2px solid #EADCC8', boxSizing: 'border-box',
                 backgroundImage: `url(${url})`, backgroundRepeat: 'no-repeat',
                 backgroundSize: `${100 / crop.w}% ${100 / crop.h}%`,
                 backgroundPosition: `${bgPos(crop.x, crop.w)}% ${bgPos(crop.y, crop.h)}%`,
               }}
             />
-            <span style={{ fontSize: 13, color: '#7A6458' }}>Preview. The picture is saved as this square.</span>
+            <span style={{ fontSize: 13, color: '#7A6458' }}>Preview. The picture is saved as this {aspect === 1 ? 'square' : 'frame'}.</span>
           </div>
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-          <button type="button" className={`${s.btn} ${s.ghost}`} onClick={onCancel} style={{ height: 44, padding: '0 20px' }}>Cancel</button>
+          <button type="button" className={s.ghost} onClick={onCancel} style={{ height: 44, padding: '0 20px', borderRadius: 12, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer' }}>Cancel</button>
           <button
             type="button"
             disabled={!ready}
