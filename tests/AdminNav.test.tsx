@@ -28,7 +28,7 @@ describe('AdminNav (N2)', () => {
     expect(await screen.findByRole('link', { name: 'Children' })).toHaveProperty('pathname', '/admin/children');
     expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
     for (const n of ['Media', 'Quiz sets', 'Cards', 'Spot', 'Find']) expect(screen.getByRole('link', { name: n })).toBeTruthy();
-    for (const n of ['Review queue', 'Parents', 'Messages']) expect(screen.queryByRole('link', { name: n })).toBeNull();
+    for (const n of ['Review queue', 'Parents', 'Messages', 'Puzzle']) expect(screen.queryByRole('link', { name: n })).toBeNull();
     expect(screen.queryByRole('link', { name: /pending/ })).toBeNull();
     expect(h.pendingMessageCount).not.toHaveBeenCalled();
   });
@@ -38,7 +38,7 @@ describe('AdminNav (N2)', () => {
     render(<AdminNav />);
     await waitFor(() => expect(screen.getByText('Super Admin')).toBeTruthy());
     expect(screen.getByRole('link', { name: 'Quiz sets' })).toBeTruthy();
-    for (const [name, href] of [['Children', '/admin/all-children'], ['Parents', '/admin/parents'], ['Messages', '/admin/messages']]) {
+    for (const [name, href] of [['Children', '/admin/all-children'], ['Parents', '/admin/parents'], ['Messages', '/admin/messages'], ['Puzzle', '/admin/puzzle']]) {
       expect(screen.getByRole('link', { name })).toHaveProperty('pathname', href);
     }
     // Children is the first link of the Super Admin section (the baby icon).
