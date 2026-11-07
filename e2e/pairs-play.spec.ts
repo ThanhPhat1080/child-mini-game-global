@@ -65,10 +65,14 @@ async function clickHalf(page: Page, id: string) {
   await hitEl.click({ position: { x: b.width * (isLeft(id) ? 0.25 : 0.75), y: b.height / 2 } });
 }
 
-/** Clicks the visible part of a face-down half and waits for its question. */
+/**
+ * Clicks the visible part of a face-down half and waits for its question. The question ignores picks and closes for its
+ * first 400 ms (OPEN_GUARD_MS), so this also waits until the speaker has been up for 500 ms.
+ */
 async function openHalf(page: Page, id: string) {
   await clickHalf(page, id);
   await expect(dialog(page)).toBeVisible();
+  await page.waitForTimeout(500);
 }
 
 /** Tries answers 1, 2, 3 in turn until the modal closes; a wrong pick only dims that answer, so this ends on the right one. */

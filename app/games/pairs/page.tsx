@@ -250,6 +250,20 @@ export default function PairsPlay() {
 
   const onMove = (order: string[]) => dispatch({ type: 'move', order });
 
+  /**
+   * The pair has landed and leaves the board. The pair's halves are removed, so if the keyboard focus was on one of them
+   * (or on nothing), the half at the joined slot takes it, or the first half when there is none (H11).
+   */
+  const land = (a: string, b: string) => {
+    const active = document.activeElement;
+    const activeId = active?.closest('[data-piece]')?.getAttribute('data-piece') ?? null;
+    const lost = !active || active === document.body || activeId === a || activeId === b;
+    const slot = Math.min(state.order.indexOf(a), state.order.indexOf(b));
+    const rest = removePair(state.order, a, b);
+    dispatch({ type: 'landed' });
+    if (lost) focusHalf(rest[slot] ?? rest[0]);
+  };
+
   /** Two halves of one picture meet: chime and the word, the whole picture flies to the shelf, the pair leaves the board (H9). */
   const onJoin = (a: string, b: string) => {
     if (state.phase !== 'play' || state.joining || state.modal || state.flipping || help) return;
@@ -257,7 +271,7 @@ export default function PairsPlay() {
     dispatch({ type: 'join', a, b });
     later(() => { chime(); if (picture) sayWord(picture); }, SLIDE_MS);
     later(() => dispatch({ type: 'fly' }), FLY_AT_MS);
-    later(() => dispatch({ type: 'landed' }), LAND_MS);
+    later(() => land(a, b), LAND_MS);
   };
 
   /** New level: a draw that is not the level just played, all halves face down (H10). */

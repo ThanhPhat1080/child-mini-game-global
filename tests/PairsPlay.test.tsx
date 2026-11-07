@@ -58,7 +58,7 @@ vi.mock('next/link', () => ({
 vi.mock('@/components/MusicButton', () => ({ MusicButton: () => null }));
 
 import PairsPlay from '@/app/games/pairs/page';
-import { RIGHT_CLOSE_MS, OPEN_SAY_MS } from '@/components/pairs/QuestionModal';
+import { OPEN_GUARD_MS, RIGHT_CLOSE_MS, OPEN_SAY_MS } from '@/components/pairs/QuestionModal';
 import { FINISH_MS, FLIP_MS, FLY_AT_MS, LAND_MS, SLIDE_MS } from '@/lib/pairs/timing';
 import { PRELOAD_MS } from '@/lib/memory/preload';
 
@@ -171,6 +171,7 @@ describe('Puzzle Pairs play screen (H1-H3, H9, H10, H12)', () => {
     const id = h.board!.order[0];
     fireEvent.click(hit(id));
     const first = h.drawQuestion.mock.results[0].value as DrawnQuestion;
+    await advance(OPEN_GUARD_MS);
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
     expect(dialog()).toBeNull();
     expect(pieceOf(id).getAttribute('data-up')).toBe('false');
@@ -195,6 +196,7 @@ describe('Puzzle Pairs play screen (H1-H3, H9, H10, H12)', () => {
     await ready();
     fireEvent.click(hit(h.board!.order[0]));
     expect(dialog()).toBeTruthy();
+    await advance(OPEN_GUARD_MS);
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(dialog()).toBeNull();
     expect(h.push).not.toHaveBeenCalled();
@@ -204,6 +206,7 @@ describe('Puzzle Pairs play screen (H1-H3, H9, H10, H12)', () => {
     h.drawQuestion.mockReturnValueOnce(triangleQ);
     await ready();
     fireEvent.click(hit('triangle:L'));
+    await advance(OPEN_GUARD_MS);
     fireEvent.click(document.querySelector('[data-card-id="triangle"]')!);
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(dialog()).toBeTruthy();
@@ -234,6 +237,7 @@ describe('Puzzle Pairs play screen (H1-H3, H9, H10, H12)', () => {
     h.drawQuestion.mockReturnValueOnce(triangleQ);
     await ready();
     fireEvent.click(hit('triangle:L'));
+    await advance(OPEN_GUARD_MS);
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByRole('dialog', { name: 'Leave now?' })).toBeNull();
     expect(dialog()).toBeNull();
@@ -276,6 +280,27 @@ describe('Puzzle Pairs play screen (H1-H3, H9, H10, H12)', () => {
     await advance(10);
     expect(h.board!.joining?.phase).toBe('fly');
     expect(h.board!.joining?.shelfIndex).toBe(0);
+  });
+
+  it('after a join the keyboard focus stays on a half of the board (H11): ArrowRight moves to the next one', async () => {
+    await ready();
+    const before = [...h.board!.order];
+    const slot = Math.min(before.indexOf('fish:L'), before.indexOf('fish:R'));
+    act(() => hit('fish:L').focus());
+    act(() => h.board!.onJoin('fish:L', 'fish:R'));
+    await advance(LAND_MS + 10);
+    expect(pieces()).toHaveLength(6);
+
+    const order = h.board!.order;
+    const focused = document.activeElement as HTMLElement;
+    expect(focused.hasAttribute('data-hit')).toBe(true);
+    // the half now at the joined slot (the first half when the pair was last)
+    expect(focused.closest('[data-piece]')?.getAttribute('data-piece')).toBe(order[slot] ?? order[0]);
+
+    fireEvent.keyDown(focused, { key: 'ArrowRight' });
+    const next = document.activeElement as HTMLElement;
+    expect(next.hasAttribute('data-hit')).toBe(true);
+    expect(next.closest('[data-piece]')?.getAttribute('data-piece')).toBe(order[order.indexOf(order[slot] ?? order[0]) + 1]);
   });
 
   it('a second half is not opened while a join runs', async () => {

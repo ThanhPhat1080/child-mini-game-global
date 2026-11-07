@@ -14,6 +14,8 @@ import type { QuizAnswer } from '@/lib/quiz/playable';
 
 /** Pause after the modal opens before the word or prompt is said (ms). */
 export const OPEN_SAY_MS = 600;
+/** After the modal opens, picks, Enter/Space on an answer, X, Esc and backdrop closes wait this long (ms), so a double click on a half cannot answer it. */
+export const OPEN_GUARD_MS = 400;
 /** Pause after a wrong pick before the Listen & Pick word is said again (ms). */
 export const SAY_AFTER_WRONG_MS = 700;
 /** How long the oh-oh popup stays; a new wrong pick restarts it (ms). */
@@ -51,6 +53,10 @@ export function QuestionModal({ drawn, sounds, onRight, onClose }: Props) {
   const alive = useRef(true);
   /** Bumped by every stop, so a word that ends late does nothing. */
   const token = useRef(0);
+  /** False until OPEN_GUARD_MS after the modal opened: picks and closes are ignored before that. */
+  const armed = useRef(false);
+  /** Whether the last mousedown was on the veil (null: none seen), so a press that starts on an answer does not close. */
+  const pressOnVeil = useRef<boolean | null>(null);
   /** Named timers, so each one can be cancelled on its own. */
   const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const [picked, setPicked] = useState<number | null>(null);
@@ -135,7 +141,7 @@ export function QuestionModal({ drawn, sounds, onRight, onClose }: Props) {
   }, [drawn, readFrom]);
 
   const pick = useCallback((i: number) => {
-    if (locked || wrong.has(i) || i >= answerCount) return;
+    if (!armed.current || locked || wrong.has(i) || i >= answerCount) return;
     hush();
     setSpeaking(false);
     setReadIdx(null);
@@ -154,6 +160,11 @@ export function QuestionModal({ drawn, sounds, onRight, onClose }: Props) {
     if (isListen) later('again', SAY_AFTER_WRONG_MS, say);
   }, [locked, wrong, answerCount, rightIndex, hush, sounds, onRight, later, isListen, say]);
 
+  /** X, Esc and a backdrop click: ignored during the opening guard and while a right pick is celebrated. */
+  const close = useCallback(() => {
+    if (armed.current && !locked) onClose();
+  }, [locked, onClose]);
+
   const replay = useCallback(() => {
     if (locked) return;
     hush();
@@ -163,6 +174,8 @@ export function QuestionModal({ drawn, sounds, onRight, onClose }: Props) {
   // Opens: focus the first answer and say the word or prompt after a short pause. Leaving stops everything.
   useEffect(() => {
     alive.current = true;
+    armed.current = false;
+    later('arm', OPEN_GUARD_MS, () => { armed.current = true; });
     later('open', OPEN_SAY_MS, say);
     later('focus', 0, () => dialogRef.current?.querySelector<HTMLElement>('[data-answer]')?.focus());
     return () => {
@@ -178,14 +191,19 @@ export function QuestionModal({ drawn, sounds, onRight, onClose }: Props) {
     const onEsc = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       e.stopPropagation();
-      if (!locked) onClose();
+      close();
     };
     window.addEventListener('keydown', onEsc, true);
     return () => window.removeEventListener('keydown', onEsc, true);
-  }, [locked, onClose]);
+  }, [close]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // A held key repeats: it must not pick (a focused answer would be clicked by Enter or Space) or replay.
+      if (e.repeat && (e.key === '1' || e.key === '2' || e.key === '3' || e.key === 'r' || e.key === 'R' || e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        return;
+      }
       if (e.key === '1' || e.key === '2' || e.key === '3') {
         pick(Number(e.key) - 1);
       } else if (e.key === 'r' || e.key === 'R') {
@@ -208,7 +226,13 @@ export function QuestionModal({ drawn, sounds, onRight, onClose }: Props) {
   return (
     <div
       data-backdrop
-      onClick={(e) => { if (e.target === e.currentTarget && !locked) onClose(); }}
+      onMouseDown={(e) => { pressOnVeil.current = e.target === e.currentTarget; }}
+      onClick={(e) => {
+        // A press that began on an answer (or the card) and ended on the veil is not a close.
+        const began = pressOnVeil.current !== false;
+        pressOnVeil.current = null;
+        if (began && e.target === e.currentTarget) close();
+      }}
       style={{ position: 'absolute', inset: 0, zIndex: 50, background: 'rgba(90,64,56,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
     >
       <div
@@ -217,7 +241,7 @@ export function QuestionModal({ drawn, sounds, onRight, onClose }: Props) {
         aria-modal="true"
         style={{ position: 'relative', width: CARD_W, height: CARD_H, borderRadius: 56, background: '#fff', boxShadow: '0 16px 0 #EADCC8', overflow: 'hidden' }}
       >
-        <ModalClose size="child" disabled={locked} onClick={onClose} />
+        <ModalClose size="child" disabled={locked} onClick={close} />
         <div style={{ position: 'absolute', left: (CARD_W - QUESTION_W * SCALE) / 2, top: (CARD_H - QUESTION_H * SCALE) / 2, width: QUESTION_W, height: QUESTION_H, transform: `scale(${SCALE})`, transformOrigin: '0 0' }}>
           {question}
         </div>
