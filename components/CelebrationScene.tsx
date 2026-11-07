@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { Hills } from '@/components/Hills';
 import { Confetti } from '@/components/Confetti';
 import { Pic } from '@/components/Pic';
-import { celebrationSlots, useCelebrationPictures, type CelebrationSlot } from '@/lib/celebration';
+import { CELEBRATION_FRAME, celebrationSlots, useCelebrationPictures, type CelebrationSlot } from '@/lib/celebration';
 
 const STAR = 'M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z';
 
@@ -15,9 +15,9 @@ function Character({ slot, side }: { slot: CelebrationSlot; side: 'left' | 'righ
     <div
       className={uploaded ? 'hm-sway' : 'hm-float'}
       data-celebration-picture={slot.kind}
-      style={{ position: 'absolute', left: side === 'left' ? 180 : 1400, top: 300, width: 340, height: 600, animationDelay: side === 'right' ? '-2.4s' : undefined }}
+      style={{ position: 'absolute', left: side === 'left' ? 180 : 1400, top: 300, width: CELEBRATION_FRAME.width, height: CELEBRATION_FRAME.height, animationDelay: side === 'right' ? '-2.4s' : undefined }}
     >
-      <Pic src={slot.src} alt="" width={340} height={600} style={{ display: 'block', width: 340, height: 600, objectFit: 'contain', objectPosition: 'bottom' }} />
+      <Pic src={slot.src} alt="" width={CELEBRATION_FRAME.width} height={CELEBRATION_FRAME.height} style={{ display: 'block', width: CELEBRATION_FRAME.width, height: CELEBRATION_FRAME.height, objectFit: 'contain', objectPosition: 'bottom' }} />
     </div>
   );
 }
