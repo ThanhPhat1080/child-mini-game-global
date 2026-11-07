@@ -10,7 +10,7 @@ const PORT = Number(process.env.STANDIN_PORT ?? 54391);
 const SUPER = { email: 'super@test.local', password: 'secret', id: '11111111-1111-4111-8111-111111111111' };
 const PARENT = { email: 'admin@test.local', password: 'secret', id: '22222222-2222-4222-8222-222222222222' };
 const CHILD = { id: '33333333-3333-4333-8333-333333333333', name: 'Test', pin: '1234' };
-const TABLES = ['children', 'memory_cards', 'card_groups', 'spot_levels', 'find_levels', 'child_settings', 'quiz_sets', 'questions', 'answers', 'profiles', 'support_messages', 'review_events'];
+const TABLES = ['children', 'memory_cards', 'card_groups', 'spot_levels', 'find_levels', 'child_settings', 'quiz_sets', 'questions', 'answers', 'profiles', 'support_messages', 'review_events', 'puzzle_pictures'];
 const CONTENT = ['quiz_sets', 'memory_cards', 'spot_levels', 'card_groups', 'find_levels'];
 const QUOTA = 50 * 1024 * 1024;
 const RESERVED = new Set(['select', 'order', 'limit', 'offset', 'on_conflict', 'columns']);
@@ -51,6 +51,11 @@ function defaultState() {
     card_groups: [],
     spot_levels: [],
     find_levels: [],
+    // A35: the four seed pictures of Puzzle Pairs.
+    puzzle_pictures: ['fish', 'triangle', 'house', 'apple'].map((w, i) => ({
+      id: `pp-${w}`, word: w, image_path: `seed/${w}.svg`, audio_path: null, active: true,
+      sort_order: i, owner_id: null, created_at: new Date(Date.UTC(2026, 0, 1, 0, 0, i)).toISOString(),
+    })),
     child_settings: [childSettings(CHILD.id)],
     quiz_sets: [],
     questions: [],
@@ -161,11 +166,29 @@ function splitIn(v) {
 class Unsupported extends Error {}
 const OPS = new Set(['eq', 'neq', 'in', 'is', 'gt', 'gte', 'lt', 'lte']);
 
+/** One `column.op.value` test, as used inside `or=(...)`. */
+function leaf(expr) {
+  const [col, op, ...rest] = expr.split('.');
+  const val = rest.join('.');
+  return (row) => {
+    const x = row[col];
+    if (op === 'eq') return same(x, val);
+    if (op === 'neq') return !same(x, val);
+    if (op === 'is') return val === 'null' ? x == null : same(x, val);
+    throw new Unsupported(`stand-in: unsupported operator "${op}" inside or()`);
+  };
+}
+
 function matcher(params) {
   const tests = [];
   for (const [key, raw] of params) {
     if (RESERVED.has(key)) continue;
-    if (key === 'or' || key === 'and') throw new Unsupported(`stand-in: unsupported filter "${key}"`);
+    if (key === 'or') {
+      const alts = raw.replace(/^\(|\)$/g, '').split(',').map(leaf);
+      tests.push((row) => alts.some((t) => t(row)));
+      continue;
+    }
+    if (key === 'and') throw new Unsupported(`stand-in: unsupported filter "${key}"`);
     const dot = raw.indexOf('.');
     if (dot < 0) throw new Unsupported(`stand-in: cannot parse filter ${key}=${raw}`);
     let op = raw.slice(0, dot);
@@ -216,7 +239,11 @@ function withDefaults(table, row) {
     if (r.visibility === undefined) r.visibility = 'private';
   }
   if (table === 'support_messages') Object.assign(r, { from_user: currentUserId, read_at: null, resolved_at: null, ...r });
-  if (table === 'spot_levels' || table === 'find_levels') {
+  if (table === 'puzzle_pictures') {
+    if (r.owner_id === undefined) r.owner_id = currentUserId;
+    if (r.audio_path === undefined) r.audio_path = null;
+  }
+  if (table === 'spot_levels' || table === 'find_levels' || table === 'puzzle_pictures') {
     if (r.active === undefined) r.active = true;
     if (r.sort_order === undefined) r.sort_order = 0;
   }
@@ -267,13 +294,31 @@ function rpc(req, res, name, args) {
     case 'request_edit':
       event('edit_requested');
       return send(res, 200, null);
-    case 'review_approve':
+    case 'review_approve': {
+      // V8: the original goes back to private; the Super Admin gets a global copy that points at it.
+      if (myRole !== 'super_admin') return bad(res, 'forbidden', '42501');
+      const orig = find();
+      if (!orig || orig.visibility !== 'pending') return bad(res, 'not_found');
+      orig.visibility = 'private';
+      const copy = { ...orig, id: randomUUID(), owner_id: me.id, visibility: 'global', source_id: orig.id, source_owner_id: orig.owner_id };
+      state[args.p_table].push(copy);
+      event(name);
+      return send(res, 200, copy.id);
+    }
+    case 'publish_own': {
+      if (myRole !== 'super_admin') return bad(res, 'forbidden', '42501');
+      const row = find();
+      if (!row || row.owner_id !== me.id || row.visibility !== 'private') return bad(res, 'not_found');
+      row.visibility = 'global';
+      event(name);
+      return send(res, 200, null);
+    }
     case 'review_reject':
     case 'unpublish_item':
     case 'delete_item': {
       if (myRole !== 'super_admin') return bad(res, 'forbidden', '42501');
       if (name === 'delete_item') state[args.p_table] = state[args.p_table].filter((r) => String(r.id) !== String(args.p_id));
-      else if (!setVis(name === 'review_approve' ? 'global' : 'private')) return bad(res, 'not_found');
+      else if (!setVis('private')) return bad(res, 'not_found');
       event(name);
       return send(res, 200, null);
     }

@@ -77,7 +77,7 @@ export default function LeaveGameButton() {
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            style={{ position: 'relative', background: '#fff', borderColor: theme.accent }}
+            style={{ position: 'relative', background: theme.bg, borderColor: theme.accent }}
             onKeyDown={onKey}
           >
             <ModalClose size="child" onClick={close} />

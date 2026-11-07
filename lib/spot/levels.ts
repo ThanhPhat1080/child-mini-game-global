@@ -1,18 +1,21 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { applyScope } from '@/lib/review';
+import { dropOwnCopies, familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
 import type { SpotLevel } from '@/lib/spot/types';
 
 const COLUMNS = 'id, image_a_path, image_b_path, differences, active, sort_order';
+const LIST_COLUMNS = `${COLUMNS}, owner_id, source_id`;
 
 /** Active levels only, in play order (`sort_order`, then `created_at`). Throws Error(message) when Supabase fails. */
 export async function fetchActiveLevels(): Promise<SpotLevel[]> {
-  const { data, error } = await applyScope(
-    createSupabaseBrowserClient().from('spot_levels').select(COLUMNS).eq('active', true),
+  const me = await playerId();
+  const { data, error } = await familyOrGlobal(
+    createSupabaseBrowserClient().from('spot_levels').select(LIST_COLUMNS).eq('active', true),
+    me,
   )
     .order('sort_order')
     .order('created_at');
   if (error) throw new Error(error.message);
-  return (data ?? []) as SpotLevel[];
+  return ownerFirst(dropOwnCopies((data ?? []) as SpotLevel[], me), me);
 }
 
 /**

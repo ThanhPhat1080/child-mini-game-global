@@ -2,7 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAccess, getMyProfile } from '@/lib/auth/roles';
-import { ACTIVE_CHILD_COOKIE } from '@/lib/childSession';
+import { ACTIVE_CHILD_COOKIE, GUEST_COOKIE } from '@/lib/childSession';
 
 const ADMIN_SIGN_IN = '/admin/sign-in';
 const PLAY_SIGN_IN = '/play/sign-in';
@@ -17,7 +17,8 @@ const ADMIN_TARGET = { signin: ADMIN_SIGN_IN, forbidden: '/admin/forbidden', ban
 /**
  * Role-aware route guard (U11, U12, U13, K9). Reads the caller's profile on every request, so a ban takes
  * effect immediately. `/` and `/games/*` need a signed-in profile and an active child (cookie that selects
- * one of the parent's own `children` rows through RLS); `/admin/*` follows `adminAccess`.
+ * one of the parent's own `children` rows through RLS) or the guest cookie (no child: global content only);
+ * `/admin/*` follows `adminAccess`.
  * `/play` and `/play/sign-in` are not matched and stay open.
  */
 export async function middleware(request: NextRequest) {
@@ -50,7 +51,8 @@ export async function middleware(request: NextRequest) {
     const access = adminAccess(profile);
     target = access === 'ok' ? null : ADMIN_TARGET[access];
   } else {
-    target = !profile ? PLAY_SIGN_IN : (request.nextUrl.searchParams.get('preview') === '1' || (await hasActiveChild(request, supabase, profile.user_id))) ? null : PICKER;
+    const guest = request.cookies.get(GUEST_COOKIE)?.value === '1';
+    target = !profile ? PLAY_SIGN_IN : (request.nextUrl.searchParams.get('preview') === '1' || guest || (await hasActiveChild(request, supabase, profile.user_id))) ? null : PICKER;
   }
   if (!target) return response;
 

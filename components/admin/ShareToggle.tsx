@@ -3,12 +3,21 @@
 import { useState } from 'react';
 import { requestEdit, shareItem, type ContentTable, type Visibility } from '@/lib/review';
 import s from '@/components/admin/admin-ui.module.css';
+import { GlobalToggle } from './GlobalToggle';
 
 /**
  * Sharing controls of one row (V2-V4): a private row gets "Share with all children"; a pending row shows
- * "Under review"; a global row offers "Request edit". Keep this outside an EditLock: it must stay usable.
+ * "Under review"; a global row offers "Request edit". A Super Admin's own row gets publish and unpublish instead (V10).
+ * Keep this outside an EditLock: it must stay usable.
  */
-export function ShareToggle({ table, id, visibility, onChanged }: {
+export function ShareToggle({ table, id, visibility, onChanged, superOwned }: {
+  table: ContentTable; id: string; visibility: Visibility; onChanged?: (v: Visibility) => void; superOwned?: boolean;
+}) {
+  if (superOwned) return <GlobalToggle table={table} id={id} visibility={visibility} onChanged={onChanged} />;
+  return <ParentShare table={table} id={id} visibility={visibility} onChanged={onChanged} />;
+}
+
+function ParentShare({ table, id, visibility, onChanged }: {
   table: ContentTable; id: string; visibility: Visibility; onChanged?: (v: Visibility) => void;
 }) {
   const [busy, setBusy] = useState(false);

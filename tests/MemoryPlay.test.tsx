@@ -85,13 +85,14 @@ describe('Memory play screen (M2-M6, M8-M10)', () => {
     expect(tiles()).toHaveLength(0);
   });
 
-  it('a fetch error: the same friendly status screen, no grid', async () => {
+  it('a fetch error: a retry screen, no grid', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
     h.level = '12';
     h.fetchActiveCards.mockRejectedValue(new Error('boom'));
     render(<MemoryPlay />);
     await advance(PRELOAD_MS + 10);
-    expect(screen.getByRole('status')).toBeTruthy();
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('alert', { name: /went wrong/ })).toBeTruthy();
+    expect(screen.queryByRole('status')).toBeNull();
     expect(tiles()).toHaveLength(0);
   });
 
@@ -289,10 +290,13 @@ describe('Memory play screen (M2-M6, M8-M10)', () => {
     expect(tile(1).getAttribute('data-face-up')).toBe('true');
   });
 
-  it('Esc goes back to the level screen', async () => {
+  it('Esc asks "Leave now?"; Yes goes back to the level screen', async () => {
     await ready();
     expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/games/memory');
     fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Leave now?' })).toBeTruthy();
+    expect(h.push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     expect(h.push).toHaveBeenCalledWith('/games/memory');
   });
 

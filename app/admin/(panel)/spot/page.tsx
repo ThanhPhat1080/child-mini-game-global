@@ -2,8 +2,10 @@
 
 import { ContentTabs } from '@/components/admin/ContentTabs';
 import { GlobalContent } from '@/components/admin/GlobalContent';
-import { useContentScope } from '@/lib/review';
-import type { Visibility } from '@/lib/review';
+import { useContentScope, useMyRole } from '@/lib/review';
+import { ReviewQueue } from '@/components/admin/ReviewQueue';
+import { usePendingCounts } from '@/lib/superAdmin';
+import type { ContentTable, Visibility } from '@/lib/review';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isLevelComplete, loadLevels, newLevel, saveLevels, type ELevel } from '@/lib/spot/adminLevels';
 import { aspectsClose } from '@/lib/spot/validate';
@@ -19,9 +21,13 @@ import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { SortToggle, displayOrder } from '@/components/admin/LevelSort';
 import { SpotLevelPanel } from '@/components/admin/SpotLevelPanel';
 
+const SPOT_TABLES: ContentTable[] = ['spot_levels'];
+
 /** Spot the Differences level builder (A14-A16). Nothing is uploaded or written until Save. */
 export default function SpotPage() {
-  const { scope, setScope } = useContentScope();
+  const role = useMyRole();
+  const { scope, setScope } = useContentScope(role);
+  const pending = usePendingCounts(role).spot;
   const [saved, setSaved] = useState<ELevel[] | null>(null);
   const [draft, setDraft] = useState<ELevel[] | null>(null);
   const [msgs, setMsgs] = useState<Record<string, string>>({});
@@ -147,8 +153,12 @@ export default function SpotPage() {
         </div>
       </div>
 
-      <ContentTabs scope={scope} onChange={setScope} />
-      {scope === 'global' ? (
+      <ContentTabs scope={scope} onChange={setScope} role={role} pending={pending} />
+      {scope === 'queue' ? (
+        <ReviewQueue tables={SPOT_TABLES} />
+      ) : scope === 'parents' ? (
+        <GlobalContent table="spot_levels" mode="parents" />
+      ) : scope === 'global' ? (
         <GlobalContent table="spot_levels" />
       ) : (
         <>

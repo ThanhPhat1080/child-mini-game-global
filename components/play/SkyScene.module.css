@@ -4,4 +4,18 @@
 @keyframes drift { from { transform: translateX(0); } to { transform: translateX(60px); } }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
 @keyframes twinkle { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .drift, .bob, .twinkle { animation: none; } }
+@keyframes cloudRun { from { transform: translateX(var(--from)); } to { transform: translateX(var(--to)); } }
+@keyframes flyRight { from { transform: translateX(-260px); } to { transform: translateX(2180px); } }
+@keyframes flyLeft { from { transform: translateX(2180px); } to { transform: translateX(-260px); } }
+@keyframes birdWave { 0%, 100% { transform: translateY(-14px); } 50% { transform: translateY(14px); } }
+@keyframes flap { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(-0.45); } }
+@keyframes sway { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(5deg); } }
+.cloudRun { animation: cloudRun 120s linear infinite; }
+.flockA { animation: flyRight 42s linear infinite both; }
+.flockB { animation: flyLeft 58s linear infinite both; }
+.birdWave { animation: birdWave 3.6s ease-in-out infinite; }
+.flap { animation: flap 0.9s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+.sway, .swayFlower { animation: sway 4.2s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+.swayFlower { animation-duration: 5.4s; }
+@media (prefers-reduced-motion: reduce) { .drift, .bob, .twinkle, .cloudRun, .flockA, .flockB, .birdWave, .flap, .sway, .swayFlower { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .flockA, .flockB { visibility: hidden; } }

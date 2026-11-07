@@ -12,6 +12,8 @@ export const MEDIA_SOURCES: MediaSource[] = [
   { table: 'child_settings', column: 'greeting_path', kind: 'audio' },
   { table: 'child_settings', column: 'music_path', kind: 'audio' },
   { table: 'children', column: 'avatar_path', kind: 'image' },
+  { table: 'children', column: 'celebrate_a_path', kind: 'image' },
+  { table: 'children', column: 'celebrate_b_path', kind: 'image' },
   { table: 'child_settings', column: 'hooray_path', kind: 'audio' },
   { table: 'child_settings', column: 'ohoh_path', kind: 'audio' },
   { table: 'child_settings', column: 'complete_path', kind: 'audio' },
@@ -25,6 +27,8 @@ export const MEDIA_SOURCES: MediaSource[] = [
   { table: 'spot_levels', column: 'image_b_path', kind: 'image' },
   { table: 'find_levels', column: 'image_path', kind: 'image' },
   { table: 'find_levels', column: 'objects', kind: 'audio', objectAudio: true },
+  { table: 'puzzle_pictures', column: 'image_path', kind: 'image' },
+  { table: 'puzzle_pictures', column: 'audio_path', kind: 'audio' },
 ];
 
 /** The sound paths inside one find_levels.objects value (each object's audio_path). */

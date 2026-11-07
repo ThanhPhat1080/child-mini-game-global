@@ -5,7 +5,7 @@ vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({ rpc: h.rpc, from: (t: string) => (h.from(t) ?? { update: h.update }) }),
 }));
 
-import { approveItem, banParent, createAccount, deleteItem, listAllChildren, markMessage, removeChild, rejectItem, setQuota, unbanParent, unpublishItem } from '@/lib/superAdmin';
+import { approveItem, banParent, createAccount, deleteItem, listAllChildren, listContent, listPeople, markMessage, pendingMessageCount, pendingSenders, removeChild, rejectItem, setQuota, unbanParent, unpublishItem } from '@/lib/superAdmin';
 
 beforeEach(() => {
   h.rpc.mockReset().mockResolvedValue({ error: null });
@@ -67,9 +67,9 @@ describe('Super Admin database calls', () => {
 
 describe('Super Admin children (K13)', () => {
   const kids = [
-    { id: 'c1', display_name: 'Mia', child_name: 'mia', parent_id: 'p1' },
-    { id: 'c2', display_name: 'Bao', child_name: 'bao', parent_id: 'p2' },
-    { id: 'c3', display_name: 'Nam', child_name: 'nam', parent_id: 'p1' },
+    { id: 'c1', display_name: 'Mia', child_name: 'mia', parent_id: 'p1', gender: 'female', age_band: '2-5', pin: 'ab12', avatar_path: null, created_at: '2026-11-01T00:00:00Z' },
+    { id: 'c2', display_name: 'Bao', child_name: 'bao', parent_id: 'p2', gender: 'male', age_band: '5-10', pin: 'cd34', avatar_path: null, created_at: '2026-11-02T00:00:00Z' },
+    { id: 'c3', display_name: 'Nam', child_name: 'nam', parent_id: 'p1', gender: 'male', age_band: '2-5', pin: 'ef56', avatar_path: null, created_at: '2026-11-03T00:00:00Z' },
   ];
   function childrenThenProfiles(profiles: { data: unknown; error: unknown }) {
     const inFn = vi.fn().mockResolvedValue(profiles);
@@ -80,22 +80,23 @@ describe('Super Admin children (K13)', () => {
     return { inFn };
   }
 
-  it('listAllChildren reads children, then the distinct parents, and joins the names', async () => {
-    const { inFn } = childrenThenProfiles({ data: [{ user_id: 'p1', display_name: 'Lan' }], error: null });
+  it('listAllChildren reads children, then the distinct parents, and joins the names and ban state', async () => {
+    const { inFn } = childrenThenProfiles({ data: [{ user_id: 'p1', display_name: 'Lan', banned: true }], error: null });
     const list = await listAllChildren();
     expect(inFn).toHaveBeenCalledWith('user_id', ['p1', 'p2']);
-    expect(list).toEqual([
-      { id: 'c1', display_name: 'Mia', child_name: 'mia', parent_id: 'p1', parent_name: 'Lan' },
-      { id: 'c2', display_name: 'Bao', child_name: 'bao', parent_id: 'p2', parent_name: null },
-      { id: 'c3', display_name: 'Nam', child_name: 'nam', parent_id: 'p1', parent_name: 'Lan' },
+    expect(list.map((c) => [c.id, c.parent_name, c.parent_banned])).toEqual([
+      ['c1', 'Lan', true],
+      ['c2', null, false],
+      ['c3', 'Lan', true],
     ]);
+    expect(list[0]).toMatchObject({ display_name: 'Mia', child_name: 'mia', parent_id: 'p1', gender: 'female', pin: 'ab12', created_at: '2026-11-01T00:00:00Z' });
   });
 
   it('listAllChildren keeps the list when the parent names fail to load', async () => {
     childrenThenProfiles({ data: null, error: { message: 'boom' } });
     const list = await listAllChildren();
     expect(list).toHaveLength(3);
-    expect(list.every((c) => c.parent_name === null)).toBe(true);
+    expect(list.every((c) => c.parent_name === null && c.parent_banned === false)).toBe(true);
   });
 
   it('listAllChildren throws when the children read fails', async () => {
@@ -115,3 +116,50 @@ describe('Super Admin children (K13)', () => {
   });
 });
 
+
+describe('Super Admin people reads (N10, N11, N17)', () => {
+  it('listPeople returns createdAt for each person', async () => {
+    h.from.mockReturnValue({
+      select: () => ({ eq: () => ({ order: async () => ({ data: [{ user_id: 'p1', role: 'parent', display_name: 'Lan', banned: false, ban_reason_code: null, ban_note: null, banned_at: null, quota_bytes: 0, created_at: '2026-11-01T00:00:00Z' }], error: null }) }) }),
+    });
+    const [p] = await listPeople('parent');
+    expect(p.createdAt).toBe('2026-11-01T00:00:00Z');
+  });
+
+  it('listContent filters by owner when asked, and by visibility too', async () => {
+    const eq = vi.fn();
+    const chain = { eq, order: vi.fn().mockResolvedValue({ data: [], error: null }) };
+    eq.mockReturnValue(chain);
+    h.from.mockReturnValue({ select: () => chain });
+    await listContent(undefined, { ownerId: 'p1' });
+    expect(eq).toHaveBeenCalledWith('owner_id', 'p1');
+    eq.mockClear();
+    await listContent('pending', { ownerId: 'p1' });
+    expect(eq.mock.calls.slice(0, 2)).toEqual([['visibility', 'pending'], ['owner_id', 'p1']]); // first table
+  });
+
+  it('listContent without an owner does not filter by owner', async () => {
+    const eq = vi.fn();
+    const chain = { eq, order: vi.fn().mockResolvedValue({ data: [], error: null }) };
+    h.from.mockReturnValue({ select: () => chain });
+    await listContent();
+    expect(eq).not.toHaveBeenCalled();
+  });
+
+  it('pendingMessageCount counts unresolved messages with a head count', async () => {
+    const is = vi.fn().mockResolvedValue({ count: 3, error: null });
+    const select = vi.fn(() => ({ is }));
+    h.from.mockReturnValue({ select });
+    expect(await pendingMessageCount()).toBe(3);
+    expect(h.from).toHaveBeenCalledWith('support_messages');
+    expect(select).toHaveBeenCalledWith('id', { count: 'exact', head: true });
+    expect(is).toHaveBeenCalledWith('resolved_at', null);
+  });
+
+  it('pendingSenders returns the set of parents with an unresolved message', async () => {
+    const is = vi.fn().mockResolvedValue({ data: [{ from_user: 'p1' }, { from_user: 'p1' }, { from_user: 'p2' }], error: null });
+    h.from.mockReturnValue({ select: () => ({ is }) });
+    expect([...(await pendingSenders())].sort()).toEqual(['p1', 'p2']);
+    expect(is).toHaveBeenCalledWith('resolved_at', null);
+  });
+});

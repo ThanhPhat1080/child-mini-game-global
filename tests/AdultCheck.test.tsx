@@ -103,3 +103,26 @@ describe('AdultCheck (U10)', () => {
     expect(document.activeElement).toBe(ok);
   });
 });
+
+describe('AdultCheck two-digit mode (way into the admin area)', () => {
+  const mount = (random: () => number) => render(<AdultCheck open twoDigit onPass={() => {}} onCancel={() => {}} random={random} />);
+
+  it('uses two two-digit numbers whose sum is at most 99, over the whole random range', () => {
+    for (const r of [0, 0.25, 0.5, 0.75, 0.999999]) {
+      mount(() => r);
+      const [a, b] = question()!.replace('=', '').split('+').map((x) => Number(x.trim()));
+      expect(a).toBeGreaterThanOrEqual(10);
+      expect(b).toBeGreaterThanOrEqual(10);
+      expect(a + b).toBeLessThanOrEqual(99);
+      cleanup();
+    }
+  });
+
+  it('accepts the right sum', () => {
+    const onPass = vi.fn();
+    render(<AdultCheck open twoDigit onPass={onPass} onCancel={() => {}} random={() => 0} />);
+    // random 0 -> 10 + 10
+    submit('20');
+    expect(onPass).toHaveBeenCalledTimes(1);
+  });
+});

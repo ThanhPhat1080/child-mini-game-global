@@ -7,6 +7,7 @@ import { playOnce, startMusic } from '@/lib/audio';
 import { BOY_WELCOME_VARS, GENDER_THEME } from '@/lib/childTheme';
 import { useActiveChild } from '@/lib/useActiveChild';
 import { Stage } from '@/components/Stage';
+import { BounceText } from '@/components/BounceText';
 import { MusicButton } from '@/components/MusicButton';
 import LeaveGameButton from '@/components/auth/LeaveGameButton';
 import styles from './welcome.module.css';
@@ -72,6 +73,7 @@ export default function Welcome() {
 
         {!known ? null : !entered ? (
           <div className={`${styles.center} ${styles.enterWrap}`}>
+            <p className={styles.playNow}><BounceText text="Play now" delay={0.3} /></p>
             <button type="button" className={`${styles.enterBtn} ${styles.breathe}`} aria-label="Tap to enter" onClick={onEnter}>
               <svg aria-hidden="true" width="170" height="170" viewBox="0 0 24 24" fill="#FFFFFF" stroke="#FFFFFF" strokeWidth="1.5" strokeLinejoin="round">
                 <path d="M8 5.5v13l10.5-6.5z" />

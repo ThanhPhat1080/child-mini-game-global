@@ -1,14 +1,32 @@
 .wrap { position: relative; min-height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 48px 16px; box-sizing: border-box; background: linear-gradient(#dce8f1, #fbf4e9 70%); font-family: 'Nunito', sans-serif; color: #4a3830; }
 .col { position: relative; z-index: 1; width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 18px; }
-.brandRow { display: flex; align-items: center; justify-content: center; gap: 12px; }
-.logo { flex: none; }
+.brandRow { display: flex; align-items: center; justify-content: center; gap: 14px; }
+.logo { flex: none; width: clamp(56px, 14vw, 84px); height: auto; animation: fishPop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) 1.7s both, fishWiggle 3.6s ease-in-out 2.7s infinite; transform-origin: 50% 60%; }
+.brandText { font-size: clamp(44px, 11vw, 64px); line-height: 1.1; }
 .signupRow { display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; font-size: 15px; }
 .helpBtn { width: 30px; height: 30px; border-radius: 15px; border: 1.5px solid #8fb3d1; background: #fff; color: #3f6285; font: 700 16px 'Nunito', sans-serif; cursor: pointer; }
 .helpBtn:focus-visible { outline: 3px solid #c77d85; outline-offset: 2px; }
 .helpPanel { background: #fff; border-radius: 16px; padding: 16px 20px; font-size: 14px; line-height: 1.5; }
 .helpPanel p { margin: 0 0 8px; }
 .helpPanel ol { margin: 0; padding-left: 20px; }
-.hero { position: absolute; bottom: 0; width: clamp(160px, 22vw, 420px); height: auto; pointer-events: none; }
-.heroLeft { left: 2vw; }
-.heroRight { right: 2vw; }
-@media (max-width: 900px) { .hero { display: none; } }
+.hero { position: absolute; bottom: 0; width: clamp(340px, 28vw, 540px); height: auto; pointer-events: none; }
+/* the characters breathe and sway a little, out of step with each other */
+.hero { transform-origin: 50% 100%; animation: heroIn 1s cubic-bezier(0.34, 1.4, 0.64, 1) var(--d) both, heroSway 5.5s ease-in-out calc(var(--d) + 1s) infinite; }
+.heroLeft { left: 2vw; --d: 0.8s; }
+.heroRight { right: 2vw; --d: 1.2s; animation-duration: 1s, 6.5s; }
+
+/* the arrival order: sky (0s) -> princess -> prince -> ABC Play (letters bounce in) -> sign-in form */
+.sky { position: absolute; inset: 0; animation: skyIn 1s ease-out both; }
+.rest { display: flex; flex-direction: column; gap: 18px; animation: restIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 3.1s both; }
+@keyframes skyIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes heroIn { from { opacity: 0; transform: translateY(70px) scale(0.9) rotate(-1.6deg); } 60% { opacity: 1; } to { opacity: 1; transform: translateY(0) scale(1) rotate(-1.6deg); } }
+@keyframes heroSway { 0%, 100% { transform: translateY(0) rotate(-1.6deg); } 50% { transform: translateY(-10px) rotate(1.6deg); } }
+@keyframes fishPop { from { opacity: 0; transform: scale(0) rotate(-40deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes fishWiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg) translateY(-3px); } 75% { transform: rotate(8deg) translateY(-3px); } }
+@keyframes restIn { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .hero, .sky, .rest, .logo { animation: none; } }
+/* 900-1200px: bigger characters, partly behind the sign-in card */
+@media (max-width: 1200px) { .hero { width: 38vw; } .heroLeft { left: -3vw; } .heroRight { right: -3vw; } }
+/* narrower windows: the characters grow and tuck behind the sign-in card; on phones they go away */
+@media (max-width: 900px) { .hero { width: 44vw; } .heroLeft { left: -4vw; } .heroRight { right: -4vw; } }
+@media (max-width: 599px) { .hero { display: none; } }

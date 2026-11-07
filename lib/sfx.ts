@@ -75,9 +75,34 @@ export function playFile(url: string): SoundHandle {
   return { ms: 0, stop: () => a.pause() };
 }
 
-/** Soft descending "oh-oh" (two wobbly notes), or the uploaded track. */
+/**
+ * The default "Feedback sounds" set: recorded files shipped in `public/seed/sounds/` (hooray.mp3, ohoh.mp3,
+ * complete.mp3). A family's own upload wins; when a default file is missing or cannot load, the built-in
+ * synthesized sound plays instead, so an empty folder changes nothing.
+ */
+export const DEFAULT_FEEDBACK_SOUNDS = {
+  hooray: '/seed/sounds/hooray.mp3',
+  ohoh: '/seed/sounds/ohoh.mp3',
+  complete: '/seed/sounds/complete.mp3',
+} as const;
+
+/** Plays a default file; if it fails to load (missing file), runs the synthesized fallback once. */
+function playDefault(url: string, ms: number, fallback: () => SoundHandle | void): SoundHandle {
+  const a = new Audio(url);
+  let alt: SoundHandle | void;
+  let stopped = false;
+  a.addEventListener('error', () => { if (!stopped && !alt) alt = fallback(); }, { once: true });
+  a.play().catch(() => undefined);
+  return { ms, stop: () => { stopped = true; a.pause(); alt?.stop(); } };
+}
+
+/** Soft descending "oh-oh" (two wobbly notes), or the uploaded track, or the default file. */
 export function ohOh(customUrl?: string | null): SoundHandle | void {
   if (customUrl) return playFile(customUrl);
+  return playDefault(DEFAULT_FEEDBACK_SOUNDS.ohoh, 1900, synthOhOh);
+}
+
+function synthOhOh(): SoundHandle | void {
   const c = ac();
   if (!c) return;
   const { bus, handle } = makeBus(c, 1900);
@@ -88,9 +113,13 @@ export function ohOh(customUrl?: string | null): SoundHandle | void {
   return handle;
 }
 
-/** Happy rising sparkle plus a cheerful "Yay, hooray!", or the uploaded track. */
+/** Happy rising sparkle plus a cheerful "Yay, hooray!", or the uploaded track, or the default file. */
 export function yay(customUrl?: string | null): SoundHandle | void {
   if (customUrl) return playFile(customUrl);
+  return playDefault(DEFAULT_FEEDBACK_SOUNDS.hooray, 2400, synthYay);
+}
+
+function synthYay(): SoundHandle | void {
   const c = ac();
   if (!c) return;
   const { bus, handle } = makeBus(c, 2400);
@@ -100,8 +129,20 @@ export function yay(customUrl?: string | null): SoundHandle | void {
   return handle;
 }
 
+/**
+ * The "You did it" sound: the default `complete.mp3` (it carries its own voice), else synthesized applause;
+ * an upload is played by the caller. `speakFallback` (the spoken praise) runs only when the built-in applause
+ * plays, so a recorded file is never spoken over.
+ */
+export function applause(seconds = 3, speakFallback?: () => void): SoundHandle | void {
+  return playDefault(DEFAULT_FEEDBACK_SOUNDS.complete, seconds * 1000 + 1500, () => {
+    speakFallback?.();
+    return synthApplause(seconds);
+  });
+}
+
 /** Audience applause: many tiny band-passed noise claps over `seconds`. */
-export function applause(seconds = 3): SoundHandle | void {
+function synthApplause(seconds: number): SoundHandle | void {
   const c = ac();
   if (!c) return;
   const { bus, handle } = makeBus(c, seconds * 1000 + 1500);

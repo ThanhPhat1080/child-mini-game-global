@@ -207,20 +207,24 @@ describe('Find It play screen (F2-F9)', () => {
     expect(word()).toBe('apple');
   });
 
-  it('Esc goes back to the level grid', async () => {
+  it('Esc asks "Leave now?"; Yes goes back to the level grid', async () => {
     await ready();
     fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Leave now?' })).toBeTruthy();
+    expect(h.push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     expect(h.push).toHaveBeenCalledWith('/games/find');
   });
 
-  it('an unknown level shows the friendly status; Back and Esc still work', async () => {
+  it('an unknown level shows the friendly status; Back and Esc both ask first', async () => {
     h.fetchFindLevel.mockResolvedValue(null);
     render(<FindPlay />);
     await advance(10);
     expect(screen.getByRole('status').getAttribute('aria-label')).toBe('This picture is not available');
     expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/games/find');
     fireEvent.keyDown(window, { key: 'Escape' });
-    expect(h.push).toHaveBeenCalledWith('/games/find');
+    expect(screen.getByRole('dialog', { name: 'Leave now?' })).toBeTruthy();
+    expect(h.push).not.toHaveBeenCalled();
   });
 
   it('an unplayable level (one object) shows the same friendly status and never a board', async () => {

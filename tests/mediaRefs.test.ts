@@ -57,6 +57,7 @@ describe('MEDIA_SOURCES', () => {
       'quiz_sets.cover_path', 'questions.prompt_image_path', 'questions.prompt_audio_path',
       'answers.image_path', 'memory_cards.image_path', 'memory_cards.audio_path',
       'spot_levels.image_a_path', 'spot_levels.image_b_path', 'find_levels.image_path',
+      'puzzle_pictures.image_path', 'puzzle_pictures.audio_path',
     ]) expect(cols).toContain(c);
     expect(MEDIA_SOURCES.find((s) => s.table === 'find_levels' && s.column === 'objects')).toMatchObject({ kind: 'audio' });
   });
@@ -76,6 +77,8 @@ describe('referencedPathsByScan (client-side column scan)', () => {
     ['spot_levels', 'image_a_path', { id: 's', image_a_path: 'spot/a.png', image_b_path: 'spot/b.png' }, 'spot/a.png'],
     ['spot_levels', 'image_b_path', { id: 's', image_a_path: 'spot/a.png', image_b_path: 'spot/b.png' }, 'spot/b.png'],
     ['find_levels', 'image_path', { id: 'f', image_path: 'find/f.png', objects: [] }, 'find/f.png'],
+    ['puzzle_pictures', 'image_path', { id: 'z', image_path: 'puzzle/z.png' }, 'puzzle/z.png'],
+    ['puzzle_pictures', 'audio_path', { id: 'z', image_path: 'x.png', audio_path: 'puzzle/z.mp3' }, 'puzzle/z.mp3'],
   ];
 
   it.each(cases)('reports a path used by %s.%s as referenced', async (table, _col, row, path) => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { LoadError } from '@/components/LoadError';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Stage } from '@/components/Stage';
 import { Hills } from '@/components/Hills';
@@ -46,6 +47,8 @@ const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia
 /** Listen & Pick (L1-L5, L8, L10): hear a word, pick its picture out of three. No timers on the child, no penalty. */
 export default function ListenPlay() {
   const [phase, setPhase] = useState<'loading' | 'empty' | 'play' | 'done'>('loading');
+  const [loadErr, setLoadErr] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [index, setIndex] = useState(0);
   const [wrong, setWrong] = useState<ReadonlySet<number>>(() => new Set());
@@ -122,10 +125,10 @@ export default function ListenPlay() {
           setPhase('play');
         });
       },
-      () => live && setPhase('empty'),
+      (e) => { if (live) { setLoadErr(e ?? true); setPhase('empty'); } },
     );
     return () => { live = false; stopPreload?.(); };
-  }, [round]);
+  }, [round, attempt]);
 
   // Custom hooray / oh-oh sounds (as in Quiz); any error just keeps the built-in ones.
   useEffect(() => {
@@ -323,7 +326,7 @@ export default function ListenPlay() {
         <>
         <Hills />
         <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <BackButton href="/games" label="Back to games" />
+          <BackButton href="/games" label="Back to games" game="listen" />
           {!done && (
             <button
               ref={helpBtn}
@@ -338,7 +341,8 @@ export default function ListenPlay() {
             </button>
           )}
         </div>
-        {phase === 'empty' && (
+        {!!loadErr && <LoadError error={loadErr} onRetry={() => { setLoadErr(null); setPhase('loading'); setAttempt((n) => n + 1); }} />}
+        {!loadErr && phase === 'empty' && (
           <div role="status" aria-label="New cards are coming soon" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg aria-hidden="true" width="420" height="420" viewBox="0 0 24 24">
               <circle cx="12" cy="12" r="10.5" fill="#F0ECF8" stroke="#C9BFE4" strokeWidth="0.6" />

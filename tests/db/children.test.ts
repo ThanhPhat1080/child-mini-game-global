@@ -172,12 +172,81 @@ describe('children (K1-K6)', () => {
     await createChild(b);
     expect(await as(sa).query(`select id from public.children`)).toHaveLength(2);
     expect(await as(sa).query(`delete from public.children where id = $1 returning id`, [c1])).toHaveLength(1);
-    // but does not create or edit
-    await expect(as(sa).query(INSERT, ['sa-kid'])).rejects.toThrow();
-    const left = await superQuery<{ id: string }>(`select id from public.children`);
+  });
+
+  const SA_INSERT = `insert into public.children (parent_id, child_name, display_name, gender, age_band, pin)
+                     values ($1, $2, 'Kid', 'male', '2-5', 'ab12') returning id`;
+
+  it('super admin creates a child for a parent (N16)', async () => {
+    const sa = await createUser('super_admin');
+    const p = await createUser('parent');
+    const rows = await as(sa).query<{ id: string; parent_id: string }>(SA_INSERT.replace('returning id', 'returning id, parent_id'), [p, 'sa-made']);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].parent_id).toBe(p);
+    expect(await superQuery(`select 1 from public.child_settings where child_id = $1`, [rows[0].id])).toHaveLength(1);
+  });
+
+  it('super admin cannot create a child for another super admin or a missing user (N16)', async () => {
+    const sa = await createUser('super_admin');
+    const other = await createUser('super_admin');
+    await expect(as(sa).query(SA_INSERT, [other, 'to-sa'])).rejects.toThrow();
+    await expect(as(sa).query(SA_INSERT, ['00000000-0000-4000-8000-000000000000', 'to-nobody'])).rejects.toThrow();
+  });
+
+  it('super admin edits name, PIN, gender and age, but never the login name (N16)', async () => {
+    const sa = await createUser('super_admin');
+    const p = await createUser('parent');
+    const c = await createChild(p, { childName: 'login1', displayName: 'Old' });
+    const rows = await as(sa).query(
+      `update public.children set display_name = 'New', pin = 'zz99', gender = 'male', age_band = '5-10' where id = $1 returning id`,
+      [c],
+    );
+    expect(rows).toHaveLength(1);
+    const kid = await superQuery<{ display_name: string; pin: string; gender: string; age_band: string }>(
+      `select display_name, pin, gender, age_band from public.children where id = $1`,
+      [c],
+    );
+    expect(kid[0]).toEqual({ display_name: 'New', pin: 'zz99', gender: 'male', age_band: '5-10' });
+    await expect(
+      as(sa).query(`update public.children set child_name = 'other' where id = $1 returning id`, [c]),
+    ).rejects.toThrow(/immutable|cannot be changed/);
+  });
+
+  it('super admin cannot set or change a child picture (N16)', async () => {
+    const sa = await createUser('super_admin');
+    const p = await createUser('parent');
+    const c = await createChild(p, { avatarPath: 'img/mine.png' });
+    const ins = (col: string) =>
+      as(sa).query(`insert into public.children (parent_id, child_name, display_name, gender, age_band, pin, ${col})
+                    values ($1, $2, 'Kid', 'male', '2-5', 'ab12', 'img/x.png')`, [p, `pic-${col}`]);
+    await expect(ins('avatar_path')).rejects.toThrow(/super_admin_media/);
+    await expect(ins('celebrate_a_path')).rejects.toThrow(/super_admin_media/);
+    await expect(ins('celebrate_b_path')).rejects.toThrow(/super_admin_media/);
+    await expect(
+      as(sa).query(`update public.children set avatar_path = 'img/new.png' where id = $1 returning id`, [c]),
+    ).rejects.toThrow(/super_admin_media/);
+    await expect(
+      as(sa).query(`update public.children set celebrate_b_path = 'img/new.png' where id = $1 returning id`, [c]),
+    ).rejects.toThrow(/super_admin_media/);
+    // an edit that leaves the pictures alone is fine, and the picture stays
+    expect(await as(sa).query(`update public.children set display_name = 'Ok' where id = $1 returning id`, [c])).toHaveLength(1);
+    const kid = await superQuery<{ avatar_path: string }>(`select avatar_path from public.children where id = $1`, [c]);
+    expect(kid[0].avatar_path).toBe('img/mine.png');
+  });
+
+  it('super admin cannot add a sixth child to a full parent (N16)', async () => {
+    const sa = await createUser('super_admin');
+    const p = await createUser('parent');
+    for (let i = 0; i < 5; i++) await createChild(p);
+    await expect(as(sa).query(SA_INSERT, [p, 'sixth'])).rejects.toThrow(/too_many_children/);
+  });
+
+  it('a parent can still set their own pictures (the Super Admin rule does not reach parents)', async () => {
+    const p = await createUser('parent');
+    const c = await createChild(p);
     expect(
-      await as(sa).query(`update public.children set display_name = 'x' where id = $1 returning id`, [left[0].id]),
-    ).toEqual([]);
+      await as(p).query(`update public.children set avatar_path = 'img/mine.png' where id = $1 returning id`, [c]),
+    ).toHaveLength(1);
   });
 
   it('anon has no access', async () => {

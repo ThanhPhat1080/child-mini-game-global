@@ -1,6 +1,6 @@
 import { randomId } from '@/lib/randomId';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import type { Visibility } from '@/lib/review';
+import { copiedIds, getMyRole, getMyUserId, type Visibility } from '@/lib/review';
 import { removeMedia } from '@/lib/media';
 import { setMediaPaths } from '@/lib/mediaPaths';
 
@@ -58,6 +58,10 @@ export type ESet = {
   /** Sharing state and owner (spec V1-V4); absent for a set not saved yet. */
   visibility?: Visibility;
   ownerId?: string | null;
+  /** The signed-in user is a Super Admin and owns the set (V8): it stays editable. */
+  superOwned?: boolean;
+  /** A parent's set with a global copy of a Super Admin (V10): shows the "Global copy" badge. */
+  copied?: boolean;
 };
 
 /** An answer needs a picture, a text, or both (C4). Both empty is invalid. */
@@ -98,7 +102,10 @@ export async function loadSet(id: string): Promise<ESet | null> {
     const slots = q.answers.length;
     return { id: q.id, text: q.prompt_text ?? '', voice: q.prompt_audio_path, qimg: q.prompt_image_path, imgs, texts, readAnswers: q.read_answers, hideAnswerText: !!q.hide_answer_text, correct, count: slots === 2 ? 2 : 3 };
   });
-  return { id: r.id, isNew: false, name: r.title, subtitle: r.subtitle ?? '', color: r.heading_color, cover: r.cover_path, published: r.status === 'published', qs, visibility: r.visibility, ownerId: r.owner_id };
+  const [me, role] = await Promise.all([getMyUserId(), getMyRole()]);
+  const superOwned = role === 'super_admin' && r.owner_id === me;
+  const copied = !superOwned && r.owner_id === me && r.owner_id !== null && (await copiedIds('quiz_sets', [r.id])).has(r.id);
+  return { id: r.id, isNew: false, name: r.title, subtitle: r.subtitle ?? '', color: r.heading_color, cover: r.cover_path, published: r.status === 'published', qs, visibility: r.visibility, ownerId: r.owner_id, superOwned, copied };
 }
 
 /** Saves the whole set. Returns an error message, or null on success. */

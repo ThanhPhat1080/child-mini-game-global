@@ -9,7 +9,7 @@ const h = vi.hoisted(() => ({
   from: vi.fn(),
 }));
 
-vi.mock('@/lib/review', () => ({ applyScope: (q: unknown) => q }));
+vi.mock('@/lib/review', () => ({ playerId: async () => null, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r, dropOwnCopies: (r: unknown) => r }));
 vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ from: h.from }) }));
 
 import { fetchActiveFindLevels, fetchFindLevel } from '@/lib/find/levels';
@@ -45,7 +45,7 @@ describe('fetchActiveFindLevels', () => {
     h.result = { data: [good('a')], error: null };
     await fetchActiveFindLevels();
     expect(h.from).toHaveBeenCalledWith('find_levels');
-    expect(h.select).toHaveBeenCalledWith(COLS);
+    expect(h.select).toHaveBeenCalledWith(`${COLS}, owner_id, source_id`);
     expect(h.eq).toHaveBeenCalledWith('active', true);
     expect(h.order).toHaveBeenCalledWith('sort_order');
   });

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { BAN_REASONS } from '@/lib/policy/reasons';
 import s from './admin-ui.module.css';
+import { selectArrowStyle } from './selectArrow';
 import { ModalClose } from '@/components/ModalClose';
 
 /** Ban dialog (N9, U15): a reason from the content policy is required; the note is optional. */
@@ -18,7 +19,7 @@ export function BanDialog({ name, busy, onCancel, onConfirm }: {
         <h2 id="ban-title" style={{ margin: 0, fontSize: 21, fontWeight: 700 }}>Ban {name || 'this parent'}?</h2>
         <p style={{ margin: 0, fontSize: 15, color: '#6E5A4E' }}>All their content is hidden from everyone. Their children can still sign in. You can unban at any time.</p>
         <label htmlFor="ban-reason" style={{ fontSize: 14, fontWeight: 700 }}>Reason</label>
-        <select id="ban-reason" value={code} onChange={(e) => setCode(e.target.value)} style={{ height: 44, borderRadius: 10, padding: '0 10px', fontSize: 15 }}>
+        <select id="ban-reason" value={code} onChange={(e) => setCode(e.target.value)} style={{ height: 44, borderRadius: 10, padding: '0 10px', fontSize: 15, ...selectArrowStyle }}>
           <option value="">Choose a reason…</option>
           {BAN_REASONS.map((r) => <option key={r.code} value={r.code}>{r.label}</option>)}
         </select>

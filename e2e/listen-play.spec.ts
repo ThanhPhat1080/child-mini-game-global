@@ -115,9 +115,11 @@ test('no card word is written on the play screen', async ({ page }) => {
   expect(html).not.toMatch(/word\d+/);
 });
 
-test('Esc returns to the game list', async ({ page }) => {
+test('Esc asks "Leave now?"; Yes goes back to the game list', async ({ page }) => {
   await open(page);
   await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog', { name: 'Leave now?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Yes' }).click();
   await expect(page).toHaveURL(/\/games$/);
 });
 

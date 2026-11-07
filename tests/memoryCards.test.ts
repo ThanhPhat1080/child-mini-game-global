@@ -3,13 +3,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const h = vi.hoisted(() => ({
   result: { data: null as unknown, error: null as { message: string } | null },
   eq: vi.fn(),
+  eqGlobal: vi.fn(),
   order: vi.fn(),
   select: vi.fn(),
   from: vi.fn(),
   speakKid: vi.fn(),
 }));
 
-vi.mock('@/lib/review', () => ({ applyScope: (q: unknown) => q }));
+vi.mock('@/lib/review', async (orig) => ({ ...(await orig<typeof import('@/lib/review')>()), playerId: async () => null }));
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
     from: h.from,
@@ -43,7 +44,9 @@ beforeEach(() => {
   window.Audio = FakeAudio as unknown as typeof Audio;
   h.result = { data: null, error: null };
   h.order.mockImplementation(() => Promise.resolve(h.result));
-  h.eq.mockImplementation(() => ({ order: h.order }));
+  // no player (guest play): the list is narrowed to global rows
+  h.eq.mockImplementation(() => ({ order: h.order, eq: h.eqGlobal }));
+  h.eqGlobal.mockImplementation(() => ({ order: h.order }));
   h.select.mockImplementation(() => ({ eq: h.eq }));
   h.from.mockImplementation(() => ({ select: h.select }));
 });
@@ -52,10 +55,11 @@ describe('fetchActiveCards', () => {
   it('asks only for active cards and returns the rows', async () => {
     const rows = [{ id: 'a', word: 'cat', image_path: 'seed/cat.svg', audio_path: null, active: true }];
     h.result = { data: rows, error: null };
-    await expect(fetchActiveCards()).resolves.toEqual(rows);
+    await expect(fetchActiveCards()).resolves.toEqual(rows.map((r) => ({ ...r, family: false })));
     expect(h.from).toHaveBeenCalledWith('memory_cards');
-    expect(h.select).toHaveBeenCalledWith('id, word, image_path, audio_path, active');
+    expect(h.select).toHaveBeenCalledWith('id, word, image_path, audio_path, active, owner_id, source_id');
     expect(h.eq).toHaveBeenCalledWith('active', true);
+    expect(h.eqGlobal).toHaveBeenCalledWith('visibility', 'global');
     expect(h.order).toHaveBeenCalledWith('created_at');
   });
 
@@ -246,5 +250,19 @@ describe('stopWord (M10: leaving the page silences the word)', () => {
     sayWord({ word: 'cat', audio_path: 'seed/cat.mp3' });
     FakeAudio.instances[0].pause.mockImplementation(() => { throw new Error('x'); });
     expect(() => stopWord()).not.toThrow();
+  });
+});
+
+describe('prepareCards (FG5, FG6)', () => {
+  const card = (id: string, word: string, owner: string | null) => ({ id, word, image_path: 'i', audio_path: null, active: true, owner_id: owner });
+  it('marks and lists the family first, and drops a global card whose word the family has', async () => {
+    const { prepareCards } = await import('@/lib/memory/cards');
+    const out = prepareCards([card('g1', 'Cat', null), card('f1', ' cat ', 'me'), card('g2', 'Dog', 'x'), card('f2', 'Sun', 'me')], 'me');
+    expect(out.map((c) => c.id)).toEqual(['f1', 'f2', 'g2']);
+    expect(out.map((c) => c.family)).toEqual([true, true, false]);
+  });
+  it('keeps two family cards with the same word', async () => {
+    const { prepareCards } = await import('@/lib/memory/cards');
+    expect(prepareCards([card('f1', 'Cat', 'me'), card('f2', 'cat', 'me')], 'me')).toHaveLength(2);
   });
 });

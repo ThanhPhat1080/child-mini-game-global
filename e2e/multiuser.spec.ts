@@ -91,24 +91,27 @@ test('share, approve, ban: the whole review loop', async ({ browser }) => {
   await parent.reload();
   await expect(parent.getByText('Under review').first()).toBeVisible();
 
-  // The Super Admin approves it from the queue.
+  // The Super Admin approves it from the Cards tab "Review queue": the parent's card goes back to private,
+  // and a global copy the Super Admin owns appears (V8).
   const sa = await signedOut(browser);
   await signInAsSuper(sa);
+  await sa.goto('/admin/cards');
+  await sa.getByRole('tab', { name: /Review queue/ }).click();
   await sa.getByRole('button', { name: /^Approve/ }).first().click();
   await expect.poll(async () => (await getState()).memory_cards.filter((c) => c.visibility === 'global').length).toBe(1);
+  await expect.poll(async () => (await getState()).memory_cards.filter((c) => c.visibility === 'pending').length).toBe(0);
 
-  // The child sees it under Everyone.
+  // The child plays: own content first, then global, with no switch on the games page.
   const child = await signedOut(browser);
   await signInOnDevice(child);
   await pickChild(child);
-  await child.getByRole('button', { name: /everyone/i }).click();
-  await expect.poll(() => child.evaluate(() => localStorage.getItem('childPlayer:scope'))).toBe('global');
 
   // The Super Admin bans the parent with a reason: the parent is sent to the suspended page, the child still plays.
   await sa.goto('/admin/parents');
-  await sa.getByRole('button', { name: /^Ban/ }).first().click();
+  await sa.getByRole('link', { name: 'Parent', exact: true }).click();
+  await sa.getByRole('button', { name: 'Ban', exact: true }).click();
   await sa.getByRole('dialog').getByRole('combobox').selectOption({ index: 1 });
-  await sa.getByRole('dialog').getByRole('button', { name: /^Ban/ }).click();
+  await sa.getByRole('dialog').getByRole('button', { name: 'Ban', exact: true }).click();
   await expect.poll(async () => (await getState()).profiles.find((p) => p.user_id === ACCOUNTS.parent.id)?.banned).toBe(true);
   await parent.goto('/admin/cards');
   await expect(parent).toHaveURL(/\/admin\/suspended$/);
