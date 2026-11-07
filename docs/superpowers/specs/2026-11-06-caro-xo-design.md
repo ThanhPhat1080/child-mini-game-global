@@ -38,5 +38,5 @@ The board is large, so the cells are easy to hit with a mouse or the keyboard.
 
 ## 4. Out of scope
 
-- Playing against the computer, online play, scores, or saved games.
+- Online play, scores, or saved games. (Playing against a medium robot was added on 2026-11-07, see X13-X16 in `spec.md`.)
 - Any admin-written content (the game has no content to manage).

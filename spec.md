@@ -210,10 +210,10 @@ Spec: `docs/superpowers/specs/2026-11-06-review-copy-design.md`. Review tab per 
 - V12 A quiz copy is inserted as draft, then its questions and answers are copied, then the status is set (publish gate).
 - V13 One-time backfill: null-owner rows go to the first Super Admin; each global row a parent owns becomes a copy and the parent's row goes back to private.
 ## 4g. Phase 2: Caro X O for two players (2026-11-06)
-Spec: `docs/superpowers/specs/2026-11-06-caro-xo-design.md`. A 30x20 board, five in a row wins, two players on one computer. The child is X (boy) or O (girl); the opponent is the other gender's prince or princess.
+Spec: `docs/superpowers/specs/2026-11-06-caro-xo-design.md`. A 30x20 board, five in a row wins, two players on one computer. The child is X (boy) or O (girl); the opponent is the parent's initials against a human; the prince or princess against the robot.
 - X1 30x20 board of cells (38 px), centred on the stage.
 - X2 Turns alternate, X first; an occupied cell or a finished round does nothing.
-- X3 Two sides: the child on the left (avatar, then mark), the opponent on the right (prince or princess, then the other mark).
+- X3 Two sides: the child on the left (avatar, then mark), the opponent on the right (against a human, the parent's initials; against the robot, the prince or princess; then the other mark).
 - X4 The side whose turn it is bounces and its mark wiggles; reduced motion stops both.
 - X5 Five in a row wins; the five cells are highlighted. The sound and screen depend on who won (X11, X12).
 - X6 A full board with no five in a row is a draw (no message, no penalty).
@@ -223,6 +223,10 @@ Spec: `docs/superpowers/specs/2026-11-06-caro-xo-design.md`. A 30x20 board, five
 - X10 "? Caro" button at the top right opens the how-to-play popup (3 steps).
 - X11 The child wins: the win line lights for 1 s, then full-screen Hooray for about 3 s, then the board with the win line and a blue Play again.
 - X12 The opponent wins: the win line lights for 1 s, then the Oh-oh toast for about 1.4 s, then the board with the opponent's line lit and a blue Play again. No retry popup.
+- X13 The first screen after choosing Caro: a blue button (the child's picture, "vs", the parent's initials; "human" is the two-player game, X1-X12) and a yellow button (the child's picture, "vs", a robot icon). The button names are for screen readers only; the child sees pictures and the robot icon.
+- X14 The robot plays the other mark (the child is X or O as before, X starts). It moves after a short think (0.9 s); the board is inert while it is due, so the child cannot place its mark.
+- X15 The robot is medium: it always takes a win it can see and always blocks a four (the child's four in a row with the fifth cell open); otherwise it picks one of the three best cells by line scores, at random (`lib/caro/robot.ts`).
+- X16 A win or draw against the robot ends the round like X5-X7 (Hooray or Oh-oh by who won); Play again starts a new round against the robot.
 
 ## 4h. "You did it" characters (parent feedback, 2026-11-06)
 The shared celebration scene (`CelebrationScene`, used by the done screens of Quiz, Memory, Sort It, Spot, Find It and Listen & Pick) shows one or two characters on the left and right, by these rules:

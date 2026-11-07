@@ -20,6 +20,7 @@ test('Back asks "Leave now?": No stays on the board, Yes goes to the games list'
   await page.goto('/games');
   await page.getByRole('link', { name: 'Play Caro' }).click();
   await expect(page).toHaveURL(/\/games\/caro$/);
+  await page.getByRole('button', { name: /vs human/ }).click();
   await play(page, [1, 31]);
 
   await page.getByRole('link', { name: 'Back to games' }).click();
@@ -39,6 +40,7 @@ test('after the round: Play again? is centred at the bottom, the board is off, a
   await page.goto('/games');
   await page.getByRole('link', { name: 'Play Caro' }).click();
   await expect(page).toHaveURL(/\/games\/caro$/);
+  await page.getByRole('button', { name: /vs human/ }).click();
   await play(page, [1, 31, 2, 32, 3, 33, 50, 34, 51, 35]);
 
   await expect(playAgain(page)).toBeVisible({ timeout: 8000 });
@@ -67,6 +69,7 @@ test('the child makes five in a row and sees Hooray; after it, Play again clears
   await page.goto('/games');
   await page.getByRole('link', { name: 'Play Caro' }).click();
   await expect(page).toHaveURL(/\/games\/caro$/);
+  await page.getByRole('button', { name: /vs human/ }).click();
 
   // X (opponent) 1, O (child) 31, ... the child makes five on row 2 (cells 31-35).
   await play(page, [1, 31, 2, 32, 3, 33, 50, 34, 51, 35]);
@@ -80,6 +83,7 @@ test('the child makes five in a row and sees Hooray; after it, Play again clears
 
 test('when the opponent makes five: Oh-oh, the board stays with the five lit, and a blue Play again starts over', async ({ page }) => {
   await page.goto('/games/caro');
+  await page.getByRole('button', { name: /vs human/ }).click();
   await play(page, [1, 31, 2, 32, 3, 33, 4, 34, 5]); // X makes five in the top row
 
   await expect(page.getByText('Oh-oh… try again!')).toBeVisible({ timeout: 4000 });
@@ -99,4 +103,20 @@ test('the Caro card opens from the list with arrow keys and Enter', async ({ pag
   await expect(page.getByRole('button', { name: 'Go to game 7' })).toHaveAttribute('aria-current', 'true');
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/games\/caro$/);
+  await page.getByRole('button', { name: /vs human/ }).click();
+});
+
+test('vs Robot: the right side is the prince again, the robot (X) starts by itself, and the child (O) plays after it', async ({ page }) => {
+  await page.goto('/games');
+  await page.getByRole('link', { name: 'Play Caro' }).click();
+  await expect(page).toHaveURL(/\/games\/caro$/);
+  await page.screenshot({ path: 'test-results/caro-pick.png' });
+  await page.getByRole('button', { name: /vs Robot/ }).click();
+
+  // The right side is the prince (the child is a girl), not a robot face.
+  await expect(page.getByLabel('Player 2').locator('img')).toHaveAttribute('src', /prince\.webp/);
+  // The e2e child is a girl (O): the robot plays X and makes the first move.
+  await expect(page.locator('.caro-cell[aria-label$=", X"]')).toHaveCount(1, { timeout: 5000 });
+  await expect(page.getByLabel('Player 1')).toHaveAttribute('aria-current', 'true');
+  await page.screenshot({ path: process.env.ROBOT_SHOT ?? 'test-results/caro-robot.png' });
 });
