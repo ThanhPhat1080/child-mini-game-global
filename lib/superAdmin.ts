@@ -260,6 +260,18 @@ export async function createAccount(input: NewAccount, fetchFn: typeof fetch = f
 }
 
 /** Unresolved messages across all parents (N18): the number for the red dot on Messages. */
+/** A parent as the Super Admin sees them for a reply: name, sign-in email and phone (SA1, SA2). */
+export type ParentContact = { userId: string; displayName: string; email: string; phone: string | null };
+
+/** The contact details of every parent. Only a Super Admin may read them; the database raises otherwise. */
+export async function listParentContacts(client: Client = createSupabaseBrowserClient()): Promise<ParentContact[]> {
+  const { data, error } = await client.rpc('super_admin_parent_contacts');
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as { user_id: string; display_name: string | null; email: string; phone: string | null }[]).map((r) => ({
+    userId: r.user_id, displayName: r.display_name ?? '', email: r.email, phone: r.phone,
+  }));
+}
+
 export async function pendingMessageCount(client: Client = createSupabaseBrowserClient()): Promise<number> {
   const { count, error } = await client.from('support_messages').select('id', { count: 'exact', head: true }).is('resolved_at', null);
   if (error) throw new Error(error.message);

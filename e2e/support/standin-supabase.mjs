@@ -22,7 +22,7 @@ const SAMPLE_WORDS = [
 
 const profile = (u, role, extra = {}) => ({
   user_id: u.id, role, display_name: role, banned: false, ban_reason_code: null, ban_note: null,
-  banned_at: null, quota_bytes: QUOTA, created_at: new Date(Date.UTC(2026, 0, 1)).toISOString(), ...extra,
+  banned_at: null, quota_bytes: QUOTA, phone: null, avatar_path: null, created_at: new Date(Date.UTC(2026, 0, 1)).toISOString(), ...extra,
 });
 
 const seedChild = () => ({
@@ -332,6 +332,15 @@ function rpc(req, res, name, args) {
       else if (name === 'unban_parent') Object.assign(p, { banned: false, ban_reason_code: null, ban_note: null, banned_at: null });
       else p.quota_bytes = Number(args.p_bytes);
       return send(res, 200, null);
+    }
+    case 'super_admin_parent_contacts': {
+      // SA1: the Super Admin's list of parents, with the sign-in email from the account (never from profiles).
+      if (myRole !== 'super_admin') return bad(res, 'forbidden', '42501');
+      const rows = state.profiles
+        .filter((p) => p.role === 'parent')
+        .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)))
+        .map((p) => ({ user_id: p.user_id, display_name: p.display_name ?? null, email: users.get(p.user_id)?.email ?? null, phone: p.phone ?? null }));
+      return send(res, 200, rows);
     }
     default:
       return bad(res, `stand-in: no rpc ${name}`);
