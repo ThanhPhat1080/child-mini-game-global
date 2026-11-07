@@ -1,6 +1,6 @@
 # Parent Profile and Inbox design
 
-Date: 2026-11-07. Status: Draft, awaiting review. Repo: `child-mini-game-global`. Branch: `claude/parent-profile-inbox` (from `develop`).
+Date: 2026-11-07. Status: Accepted (2026-11-07), implemented per the plan. Repo: `child-mini-game-global`. Branch: `claude/parent-profile-inbox` (from `develop`).
 
 Requirement IDs: `PR1..` (Profile), `IN1..` (Inbox), `SA1..` (Super Admin reads a parent's contact), `PT1..` (tests). Cite them in commits.
 
@@ -26,6 +26,8 @@ Existing rules still hold: RLS decides access, and the UI only mirrors it. Admin
 ## 3. Non-goals
 
 - Replies from the Super Admin, reply threads, and notifications (red dot) for replies.
+
+**Decision after review (2026-11-07):** the phone check is length and allowed characters only; the Super Admin has an optional phone on Profile; the Super Admin's sidebar gets a Profile item (PR13).
 - Changing the sign-in email or the password from Profile.
 - Changing the Super Admin's Messages page beyond showing contact details.
 - Changing `/admin/suspended` beyond sharing its message form (banned parents keep sending from there).
