@@ -212,10 +212,35 @@ describe('Puzzle Pairs play screen (H1-H3, H9, H10, H12)', () => {
     expect(h.push).not.toHaveBeenCalled();
   });
 
-  it('Esc with no question open goes to the game list', async () => {
+  it('Esc with no question open asks "Leave now?"; nothing is left until Yes', async () => {
     await ready();
     fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Leave now?' })).toBeTruthy();
+    expect(h.push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     expect(h.push).toHaveBeenCalledWith('/games');
+  });
+
+  it('Esc with no question open and No in the leave question stays on the board', async () => {
+    await ready();
+    fireEvent.keyDown(window, { key: 'Escape' });
+    fireEvent.click(screen.getByRole('button', { name: 'No' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(h.push).not.toHaveBeenCalled();
+    expect(pieces()).toHaveLength(8);
+  });
+
+  it('Esc closes only the open question (no leave question); the Back button then asks "Leave now?"', async () => {
+    h.drawQuestion.mockReturnValueOnce(triangleQ);
+    await ready();
+    fireEvent.click(hit('triangle:L'));
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Leave now?' })).toBeNull();
+    expect(dialog()).toBeNull();
+    expect(h.push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('link', { name: 'Back to games' }));
+    expect(screen.getByRole('dialog', { name: 'Leave now?' })).toBeTruthy();
+    expect(h.push).not.toHaveBeenCalled();
   });
 
   it('the help badge opens How to play; Esc closes only the help', async () => {
