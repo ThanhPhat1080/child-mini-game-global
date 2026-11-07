@@ -239,7 +239,7 @@ Rules in `lib/celebration.ts` (`celebrationSlots`).
 ## 4i. Parent Profile and Inbox (2026-11-07)
 Spec: `docs/superpowers/specs/2026-11-07-parent-profile-inbox-design.md`. Plan: `docs/superpowers/plans/2026-11-07-parent-profile-inbox.md`. A parent's own details (name, phone, picture) and their children, and an Inbox to contact the Super Admin.
 - PR1 `profiles.phone`: optional; after trim, 8 to 20 characters of digits, spaces, `+ ( ) . -`, at least 8 digits. No country-code check.
-- PR2 `profiles.avatar_path`: the parent's picture (square, A24), counted in the parent's quota.
+- PR2 `profiles.avatar_path`: the parent's picture (square, A24), counted in the parent's quota. The path must sit in the parent's own folder (checked by the database).
 - PR3 `profiles.display_name` is 1 to 40 characters after trim (checked on new writes).
 - PR4 A parent may update only `display_name`, `phone` and `avatar_path`. `role`, `banned` and `quota_bytes` stay out of reach.
 - PR5 The update policy covers the own row only, and a banned parent cannot update it.

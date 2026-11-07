@@ -50,6 +50,11 @@ describe('parent profile and contacts (PR1-PR5, SA1)', () => {
     await expect(as(a).query(`update public.profiles set phone = '1234567' where user_id = $1`, [a])).rejects.toThrow();
   });
 
+  it('a parent can only point their picture into their own folder', async () => {
+    await expect(as(a).query(`update public.profiles set avatar_path = $1 where user_id = $2`, [`${a}/me.webp`, a])).resolves.toBeDefined();
+    await expect(as(a).query(`update public.profiles set avatar_path = $1 where user_id = $2`, [`${b}/someone-else.webp`, a])).rejects.toThrow();
+  });
+
   it('the display name check rejects a blank name on a new write', async () => {
     await expect(as(a).query(`update public.profiles set display_name = '   ' where user_id = $1`, [a])).rejects.toThrow();
   });
