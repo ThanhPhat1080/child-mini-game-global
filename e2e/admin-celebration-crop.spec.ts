@@ -42,4 +42,13 @@ test('a celebration picture is cropped to a tall 3:5 frame, and the form says to
   // Width : height of the frame: about 340 : 600 (3:5), not a square.
   expect(area!.width / area!.height).toBeCloseTo(340 / 600, 1);
   await expect(crop.getByText('Preview. The picture is saved as this frame.')).toBeVisible();
+
+  // Cancel looks like the other dialogs' Cancel: white, rounded, light border (same as Confirm, Import, Ban).
+  const cancel = crop.getByRole('button', { name: 'Cancel' });
+  await expect(cancel).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+  await expect(cancel).toHaveCSS('border-radius', '12px');
+  await expect(cancel).toHaveCSS('border-top-color', 'rgb(227, 213, 196)');
+  await page.screenshot({ path: 'test-results/crop-cancel.png' });
+  await cancel.click();
+  await expect(crop).toHaveCount(0);
 });

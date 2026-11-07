@@ -179,7 +179,7 @@ export function CropDialog({ file, start, aspect = 1, onCancel, onSave }: {
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-          <button type="button" className={`${s.btn} ${s.ghost}`} onClick={onCancel} style={{ height: 44, padding: '0 20px' }}>Cancel</button>
+          <button type="button" className={s.ghost} onClick={onCancel} style={{ height: 44, padding: '0 20px', borderRadius: 12, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer' }}>Cancel</button>
           <button
             type="button"
             disabled={!ready}
