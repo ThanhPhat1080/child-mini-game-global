@@ -12,11 +12,6 @@ alter table public.profiles add constraint profiles_phone_check check (
   )
 );
 
--- A picture lives in the owner's folder (the media bucket keeps owner folders, Q1).
-alter table public.profiles add constraint profiles_avatar_folder_check check (
-  avatar_path is null or avatar_path like user_id::text || '/%'
-);
-
 -- not valid: existing rows are not checked at once; every new write is.
 alter table public.profiles add constraint profiles_display_name_check check (
   display_name is null or char_length(btrim(display_name)) between 1 and 40
