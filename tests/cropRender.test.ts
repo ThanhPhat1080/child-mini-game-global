@@ -70,3 +70,28 @@ describe('cropToSquare quality', () => {
     expect(toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/webp', 0.8);
   });
 });
+
+// A32: a 3:5 frame is saved as a 3:5 picture, so it fills the celebration frame.
+describe('cropToAspect (A32)', () => {
+  it('saves a 3:5 crop as a 3:5 WebP, with transparency kept (no fill)', async () => {
+    const { cropToAspect, outputSize } = await import('@/lib/crop/render');
+    const { defaultCrop: dc } = await import('@/lib/crop/geometry');
+    const crop = dc(1200, 800, 340 / 600);
+    const out = await cropToAspect(new File(['x'], 'kid.png', { type: 'image/png' }), crop, 340 / 600);
+    expect(out.name).toBe('kid-cropped.webp');
+    expect(out.type).toBe('image/webp');
+    // drawImage(bitmap, x, y, sw, sh, dx, dy, dw, dh): the source is the 3:5 crop, scaled so the longest side is at most 1024.
+    const [, , , sw, sh, , , dw, dh] = ctx.drawImage.mock.calls[0] as number[];
+    expect(sw / sh).toBeCloseTo(340 / 600, 1);
+    expect(dw / dh).toBeCloseTo(340 / 600, 1);
+    expect(Math.max(dw, dh)).toBeLessThanOrEqual(1024);
+    expect(outputSize(680, 1200)).toEqual({ width: 580, height: 1024 });
+  });
+
+  it('cropToSquare still saves a square with the same name as before', async () => {
+    const { cropToSquare } = await import('@/lib/crop/render');
+    const { defaultCrop: dc } = await import('@/lib/crop/geometry');
+    const out = await cropToSquare(new File(['x'], 'kid.png', { type: 'image/png' }), dc(1200, 800));
+    expect(out.name).toBe('kid-square.webp');
+  });
+});
