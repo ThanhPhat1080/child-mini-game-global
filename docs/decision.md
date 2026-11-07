@@ -238,3 +238,7 @@
 - **Decision:** `/play` ("Who are you?"), the PIN popup ("Enter your PIN, <name>!"), the Leave game popup ("Leave game?", "Stay", "Leave") and the parent sign-out check ("Sign out now?", "Finish the sum below to sign out.", "Signout now!") and farewell ("See you later!") may show fixed English text. It is for the grown-up playing along. Each screen stays usable without reading, through pictures, avatars and icons. Wrong-PIN feedback stays without text. Other child screens keep the old rule.
 - **Also:** leaving a child's session has no "a + b" check, because the PIN guards coming back. Parent sign-out and Parent configuration keep the check.
 
+### ADR-037: Puzzle Pairs halves are joined by mouse drag only
+
+- **Status:** Accepted (2026-11-07), for Puzzle Pairs (H1-H12). Narrow exception to the child keyboard rule.
+- **Decision:** The keyboard rule (1/2/3, arrows, Enter/Space, Esc) still covers opening a half, answering, closing and leaving, but joining two halves needs a drag. Reason: the PO expects a grown-up to play this game with the child, and a keyboard "pick up and drop" mode would add a second interaction model for little gain. Revisit if a child is expected to play it alone.

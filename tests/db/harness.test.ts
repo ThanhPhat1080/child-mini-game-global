@@ -63,4 +63,13 @@ describe('DB harness', () => {
     );
     expect(p[0].n).toBe('0');
   });
+
+  it('resetDb refuses to wipe a Supabase database', async () => {
+    await superQuery(`create schema supabase_migrations`);
+    try {
+      await expect(resetDb()).rejects.toThrow(/Refusing to reset a Supabase database/);
+    } finally {
+      await superQuery(`drop schema supabase_migrations`);
+    }
+  });
 });

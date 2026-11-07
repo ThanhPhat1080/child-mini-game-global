@@ -1,5 +1,5 @@
 /** Game registry (ADR-014): the game list carousel reads from here. */
-export type Game = { id: 'quiz' | 'memory' | 'listen' | 'sort' | 'spot' | 'find' | 'caro'; href: string; ready: boolean };
+export type Game = { id: 'quiz' | 'memory' | 'listen' | 'sort' | 'spot' | 'find' | 'caro' | 'pairs'; href: string; ready: boolean };
 
 export const GAMES: readonly Game[] = [
   { id: 'quiz', href: '/games/quiz', ready: true },
@@ -9,4 +9,5 @@ export const GAMES: readonly Game[] = [
   { id: 'spot', href: '/games/spot', ready: true },
   { id: 'find', href: '/games/find', ready: true },
   { id: 'caro', href: '/games/caro', ready: true },
+  { id: 'pairs', href: '/games/pairs', ready: true },
 ];
