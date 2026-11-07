@@ -7,8 +7,8 @@ const ROOT = join(__dirname, '..', '..');
 const MIGRATIONS = join(ROOT, 'supabase', 'migrations');
 const BOOTSTRAP = join(__dirname, 'bootstrap.sql');
 
-// Matches docker-compose.test.yml. scripts/test-rls.sh sets it for its own cluster.
-const DEFAULT_URL = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
+const SUPABASE_REFUSAL =
+  'Refusing to reset a Supabase database (schema supabase_migrations exists). The DB suite wipes its target; point RLS_DATABASE_URL at a throwaway Postgres.';
 
 let pool: Pool | null = null;
 
@@ -39,11 +39,25 @@ async function applyMigrations(): Promise<void> {
   }
 }
 
+/** Throws when the target is a Supabase stack. Its schemas must never be wiped by this suite. */
+async function refuseSupabase(): Promise<void> {
+  const rows = await db().query(`select 1 from pg_namespace where nspname = 'supabase_migrations'`);
+  if (rows.rows.length > 0) throw new Error(SUPABASE_REFUSAL);
+}
+
 /** Connect, add missing Supabase pieces, then start from a fresh database state. */
 export async function startDb(): Promise<void> {
-  if (!pool) {
-    pool = new Pool({ connectionString: process.env.RLS_DATABASE_URL ?? DEFAULT_URL, max: 4 });
+  const url = process.env.RLS_DATABASE_URL;
+  if (!url) {
+    throw new Error(
+      'RLS_DATABASE_URL is not set. Run the DB suite with `npm run test:rls` (it starts a throwaway Postgres).',
+    );
   }
+  if (!pool) {
+    pool = new Pool({ connectionString: url, max: 4 });
+  }
+  // Before bootstrap: bootstrap writes roles and schemas into the target.
+  await refuseSupabase();
   await db().query(readFileSync(BOOTSTRAP, 'utf8'));
   await resetDb();
 }
@@ -57,6 +71,7 @@ export async function stopDb(): Promise<void> {
 
 /** Wipe public, users and storage rows, then re-apply every migration in order. */
 export async function resetDb(): Promise<void> {
+  await refuseSupabase();
   const q = (s: string) => db().query(s);
   await q('drop schema if exists public cascade');
   await q('create schema public');

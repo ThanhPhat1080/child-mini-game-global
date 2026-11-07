@@ -39,6 +39,7 @@ export type StandinState = {
   card_groups: Row[];
   spot_levels: Row[];
   find_levels: Row[];
+  puzzle_pictures: Row[];
   children: Row[];
   child_settings: Row[];
   quiz_sets: Row[];

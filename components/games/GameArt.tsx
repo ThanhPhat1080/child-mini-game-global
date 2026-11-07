@@ -1,5 +1,8 @@
 import type { Game } from '@/lib/games/registry';
 import { O_RED, X_BLUE } from '@/components/caro/CaroMark';
+import { PAIRS_BERRY, PairsHalves, PairsMark } from '@/components/pairs/PairsArt';
+
+export { PAIRS_BERRY };
 
 /** The Memory Match green: card title text and the game-list icon ring/card strokes. */
 export const MEMORY_GREEN = '#5E8F69';
@@ -125,6 +128,17 @@ export function GameArt({ id }: { id: Game['id'] }) {
       </>
     );
   }
+  if (id === 'pairs') {
+    return (
+      <>
+        <span aria-hidden="true" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 190 }}>
+          <PairsHalves width={200} />
+        </span>
+        <span aria-hidden="true" style={{ width: 110, height: 110 }} />
+        <span style={{ fontSize: 64, fontWeight: 600, color: PAIRS_BERRY, lineHeight: 1, textAlign: 'center' }}>Puzzle Pairs</span>
+      </>
+    );
+  }
   if (id === 'find') {
     return (
       <>
@@ -230,6 +244,7 @@ export function GameIcon({ id }: { id: Game['id'] }) {
       </svg>
     );
   }
+  if (id === 'pairs') return <PairsMark size={110} />;
   if (id === 'find') {
     return (
       <svg aria-hidden="true" width="110" height="110" viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">

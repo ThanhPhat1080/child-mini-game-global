@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({
@@ -30,7 +30,7 @@ describe('AdminNav (N2)', () => {
     expect(screen.queryByRole('link', { name: 'Children' })).toBeNull();
     expect(screen.queryByRole('link', { name: 'Settings' })).toBeNull();
     for (const n of ['Media', 'Quiz sets', 'Cards', 'Spot', 'Find']) expect(screen.getByRole('link', { name: n })).toBeTruthy();
-    for (const n of ['Review queue', 'Parents', 'Messages']) expect(screen.queryByRole('link', { name: n })).toBeNull();
+    for (const n of ['Review queue', 'Parents', 'Messages', 'Puzzle']) expect(screen.queryByRole('link', { name: n })).toBeNull();
     expect(screen.queryByRole('link', { name: /pending/ })).toBeNull();
     expect(h.pendingMessageCount).not.toHaveBeenCalled();
   });
@@ -45,6 +45,11 @@ describe('AdminNav (N2)', () => {
     }
     // Profile is the first link of the Super Admin section, for the Super Admin's own details (PR13).
     expect(screen.getByRole('link', { name: 'Profile' })).toHaveProperty('pathname', '/admin/profile');
+    // A32: Puzzle belongs to the Game settings group, after Find, and only a Super Admin sees it.
+    const games = screen.getByRole('group', { name: 'Game settings' });
+    const puzzle = within(games).getByRole('link', { name: 'Puzzle' });
+    expect(puzzle).toHaveProperty('pathname', '/admin/puzzle');
+    expect(within(games).getByRole('link', { name: 'Find' }).compareDocumentPosition(puzzle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     // Children is the first link of the Super Admin section (the baby icon).
     const superLinks = ['Children', 'Parents', 'Messages'].map((n) => screen.getByRole('link', { name: n }));
     expect(superLinks[0].compareDocumentPosition(superLinks[1]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
