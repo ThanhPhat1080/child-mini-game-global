@@ -306,8 +306,11 @@ export function ChildModal({ mode, child, parentId, compact, onClose, onSaved, o
                 <span className={`${s.childAvatar} ${s.childAvatarLg}`} style={{ borderColor: theme.accent, borderRadius: 18 }}>
                   {mediaUrl(shown) ? <Pic src={mediaUrl(shown) ?? ''} alt={`Celebration picture ${k}`} className={s.childAvatarImg} /> : <span aria-hidden="true" style={{ fontSize: 22 }}>{k}</span>}
                 </span>
-                <LibraryButton kind="image" label={`celebration picture ${k}`} onChoose={setDraft} aspect={CELEBRATION_ASPECT} />
-                {draft && <span style={{ fontSize: 13 }}>Applied when you press Save.</span>}
+                {/* The note sits under the button, so it does not push the button sideways. */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+                  <LibraryButton kind="image" label={`celebration picture ${k}`} onChoose={setDraft} aspect={CELEBRATION_ASPECT} />
+                  {draft && <span style={{ fontSize: 13 }}>Applied when you press Save.</span>}
+                </div>
               </div>
             ))}
           </div>

@@ -29,6 +29,10 @@ test.beforeEach(async ({ page }) => {
 test('a celebration picture is cropped to a tall 3:5 frame, and the form says to use a transparent background (A32)', async ({ page }) => {
   await page.getByRole('button', { name: `Edit ${CHILD.name}` }).click();
   await expect(page.getByText(/transparent background/)).toBeVisible();
+  // The button label stays on one line: the button is its normal height, not two lines clipped.
+  const choose = page.getByRole('button', { name: 'Choose from library for celebration picture A' });
+  expect((await choose.boundingBox())!.height).toBeLessThanOrEqual(34.5);
+  await page.screenshot({ path: 'test-results/celebration-field.png' });
 
   await page.getByRole('button', { name: 'Choose from library for celebration picture A' }).click();
   await page.locator('input[type=file][aria-label="Upload new picture"]').setInputFiles({
@@ -51,4 +55,24 @@ test('a celebration picture is cropped to a tall 3:5 frame, and the form says to
   await page.screenshot({ path: 'test-results/crop-cancel.png' });
   await cancel.click();
   await expect(crop).toHaveCount(0);
+});
+
+test('after a celebration picture is chosen, the "Applied" note sits under its button, not beside it', async ({ page }) => {
+  await page.getByRole('button', { name: `Edit ${CHILD.name}` }).click();
+  await page.getByRole('button', { name: 'Choose from library for celebration picture A' }).click();
+  await page.locator('input[type=file][aria-label="Upload new picture"]').setInputFiles({
+    name: 'kid.png', mimeType: 'image/png', buffer: await widePng(page),
+  });
+  await page.getByRole('dialog', { name: 'Crop picture' }).getByRole('button', { name: 'Save' }).click();
+  await page.getByRole('dialog').filter({ hasText: 'Upload new' }).getByRole('button', { name: 'OK' }).click();
+
+  const choose = page.getByRole('button', { name: 'Choose from library for celebration picture A' });
+  const note = page.getByText('Applied when you press Save.').first();
+  await expect(note).toBeVisible();
+  const b = (await choose.boundingBox())!;
+  const n = (await note.boundingBox())!;
+  // Below the button: the note starts under the button's bottom edge and lines up with its left edge.
+  expect(n.y).toBeGreaterThanOrEqual(b.y + b.height - 1);
+  expect(Math.abs(n.x - b.x)).toBeLessThan(2);
+  await page.screenshot({ path: 'test-results/celebration-applied.png' });
 });
