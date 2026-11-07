@@ -1,5 +1,6 @@
 import styles from '@/app/admin/admin.module.css';
 import s from './admin-ui.module.css';
+import { selectArrowStyle } from './selectArrow';
 import type { SortOrder } from '@/lib/people';
 import type { ReactNode } from 'react';
 
@@ -24,7 +25,7 @@ export function ListToolbar({ query, onQuery, searchLabel, placeholder, sort, on
         value={query}
         onChange={(e) => onQuery(e.target.value)}
       />
-      <select aria-label="Sort" className={styles.input} value={sort} onChange={(e) => onSort(e.target.value as SortOrder)}>
+      <select aria-label="Sort" className={styles.input} style={selectArrowStyle} value={sort} onChange={(e) => onSort(e.target.value as SortOrder)}>
         {sortOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
       {children}

@@ -13,6 +13,10 @@ import { LoadError } from '@/components/LoadError';
 import { QuizHelp } from '@/components/QuizHelp';
 import { handleChoiceKey } from '@/lib/keynav';
 import { hasAnswerContent } from '@/lib/sets';
+import { rememberIndex, recallIndex } from '@/lib/carouselMemory';
+
+/** The set centered when the child last left this list; kept for the tab so a return lands on the same set. */
+const INDEX_KEY = 'childPlayer:quiz:index';
 
 const PITCH = 544; // card width 480 + gap 64
 const cards = () => Array.from(document.querySelectorAll<HTMLElement>('a[data-set-card]'));
@@ -32,6 +36,7 @@ export default function QuizSets() {
   const [done, setDone] = useState<Record<string, boolean>>({});
   const [help, setHelp] = useState(false);
   const [idx, setIdx] = useState(0);
+  const focused = useRef<unknown>(null);
   const [dx, setDx] = useState(0);
   const [dragging, setDragging] = useState(false);
   const helpBtn = useRef<HTMLButtonElement>(null);
@@ -58,6 +63,7 @@ export default function QuizSets() {
         const rows = ownerFirst(dropOwnCopies((data as unknown as Row[]) ?? [], me), me).map((r) => ({ ...r, count: r.questions.filter(isComplete).length })).filter((r) => r.count > 0);
         if (!live) return;
         setSets(rows);
+        setIdx(recallIndex(INDEX_KEY, rows.length));
         const d: Record<string, boolean> = {};
         try { rows.forEach((r) => { if (localStorage.getItem(`childPlayer:done:${r.id}`)) d[r.id] = true; }); } catch { /* storage blocked */ }
         setDone(d);
@@ -67,9 +73,16 @@ export default function QuizSets() {
   }, [attempt]);
 
   // keyboard: start on the first set; arrows move between sets; Enter or Space opens the focused one
+  // focus the centered set once per load (the remembered one, not always the first)
   useEffect(() => {
-    if (sets && sets.length > 0) cards()[0]?.focus();
-  }, [sets]);
+    if (sets && sets.length > 0 && focused.current !== sets) {
+      focused.current = sets;
+      cards()[idx]?.focus();
+    }
+  }, [sets, idx]);
+  useEffect(() => {
+    if (sets) rememberIndex(INDEX_KEY, idx);
+  }, [sets, idx]);
   useEffect(() => {
     if (help) return;
     const onKey = (e: KeyboardEvent) => {

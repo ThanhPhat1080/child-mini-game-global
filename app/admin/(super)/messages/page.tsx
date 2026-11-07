@@ -36,6 +36,12 @@ export default function MessagesPage() {
   }, [show]);
   useEffect(() => { void load(); }, [load]);
 
+  // The Parents page links here with ?q=<parent name>: that parent's messages are the search.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get('q');
+    if (q) setQuery(q);
+  }, []);
+
   const nameOf = (userId: string) => parents[userId]?.name ?? '';
 
   const visible = useMemo(() => {
@@ -100,15 +106,19 @@ export default function MessagesPage() {
           const parent = parents[m.fromUser];
           const summary = { userId: m.fromUser, name: parent?.name ?? '', banned: parent?.banned ?? false, quotaBytes: parent?.quotaBytes ?? 0 };
           return (
-            <li key={m.id} className={styles.section} aria-label={`Message from ${parent?.name || 'a parent'}`} style={{ opacity: m.resolvedAt ? 0.7 : 1 }}>
-              <ParentRow parent={summary} />
-              <p>{new Date(m.createdAt).toLocaleString('en-GB')} · {m.resolvedAt ? 'Resolved' : m.readAt ? 'Read' : 'New'}</p>
-              <p style={{ whiteSpace: 'pre-wrap', color: '#4A3830', fontSize: 15 }}>{m.body}</p>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <li key={m.id} className={`${styles.section} ${ui.msgItem}`} aria-label={`Message from ${parent?.name || 'a parent'}`} style={{ opacity: m.resolvedAt ? 0.7 : 1, padding: '16px 20px', gap: 0 }}>
+              <div className={ui.msgSide}>
+                <ParentRow parent={summary} />
+                <p>{new Date(m.createdAt).toLocaleString('en-GB')} · {m.resolvedAt ? 'Resolved' : m.readAt ? 'Read' : 'New'}</p>
+              </div>
+              <div className={ui.msgMain}>
+              <p style={{ whiteSpace: 'pre-wrap', color: '#4A3830', fontSize: 15, margin: 0 }}>{m.body}</p>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
                 {!m.readAt && <button type="button" className={styles.ghost} onClick={() => mark(m.id, { read: true })}>Mark read</button>}
                 {!m.resolvedAt
                   ? <button type="button" className={styles.primary} onClick={() => mark(m.id, { resolved: true })}>Mark resolved</button>
                   : <button type="button" className={styles.ghost} onClick={() => mark(m.id, { resolved: false })}>Reopen</button>}
+              </div>
               </div>
             </li>
           );

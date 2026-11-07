@@ -24,9 +24,10 @@ const baseName = (p: string | null) => (p ? p.split('/').pop() ?? p : null);
  * Add or edit one child (KU3-KU8). Not optimistic: Save waits for the request. The colors follow the Boy/Girl choice at once.
  * `onNotice` lets the page show a toast after the modal has closed (for example "sound not saved").
  * `parentId` is the Super Admin mode (N16): the child belongs to that parent, and only the non-media fields are shown and saved.
+ * `compact` makes the dialog narrower; the Super Admin Children page uses it, since it has no pictures or sounds.
  */
-export function ChildModal({ mode, child, parentId, onClose, onSaved, onNotice }: {
-  mode: 'create' | 'edit'; child?: Child; parentId?: string; onClose: () => void; onSaved: (c: Child) => void; onNotice?: Notice;
+export function ChildModal({ mode, child, parentId, compact, onClose, onSaved, onNotice }: {
+  mode: 'create' | 'edit'; child?: Child; parentId?: string; compact?: boolean; onClose: () => void; onSaved: (c: Child) => void; onNotice?: Notice;
 }) {
   const titleId = useId();
   const dialog = useRef<HTMLDivElement>(null);
@@ -209,7 +210,7 @@ export function ChildModal({ mode, child, parentId, onClose, onSaved, onNotice }
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={s.modal}
+        className={`${s.modal} ${compact ? s.modalCompact : ''}`}
         // Prince or princess fills the whole form; a soft wash of the form color keeps the fields readable.
         style={{
           backgroundColor: theme.modalBg,

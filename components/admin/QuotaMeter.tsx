@@ -1,11 +1,17 @@
 const MB = 1024 * 1024;
 const WARN_AT = 0.9;
 
-/** "12 / 50 MB" with a bar; turns to the warning colour at 90% (N4, Q4). */
-export function QuotaMeter({ used, quota }: { used: number; quota: number }) {
+/**
+ * "12 / 50 MB" with a bar; turns to the warning colour at 90% (N4, Q4). `quota` null is a Super Admin: the total of
+ * all families, with no bar.
+ */
+export function QuotaMeter({ used, quota }: { used: number; quota: number | null }) {
+  const fmt = (b: number) => (Math.round((b / MB) * 10) / 10).toString();
+  if (quota === null) {
+    return <span style={{ fontSize: 14, fontWeight: 700, color: '#4A3830' }}>Storage, all families: {fmt(used)} MB</span>;
+  }
   const ratio = quota > 0 ? Math.min(1, used / quota) : 1;
   const warn = ratio >= WARN_AT;
-  const fmt = (b: number) => (Math.round((b / MB) * 10) / 10).toString();
   const color = warn ? '#A8484F' : '#3F6B48';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxWidth: 320 }}>

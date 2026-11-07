@@ -18,9 +18,10 @@ const SMALL = '(max-width: 1024px)';
 type Item = { href: string; text: string; glyph: ReactNode };
 
 const CHILDREN: Item = { href: '/admin/children', text: 'Children', glyph: <g><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" /><circle cx="18" cy="9" r="2.5" /><path d="M17.5 14.2c2.4.2 3.8 1.7 4.3 4.3" /></g> };
+/** Super Admin: Children first, with a baby's face (big head, small body, one curl of hair). */
 const SUPER: Item[] = [
+  { href: '/admin/all-children', text: 'Children', glyph: <g><circle cx="12" cy="11" r="7" /><path d="M10.5 4.4c.4-1.2 1.3-1.8 2.5-1.6" /><path d="M9.5 11h.01M14.5 11h.01" /><path d="M9.6 14.4c1.5 1.2 3.3 1.2 4.8 0" /><path d="M7.5 21.5c0-2.2 2-3.5 4.5-3.5s4.5 1.3 4.5 3.5" /></g> },
   { href: '/admin/parents', text: 'Parents', glyph: <g><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" /></g> },
-  { href: '/admin/all-children', text: 'Children', glyph: <g><circle cx="12" cy="8" r="3" /><path d="M6 20c.5-3 2.7-4.5 6-4.5s5.5 1.5 6 4.5" /></g> },
   { href: '/admin/messages', text: 'Messages', glyph: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /> },
 ];
 const SHARED: Item[] = [

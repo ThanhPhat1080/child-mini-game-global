@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { getMyQuota, type Quota } from '@/lib/media/quota';
 import { QuotaMeter } from '@/components/admin/QuotaMeter';
 import { MediaLibrary } from '@/components/admin/MediaLibraryDialog';
+import { useMyRole } from '@/lib/review';
 
 type Kind = 'image' | 'audio';
 
@@ -14,10 +15,15 @@ const TABS: { kind: Kind; label: string; icon: React.ReactNode }[] = [
   { kind: 'audio', label: 'Sound library', icon: <svg {...iconProps}><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg> },
 ];
 
-/** Media: every picture and sound in the bucket, with the same actions as the library pop-up (upload, rename, sort, view, delete). */
+/**
+ * Media: the pictures and sounds of the family. A parent sees their own; a Super Admin sees their own and every parent's
+ * (view only for the parents'), with the storage of all families. The same actions as the library pop-up (upload, rename, sort, view, delete).
+ */
 export default function MediaPage() {
   const [kind, setKind] = useState<Kind>('image');
   const [quota, setQuota] = useState<Quota | null>(null);
+  const role = useMyRole();
+  const scope = role === 'super_admin' ? 'all' : 'own';
   useEffect(() => { void getMyQuota().then(setQuota, () => setQuota(null)); }, [kind]);
   return (
     <>
@@ -37,7 +43,7 @@ export default function MediaPage() {
           );
         })}
       </div>
-      <MediaLibrary key={kind} mode="page" kind={kind} />
+      {role && <MediaLibrary key={`${kind}:${scope}`} mode="page" kind={kind} scope={scope} />}
     </>
   );
 }

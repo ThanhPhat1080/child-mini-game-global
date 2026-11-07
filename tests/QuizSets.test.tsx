@@ -39,6 +39,7 @@ const set = (id: string, title: string, subtitle: string | null, questions: unkn
 });
 
 beforeEach(() => {
+  sessionStorage.clear(); // the remembered set position is per tab: start every test on the first set
   h.eq.mockReset();
   h.push.mockReset();
   localStorage.clear();
@@ -48,6 +49,20 @@ afterEach(cleanup);
 
 // T9 / C3, C11: quiz set selection.
 describe('Quiz set selection (T9, C3, C11)', () => {
+  it('comes back to the set that was centered when the child left (not the first)', async () => {
+    sessionStorage.setItem('childPlayer:quiz:index', '1');
+    render(<QuizSets />);
+    const colors = await screen.findByRole('link', { name: 'Colors, 1 questions' });
+    await waitFor(() => expect(document.activeElement).toBe(colors));
+  });
+
+  it('remembers the centered set when the child moves to another one', async () => {
+    render(<QuizSets />);
+    await screen.findByRole('link', { name: 'Animals, 2 questions' });
+    fireEvent.click(screen.getByRole('button', { name: 'Go to set 2' }));
+    expect(sessionStorage.getItem('childPlayer:quiz:index')).toBe('1');
+  });
+
   it('TC1: each card shows cover, name, optional sub-title and a question-count pill', async () => {
     render(<QuizSets />);
     const animals = await screen.findByRole('link', { name: 'Animals, 2 questions' });

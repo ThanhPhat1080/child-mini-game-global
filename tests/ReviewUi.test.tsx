@@ -101,9 +101,13 @@ describe('review UI (N3, N4, V1-V4)', () => {
     const q = { or: vi.fn(() => 'narrowed') };
     expect(familyOrGlobal(q, 'me')).toBe('narrowed');
     expect(q.or).toHaveBeenCalledWith('owner_id.eq.me,visibility.eq.global');
-    const untouched = { or: vi.fn() };
-    expect(familyOrGlobal(untouched, null)).toBe(untouched);
-    expect(untouched.or).not.toHaveBeenCalled();
+  });
+
+  it('familyOrGlobal with no parent (guest play) keeps global rows only', () => {
+    const q = { or: vi.fn(), eq: vi.fn(() => 'global-only') };
+    expect(familyOrGlobal(q, null)).toBe('global-only');
+    expect(q.eq).toHaveBeenCalledWith('visibility', 'global');
+    expect(q.or).not.toHaveBeenCalled();
   });
 
   it('playerId reads the session user and falls back to null', async () => {

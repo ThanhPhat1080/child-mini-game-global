@@ -38,19 +38,35 @@ export function ParentRow({ parent, used, childCount, pendingMessages, expanded,
           </button>
         )}
         <InitialsAvatar name={parent.name} />
-        <div className={s.parentMain}>
+        <div className={used !== undefined ? s.parentMain : `${s.parentMain} ${s.parentMainSolo}`}>
           <div className={s.parentNameLine}>
             <Link href={`/admin/parents/${parent.userId}`} className={s.parentName}>{name}</Link>
             {parent.banned && <BanTag />}
           </div>
-          {used !== undefined && <UsageBar used={used} quota={parent.quotaBytes} />}
+          {used !== undefined && (
+            // A fixed column on the right: the bars line up across rows, whatever the name length (N10).
+            <div className={s.parentUsage}>
+              <UsageBar inline used={used} quota={parent.quotaBytes} />
+            </div>
+          )}
           {childCount !== undefined && <span className={s.childCount}>Children: {childCount}</span>}
         </div>
-        {pendingMessages && (
-          <span className={s.iconTag}>
-            <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
-            <RedDot label="Pending messages" />
-          </span>
+        {used !== undefined && (
+          // The message slot is always there, so a row with a red dot is as wide as one without it.
+          <div className={s.msgSlot}>
+            {pendingMessages && (
+              // Opens the Messages page with this parent's name in the search box (N9).
+              <Link
+                href={`/admin/messages?q=${encodeURIComponent(parent.name)}`}
+                className={s.iconLink}
+                aria-label={`Pending messages from ${name}`}
+                title="Open this parent's messages"
+              >
+                <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                <RedDot label="Pending messages" />
+              </Link>
+            )}
+          </div>
         )}
       </div>
       {expanded && children && <div id={bodyId} className={s.parentKids}>{children}</div>}
