@@ -24,7 +24,7 @@ test.beforeEach(async () => {
   await putFile(STAR_PATH, readFileSync('public/seed/star.svg', 'utf8'));
 });
 
-test('the Super Admin adds a library picture "star", saves it; then turns "fish" off and saves', async ({ page }) => {
+test('the Super Admin adds a library picture "star", saves it; then turns "fish" off and saves; the game deals only the saved pictures', async ({ page, browser }) => {
   await signInAsSuper(page);
   await page.getByRole('link', { name: 'Puzzle', exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/puzzle$/);
@@ -62,6 +62,24 @@ test('the Super Admin adds a library picture "star", saves it; then turns "fish"
   await expect.poll(async () => (await getState()).puzzle_pictures.find((r) => r.id === 'pp-fish')?.active).toBe(false);
   await expect(chip(page, '4 on · ready')).toBeVisible();
   expect((await getState()).puzzle_pictures.filter((r) => r.active).map((r) => r.word).sort()).toEqual(['apple', 'house', 'star', 'triangle']);
+
+  // the saved pool reaches the game: a child's board deals exactly the halves of the active rows (star in, fish out)
+  const rows = (await getState()).puzzle_pictures;
+  const active = rows.filter((r) => r.active);
+  const starId = rows.find((r) => r.word === 'star')!.id;
+  const child = await browser.newContext({ storageState: 'e2e/.auth/child.json', baseURL: test.info().project.use.baseURL as string });
+  try {
+    const game = await child.newPage();
+    await game.goto('/games/pairs');
+    await expect(game.locator('[data-pairs-play]')).toHaveAttribute('data-phase', 'play');
+    await expect(game.locator('[data-piece]')).toHaveCount(8);
+    const ids = await game.locator('[data-piece]').evaluateAll((els) => els.map((e) => e.getAttribute('data-piece') ?? ''));
+    expect([...ids].sort()).toEqual(active.flatMap((r) => [`${r.id}:L`, `${r.id}:R`]).sort());
+    expect(ids).toContain(`${starId}:L`);
+    expect(ids.some((id) => id.startsWith('pp-fish:'))).toBe(false);
+  } finally {
+    await child.close();
+  }
 });
 
 test('a parent who opens /admin/puzzle gets the no-permission screen', async ({ page }) => {

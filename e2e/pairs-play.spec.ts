@@ -101,8 +101,11 @@ async function grab(page: Page, id: string) {
   return { x: box.x + box.width * (isLeft(id) ? 0.25 : 0.75), y: box.y + box.height / 2 };
 }
 
-/** Drags one face-up half onto another (10 steps), then releases. */
-async function drag(page: Page, from: string, to: string) {
+/**
+ * Presses a face-up half and moves it onto another (10 steps), without releasing: the caller checks the drag
+ * while it is held, then calls `page.mouse.up()`. Returns the pointer's start and end.
+ */
+async function beginDrag(page: Page, from: string, to: string): Promise<{ a: { x: number; y: number }; b: { x: number; y: number } }> {
   await settle(hit(page, from));
   await settle(hit(page, to));
   const a = await grab(page, from);
@@ -110,6 +113,12 @@ async function drag(page: Page, from: string, to: string) {
   await page.mouse.move(a.x, a.y);
   await page.mouse.down();
   await page.mouse.move(b.x, b.y, { steps: 10 });
+  return { a, b };
+}
+
+/** Drags one face-up half onto another (10 steps), then releases. */
+async function drag(page: Page, from: string, to: string) {
+  await beginDrag(page, from, to);
   await page.mouse.up();
 }
 
@@ -179,7 +188,17 @@ test('a wrong join slides back and nothing reaches the shelf', async ({ page }) 
 
   await settle(hit(page, first));
   const before = (await hit(page, first).boundingBox())!;
-  await drag(page, first, other);
+  const { a, b } = await beginDrag(page, first, other);
+
+  // while the pointer is still held the half really is being dragged: it is lifted and has moved toward the target
+  await expect(piece(page, first)).toHaveAttribute('data-dragging', 'true');
+  const travel = Math.hypot(b.x - a.x, b.y - a.y);
+  await expect.poll(async () => {
+    const now = (await hit(page, first).boundingBox())!;
+    return Math.hypot(now.x - before.x, now.y - before.y);
+  }, { timeout: 3000 }).toBeGreaterThan(travel / 2);
+  await page.mouse.up();
+  await expect(piece(page, first)).not.toHaveAttribute('data-dragging', 'true');
 
   // both stay face up, the board still has its 8 halves, nothing is on the shelf
   await expect(faceUp(page)).toHaveCount(2);
