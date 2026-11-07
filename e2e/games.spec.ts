@@ -5,7 +5,7 @@ test.beforeEach(async () => {
   await reset();
 });
 
-test('the game list shows Quiz, Memory Match, Listen & Pick, Sort It, Spot, Find It and Caro as playable', async ({ page }) => {
+test('the game list shows Quiz, Memory Match, Listen & Pick, Sort It, Spot, Find It, Caro and Puzzle Pairs as playable', async ({ page }) => {
   await page.goto('/games');
   await expect(page.getByRole('link', { name: 'Play Quiz' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Play Memory Match' })).toBeVisible();
@@ -14,9 +14,10 @@ test('the game list shows Quiz, Memory Match, Listen & Pick, Sort It, Spot, Find
   await expect(page.getByRole('link', { name: 'Play Spot the Differences' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Play Find It' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Play Caro' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Play Puzzle Pairs' })).toBeVisible();
   await expect(page.getByRole('img', { name: /coming soon/ })).toHaveCount(0);
   await expect(page.getByText('Coming in Phase 2')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /^Go to game \d$/ })).toHaveCount(7);
+  await expect(page.getByRole('button', { name: /^Go to game \d$/ })).toHaveCount(8);
 });
 
 /** The view takes focus in its mount effect, so a focused view means the page is hydrated and listens to keys. */

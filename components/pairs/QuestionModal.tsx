@@ -172,11 +172,21 @@ export function QuestionModal({ drawn, sounds, onRight, onClose }: Props) {
     };
   }, [clearAll, hush, later, say]);
 
+  // Esc belongs to the question while it is open: a capture listener stops it here, so the page's Back button
+  // (and any other window listener) does not also leave the game. Ignored while the right pick is celebrated.
+  useEffect(() => {
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      if (!locked) onClose();
+    };
+    window.addEventListener('keydown', onEsc, true);
+    return () => window.removeEventListener('keydown', onEsc, true);
+  }, [locked, onClose]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (!locked) onClose();
-      } else if (e.key === '1' || e.key === '2' || e.key === '3') {
+      if (e.key === '1' || e.key === '2' || e.key === '3') {
         pick(Number(e.key) - 1);
       } else if (e.key === 'r' || e.key === 'R') {
         replay();
@@ -187,7 +197,7 @@ export function QuestionModal({ drawn, sounds, onRight, onClose }: Props) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [locked, onClose, pick, replay]);
+  }, [pick, replay]);
 
   const question = drawn.kind === 'listen' ? (
     <ListenQuestion question={drawn.question} wrong={wrong} picked={picked} locked={locked} speaking={speaking} onPick={pick} onReplay={replay} />

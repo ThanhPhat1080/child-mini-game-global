@@ -20,8 +20,8 @@ const PITCH = 712;
 const N = GAMES.length;
 /** The game centered when the child last left this list; kept for the tab, so a return lands on the same game. */
 const INDEX_KEY = 'childPlayer:games:index';
-const TITLE = { quiz: 'Quiz', memory: 'Memory Match', listen: 'Listen & Pick', sort: 'Sort It', spot: 'Spot the Differences', find: 'Find It', caro: 'Caro' } as const;
-const BORDER = { quiz: '#EBB7BC', memory: '#A9CDB1', listen: '#C9BFE4', sort: '#EAD9A0', spot: '#A9C6DE', find: '#F2C9A8', caro: '#9FD3C7' } as const;
+const TITLE = { quiz: 'Quiz', memory: 'Memory Match', listen: 'Listen & Pick', sort: 'Sort It', spot: 'Spot the Differences', find: 'Find It', caro: 'Caro', pairs: 'Puzzle Pairs' } as const;
+const BORDER = { quiz: '#EBB7BC', memory: '#A9CDB1', listen: '#C9BFE4', sort: '#EAD9A0', spot: '#A9C6DE', find: '#F2C9A8', caro: '#9FD3C7', pairs: '#E3B5CF' } as const;
 
 /** Game list carousel (C2) — mirrors the GameList board: drag/arrows/keys, 120px swipe threshold. */
 export default function Games() {
@@ -98,7 +98,7 @@ export default function Games() {
                     <GameArt id={g.id} />
                   </div>
                 )}
-                {(g.id === 'quiz' || g.id === 'memory' || g.id === 'listen' || g.id === 'sort' || g.id === 'spot' || g.id === 'find' || g.id === 'caro') && (
+                {(g.id === 'quiz' || g.id === 'memory' || g.id === 'listen' || g.id === 'sort' || g.id === 'spot' || g.id === 'find' || g.id === 'caro' || g.id === 'pairs') && (
                   <span
                     data-game-icon={g.id}
                     aria-hidden="true"

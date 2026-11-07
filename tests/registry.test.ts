@@ -5,12 +5,12 @@ describe('game registry', () => {
   it('has unique ids', () => {
     expect(new Set(GAMES.map((g) => g.id)).size).toBe(GAMES.length);
   });
-  it('lists quiz, memory, listen, sort, spot, find, caro in that order', () => {
-    expect(GAMES.map((g) => g.id)).toEqual(['quiz', 'memory', 'listen', 'sort', 'spot', 'find', 'caro']);
+  it('lists quiz, memory, listen, sort, spot, find, caro, pairs in that order', () => {
+    expect(GAMES.map((g) => g.id)).toEqual(['quiz', 'memory', 'listen', 'sort', 'spot', 'find', 'caro', 'pairs']);
   });
   it('marks every game ready', () => {
     const ready = Object.fromEntries(GAMES.map((g) => [g.id, g.ready]));
-    expect(ready).toEqual({ quiz: true, memory: true, listen: true, sort: true, spot: true, find: true, caro: true });
+    expect(ready).toEqual({ quiz: true, memory: true, listen: true, sort: true, spot: true, find: true, caro: true, pairs: true });
   });
   it('points to the game routes', () => {
     const href = Object.fromEntries(GAMES.map((g) => [g.id, g.href]));
@@ -21,6 +21,7 @@ describe('game registry', () => {
     expect(href.spot).toBe('/games/spot');
     expect(href.find).toBe('/games/find');
     expect(href.caro).toBe('/games/caro');
+    expect(href.pairs).toBe('/games/pairs');
   });
   it('has no hasHelp flag any more (help opens inside the games)', () => {
     expect(GAMES.some((g) => 'hasHelp' in g)).toBe(false);
