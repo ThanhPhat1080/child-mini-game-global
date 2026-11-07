@@ -10,7 +10,7 @@ const PORT = Number(process.env.STANDIN_PORT ?? 54391);
 const SUPER = { email: 'super@test.local', password: 'secret', id: '11111111-1111-4111-8111-111111111111' };
 const PARENT = { email: 'admin@test.local', password: 'secret', id: '22222222-2222-4222-8222-222222222222' };
 const CHILD = { id: '33333333-3333-4333-8333-333333333333', name: 'Test', pin: '1234' };
-const TABLES = ['children', 'memory_cards', 'card_groups', 'spot_levels', 'find_levels', 'child_settings', 'quiz_sets', 'questions', 'answers', 'profiles', 'support_messages', 'review_events'];
+const TABLES = ['children', 'memory_cards', 'card_groups', 'spot_levels', 'find_levels', 'child_settings', 'quiz_sets', 'questions', 'answers', 'profiles', 'support_messages', 'review_events', 'puzzle_pictures'];
 const CONTENT = ['quiz_sets', 'memory_cards', 'spot_levels', 'card_groups', 'find_levels'];
 const QUOTA = 50 * 1024 * 1024;
 const RESERVED = new Set(['select', 'order', 'limit', 'offset', 'on_conflict', 'columns']);
@@ -51,6 +51,11 @@ function defaultState() {
     card_groups: [],
     spot_levels: [],
     find_levels: [],
+    // A35: the four seed pictures of Puzzle Pairs.
+    puzzle_pictures: ['fish', 'triangle', 'house', 'apple'].map((w, i) => ({
+      id: `pp-${w}`, word: w, image_path: `seed/${w}.svg`, audio_path: null, active: true,
+      sort_order: i, owner_id: null, created_at: new Date(Date.UTC(2026, 0, 1, 0, 0, i)).toISOString(),
+    })),
     child_settings: [childSettings(CHILD.id)],
     quiz_sets: [],
     questions: [],
@@ -234,7 +239,11 @@ function withDefaults(table, row) {
     if (r.visibility === undefined) r.visibility = 'private';
   }
   if (table === 'support_messages') Object.assign(r, { from_user: currentUserId, read_at: null, resolved_at: null, ...r });
-  if (table === 'spot_levels' || table === 'find_levels') {
+  if (table === 'puzzle_pictures') {
+    if (r.owner_id === undefined) r.owner_id = currentUserId;
+    if (r.audio_path === undefined) r.audio_path = null;
+  }
+  if (table === 'spot_levels' || table === 'find_levels' || table === 'puzzle_pictures') {
     if (r.active === undefined) r.active = true;
     if (r.sort_order === undefined) r.sort_order = 0;
   }
