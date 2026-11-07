@@ -17,7 +17,9 @@ const SMALL = '(max-width: 1024px)';
 
 type Item = { href: string; text: string; glyph: ReactNode };
 
-const CHILDREN: Item = { href: '/admin/children', text: 'Children', glyph: <g><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5" /><circle cx="18" cy="9" r="2.5" /><path d="M17.5 14.2c2.4.2 3.8 1.7 4.3 4.3" /></g> };
+/** Parent (PR12): the own profile and the children on it, and the feedback Inbox (spec 2026-11-07). */
+const PROFILE: Item = { href: '/admin/profile', text: 'Profile', glyph: <g><circle cx="12" cy="8" r="4" /><path d="M4 21c.8-4 4-6.5 8-6.5s7.2 2.5 8 6.5" /></g> };
+const INBOX: Item = { href: '/admin/inbox', text: 'Inbox', glyph: <g><path d="M22 12h-6l-2 3h-4l-2-3H2" /><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.5-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.7 1.1z" /></g> };
 /** Super Admin: Children first, with a baby's face (big head, small body, one curl of hair). */
 const SUPER: Item[] = [
   { href: '/admin/all-children', text: 'Children', glyph: <g><circle cx="12" cy="11" r="7" /><path d="M10.5 4.4c.4-1.2 1.3-1.8 2.5-1.6" /><path d="M9.5 11h.01M14.5 11h.01" /><path d="M9.6 14.4c1.5 1.2 3.3 1.2 4.8 0" /><path d="M7.5 21.5c0-2.2 2-3.5 4.5-3.5s4.5 1.3 4.5 3.5" /></g> },
@@ -147,9 +149,15 @@ export function AdminNav() {
           </svg>
         </button>
       </div>
-      {role === 'parent' && link(CHILDREN)}
+      {role === 'parent' && (
+        <>
+          {link(PROFILE)}
+          {link(INBOX)}
+        </>
+      )}
       {role === 'super_admin' && (
         <>
+          {link(PROFILE)}
           {SUPER.map(link)}
           <div className={styles.divider} />
         </>
