@@ -7,11 +7,16 @@ const h = vi.hoisted(() => ({
   savePictures: vi.fn(),
   sayWord: vi.fn(),
   listLibrary: vi.fn(),
+  /** the table client used by the real helpers in the partial-failure tests; throws by default */
+  from: vi.fn(),
+  /** the rows of the fake table, and whether its updates fail */
+  rows: [] as Record<string, unknown>[],
+  failUpdate: false,
 }));
 
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
-    from: () => { throw new Error('the page must not touch the database directly'); },
+    from: (table: string) => h.from(table),
     storage: { from: () => ({ getPublicUrl: (p: string) => ({ data: { publicUrl: `https://cdn.test/${p}` } }) }) },
   }),
 }));
@@ -47,6 +52,9 @@ async function renderWith(list: EPicture[]) {
 
 beforeEach(() => {
   h.loadPictures.mockReset();
+  h.from.mockReset().mockImplementation(() => { throw new Error('the page must not touch the database directly'); });
+  h.failUpdate = false;
+  h.rows = [];
   h.savePictures.mockReset().mockResolvedValue({ error: null });
   h.sayWord.mockReset();
   h.listLibrary.mockReset().mockResolvedValue(['library/star.png', 'library/moon.png']);
@@ -136,9 +144,108 @@ describe('Super Admin puzzle page (A32, A33)', () => {
     expect(saveBtn().disabled).toBe(false);
   });
 
+  it('when the read-back after a failed save also fails, the draft and the error stay as they were', async () => {
+    h.savePictures.mockResolvedValue({ error: 'Could not save: boom' });
+    h.loadPictures.mockResolvedValueOnce(SEEDS).mockRejectedValueOnce(new Error('offline'));
+    render(<PuzzlePage />);
+    await screen.findByRole('button', { name: 'Add from Image Library' });
+    await waitFor(() => expect(screen.queryByText('Loading…')).toBeNull());
+    fireEvent.click(sw(1));
+    fireEvent.click(saveBtn());
+    expect((await screen.findByRole('alert')).textContent).toBe('Could not save: boom');
+    expect(sw(1).getAttribute('aria-checked')).toBe('false');
+    expect(saveBtn().disabled).toBe(false);
+  });
+
   it('a failed load shows the error', async () => {
     h.loadPictures.mockRejectedValue(new Error('offline'));
     render(<PuzzlePage />);
     expect((await screen.findByRole('alert')).textContent).toBe('offline');
   });
 });
+
+/** Stands in for the table: upserts by id, per-row updates (failing when `h.failUpdate`), deletes by id, reads in order. */
+function useFakeTable(seed: EPicture[]) {
+  h.rows = seed.map((p, i) => ({ id: p.id, word: p.word, image_path: p.image, audio_path: p.audio, active: p.active, sort_order: i, created_at: `2026-11-0${i + 1}` }));
+  const ok = { error: null };
+  h.from.mockImplementation((table: string) => {
+    if (table !== 'puzzle_pictures') throw new Error(`unexpected table ${table}`);
+    return {
+      select: () => ({ order: () => ({ order: () => Promise.resolve({ data: h.rows.map((r) => ({ ...r })), error: null }) }) }),
+      upsert: (rows: Record<string, unknown>[]) => {
+        for (const r of rows) {
+          const i = h.rows.findIndex((x) => x.id === r.id);
+          if (i >= 0) h.rows[i] = { ...h.rows[i], ...r };
+          else h.rows.push({ ...r, created_at: '2026-11-09' });
+        }
+        return Promise.resolve(ok);
+      },
+      update: (patch: Record<string, unknown>) => ({
+        eq: (_col: string, id: string) => {
+          if (h.failUpdate) return Promise.resolve({ error: { message: 'update failed' } });
+          const i = h.rows.findIndex((x) => x.id === id);
+          h.rows[i] = { ...h.rows[i], ...patch };
+          return Promise.resolve(ok);
+        },
+      }),
+      delete: () => ({ in: (_col: string, ids: string[]) => { h.rows = h.rows.filter((r) => !ids.includes(r.id as string)); return Promise.resolve(ok); } }),
+    };
+  });
+}
+
+/**
+ * Starts from the four seeds, adds the star picture, switches fish off and removes apple, then Save fails on the
+ * fish update. The insert and the delete have already happened in the table by then.
+ */
+async function failedSave() {
+  const actual = await vi.importActual<typeof import('@/lib/pairs/adminPictures')>('@/lib/pairs/adminPictures');
+  h.loadPictures.mockImplementation(actual.loadPictures);
+  h.savePictures.mockImplementation(actual.savePictures);
+  useFakeTable(SEEDS);
+  render(<PuzzlePage />);
+  await screen.findByRole('button', { name: 'Add from Image Library' });
+  await waitFor(() => expect(screen.queryByText('Loading…')).toBeNull());
+
+  fireEvent.click(screen.getByRole('button', { name: 'Add from Image Library' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Choose star.png' }));
+  fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+  await waitFor(() => expect(screen.queryByRole('button', { name: 'OK' })).toBeNull());
+  fireEvent.change(word(5), { target: { value: 'star' } });
+  fireEvent.click(sw(1));
+  fireEvent.click(screen.getByRole('button', { name: 'Remove picture 4' }));
+
+  h.failUpdate = true;
+  fireEvent.click(saveBtn());
+  expect((await screen.findByRole('alert')).textContent).toBe('update failed');
+  h.failUpdate = false;
+}
+
+describe('a save that fails part way (A32)', () => {
+  it('insert OK, update fails, then Save again: the retry saves once, with no duplicate-row error', async () => {
+    await failedSave();
+    // the table already holds the star row and no longer holds apple; fish is still on
+    expect(h.rows.map((r) => r.word)).toEqual(['fish', 'house', 'triangle', 'star']);
+    expect(h.rows.find((r) => r.word === 'fish')?.active).toBe(true);
+
+    // the draft (fish off) is still there, so Save is enabled and the retry writes it
+    expect(saveBtn().disabled).toBe(false);
+    fireEvent.click(saveBtn());
+    await screen.findByText('Saved.');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(h.rows.map((r) => r.word)).toEqual(['fish', 'house', 'triangle', 'star']);
+    expect(h.rows.find((r) => r.word === 'fish')?.active).toBe(false);
+    expect(h.rows.filter((r) => r.word === 'star')).toHaveLength(1);
+    expect(saveBtn().disabled).toBe(true);
+  });
+
+  it('after the failed save, Revert restores the rows the database holds (apple stays gone, star is saved)', async () => {
+    await failedSave();
+    fireEvent.click(screen.getByRole('button', { name: 'Revert' }));
+    expect(word(4).value).toBe('star');
+    expect(screen.queryByLabelText('Word for picture 5')).toBeNull();
+    expect(screen.queryByDisplayValue('apple')).toBeNull();
+    expect(sw(1).getAttribute('aria-checked')).toBe('true');
+    expect((screen.getByRole('button', { name: 'Revert' }) as HTMLButtonElement).disabled).toBe(true);
+  });
+});
+

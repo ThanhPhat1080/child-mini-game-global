@@ -144,11 +144,30 @@ export function PuzzlePictures() {
 
   function revert() { setDraft(saved); touch(); }
 
+  /**
+   * After a failed save: reads the database back as the saved copy, and marks every draft row that is now in the database
+   * as not new (so a retry does not insert it again). The draft keeps its edits. If the read fails, nothing changes.
+   */
+  async function syncAfterFailure() {
+    try {
+      const fresh = await loadPictures();
+      const inDb = new Set(fresh.map((p) => p.id));
+      setSaved(fresh);
+      setDraft((d) => d && d.map((p) => (inDb.has(p.id) ? { ...p, isNew: false } : p)));
+    } catch { /* the read failed too: keep the state as it was */ }
+  }
+
   async function doSave() {
     if (!draft || !saved || !canSave) return;
     setBusy(true); touch();
     const r = await savePictures(saved, draft);
-    if (r.error) { show('error', r.error); setBusy(false); return; }
+    if (r.error) {
+      // A part-way failure may already have written some rows: the database becomes the saved copy, so a retry and Discard start from it.
+      await syncAfterFailure();
+      show('error', r.error);
+      setBusy(false);
+      return;
+    }
     // The database has the draft now: it becomes the saved copy (no row is new any more), then the list is read back.
     const settled = draft.map((p) => ({ ...p, isNew: false }));
     setSaved(settled); setDraft(settled);

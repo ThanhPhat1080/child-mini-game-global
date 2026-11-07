@@ -47,7 +47,7 @@ export async function loadPictures(): Promise<EPicture[]> {
 }
 
 /**
- * Writes the draft against the saved list: deletes removed rows, inserts new ones, updates changed ones.
+ * Writes the draft against the saved list: deletes removed rows, upserts new ones, updates changed ones.
  * `sort_order` is the row's position in the draft. Stops at the first Supabase error and returns its message.
  */
 export async function savePictures(saved: EPicture[], draft: EPicture[]): Promise<{ error: string | null }> {
@@ -62,7 +62,8 @@ export async function savePictures(saved: EPicture[], draft: EPicture[]): Promis
     }
     const fresh = draft.flatMap((p, i) => (p.isNew ? [{ id: p.id, word: p.word.trim(), image_path: p.image, audio_path: p.audio, active: p.active, sort_order: i }] : []));
     if (fresh.length) {
-      const { error } = await sb.from('puzzle_pictures').insert(fresh);
+      // upsert by id: a retry after a partial failure may send a row the database already holds
+      const { error } = await sb.from('puzzle_pictures').upsert(fresh, { onConflict: 'id' });
       if (error) return { error: error.message };
     }
     for (const [i, p] of draft.entries()) {

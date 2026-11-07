@@ -70,20 +70,25 @@ describe('loadPictures (A32)', () => {
   });
 });
 
-/** A fake table: records delete ids, insert rows and per-row updates; `fail` makes one call return an error. */
-function fakeTable(fail: 'insert' | 'update' | 'delete' | null = null) {
-  const calls = { deletes: [] as string[][], inserts: [] as Record<string, unknown>[][], updates: [] as { id: string; patch: Record<string, unknown> }[] };
+/** A fake table: records delete ids, upserts and per-row updates; `fail` makes one call return an error. */
+function fakeTable(fail: 'upsert' | 'update' | 'delete' | null = null) {
+  const calls = {
+    deletes: [] as string[][],
+    inserts: [] as Record<string, unknown>[][],
+    upsertOptions: [] as unknown[],
+    updates: [] as { id: string; patch: Record<string, unknown> }[],
+  };
   const err = (op: string) => (fail === op ? { message: 'boom' } : null);
   h.from.mockImplementation(() => ({
     delete: () => ({ in: (_col: string, ids: string[]) => { calls.deletes.push(ids); return Promise.resolve({ error: err('delete') }); } }),
-    insert: (rows: Record<string, unknown>[]) => { calls.inserts.push(rows); return Promise.resolve({ error: err('insert') }); },
+    upsert: (rows: Record<string, unknown>[], opts: unknown) => { calls.inserts.push(rows); calls.upsertOptions.push(opts); return Promise.resolve({ error: err('upsert') }); },
     update: (patch: Record<string, unknown>) => ({ eq: (_col: string, id: string) => { calls.updates.push({ id, patch }); return Promise.resolve({ error: err('update') }); } }),
   }));
   return calls;
 }
 
 describe('savePictures (A32)', () => {
-  it('a mixed diff: one delete, one insert, one update (the other rows are left alone)', async () => {
+  it('a mixed diff: one delete, one upsert of the new row, one update (the other rows are left alone)', async () => {
     const calls = fakeTable();
     const saved = [pic({ id: 'a', word: 'fish' }), pic({ id: 'b', word: 'house' }), pic({ id: 'c', word: 'apple' })];
     const draft: EPicture[] = [
@@ -94,6 +99,7 @@ describe('savePictures (A32)', () => {
     expect(await savePictures(saved, draft)).toEqual({ error: null });
     expect(calls.deletes).toEqual([['c']]);
     expect(calls.inserts).toEqual([[{ id: 'n', word: 'star', image_path: 'library/star.png', audio_path: null, active: true, sort_order: 2 }]]);
+    expect(calls.upsertOptions).toEqual([{ onConflict: 'id' }]);
     expect(calls.updates).toEqual([{ id: 'a', patch: { word: 'Fishy', image_path: 'seed/a.svg', audio_path: null, active: true, sort_order: 0 } }]);
   });
 
@@ -117,8 +123,16 @@ describe('savePictures (A32)', () => {
     expect(calls.updates).toEqual([]);
   });
 
+  it('a new row sent again after a partial failure is upserted by id, so it does not clash with the row already there', async () => {
+    const calls = fakeTable();
+    const draft: EPicture[] = [{ id: 'n', isNew: true, image: 'library/star.png', word: 'star', audio: null, active: true }];
+    await savePictures([], draft);
+    expect(calls.upsertOptions).toEqual([{ onConflict: 'id' }]);
+    expect(calls.inserts).toEqual([[{ id: 'n', word: 'star', image_path: 'library/star.png', audio_path: null, active: true, sort_order: 0 }]]);
+  });
+
   it('reports a Supabase error as the message', async () => {
-    fakeTable('insert');
+    fakeTable('upsert');
     const out = await savePictures([], [{ id: 'n', isNew: true, image: 'library/x.png', word: 'x', audio: null, active: true }]);
     expect(out).toEqual({ error: 'boom' });
   });
