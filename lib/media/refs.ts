@@ -27,6 +27,8 @@ export const MEDIA_SOURCES: MediaSource[] = [
   { table: 'spot_levels', column: 'image_b_path', kind: 'image' },
   { table: 'find_levels', column: 'image_path', kind: 'image' },
   { table: 'find_levels', column: 'objects', kind: 'audio', objectAudio: true },
+  { table: 'puzzle_pictures', column: 'image_path', kind: 'image' },
+  { table: 'puzzle_pictures', column: 'audio_path', kind: 'audio' },
 ];
 
 /** The sound paths inside one find_levels.objects value (each object's audio_path). */

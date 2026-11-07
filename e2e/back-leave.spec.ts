@@ -14,6 +14,7 @@ const PLAY = [
   '/games/memory/12',
   '/games/find/00000000-0000-4000-b000-000000000001',
   '/games/spot/00000000-0000-4000-a000-000000000001',
+  '/games/pairs',
 ];
 
 const back = (page: import('@playwright/test').Page) => page.getByRole('link', { name: /^Back/ });
