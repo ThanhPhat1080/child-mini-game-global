@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { mediaUrl } from '@/lib/media';
 import { deleteSet, isQuestionComplete, tintFor } from '@/lib/sets';
-import { SetCard } from '@/components/SetCard';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import s from '@/components/admin/admin-ui.module.css';
 import { Pic } from '@/components/Pic';
@@ -38,7 +37,7 @@ function toView(r: Row): View {
   };
 }
 
-/** Quiz sets list + front page preview strip (A3). */
+/** Quiz sets list (A3). */
 export default function SetsPage() {
   const [rows, setRows] = useState<View[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -80,12 +79,11 @@ export default function SetsPage() {
   // "Mine" = my own sets (any state); "Global" = approved sets of other families, read-only (N3);
   // "Parent published" = published sets of every parent, of any status, view only (V9, Super Admin).
   const mine = (rows ?? []).filter((r) =>
-    scope === 'mine' ? r.owner === me
+    scope === 'mine' ? r.owner === me || (role === 'super_admin' && r.owner === null)
       : scope === 'parents' ? r.pub && owners.has(r.owner ?? '')
-      : r.visibility === 'global' && r.owner !== me);
+      : r.visibility === 'global' && (role === 'super_admin' || r.owner !== me));
   // A Super Admin edits their own sets, copies included (V8); a parent edits a private set of their own.
-  const editable = (r: View) => scope === 'mine' && (r.visibility === 'private' || (role === 'super_admin' && r.owner === me));
-  const visible = mine.filter((r) => r.pub && r.count > 0);
+  const editable = (r: View) => role === 'super_admin' ? (scope === 'mine' && (r.owner === me || r.owner === null)) || (scope === 'global' && r.visibility === 'global') : scope === 'mine' && r.visibility === 'private';
   const th = { padding: '16px 12px', fontWeight: 700 } as const;
 
   return (
@@ -93,7 +91,7 @@ export default function SetsPage() {
       <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
         <div>
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Quiz sets</h1>
-          <p style={{ margin: '6px 0 0', color: '#7A6458', fontSize: 15 }}>Create sets, choose how they look on the front page, and delete the ones you no longer need.</p>
+          <p style={{ margin: '6px 0 0', color: '#7A6458', fontSize: 15 }}>Create sets, and delete the ones you no longer need.</p>
         </div>
         {scope === 'mine' && <Link href="/admin/sets/new" style={{ height: 46, padding: '0 22px', borderRadius: 12, background: '#5A4038', color: '#fff', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
@@ -103,23 +101,6 @@ export default function SetsPage() {
       <ContentTabs scope={scope} onChange={setScope} role={role} pending={pending} />
       {error && <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700, fontSize: 14 }}>{error}</p>}
       {scope === 'queue' ? <ReviewQueue tables={SET_TABLES} /> : (<>
-
-      <section style={{ background: '#fff', borderRadius: 18, padding: '22px 24px 24px', boxShadow: '0 1px 0 #EADCC8', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div>
-          <h2 style={{ margin: 0, fontSize: 19, fontWeight: 700 }}>Front page preview</h2>
-          <p style={{ margin: '4px 0 0', color: '#7A6458', fontSize: 14 }}>This is what the child sees on the Quiz screen, left to right. Draft sets are hidden.</p>
-        </div>
-        <div style={{ display: 'flex', gap: 22, padding: '28px 24px 34px', borderRadius: 16, background: '#FBF4E9', overflowX: 'auto', alignItems: 'flex-start' }}>
-          {visible.map((r) => (
-            <div key={r.id} style={{ flex: 'none', width: 210, height: 306 }} aria-label={`${r.title}, ${r.count} questions`}>
-              <div style={{ transform: 'scale(0.4375)', transformOrigin: 'top left', width: 480, height: 700 }}>
-                <SetCard set={{ id: r.id, title: r.title, subtitle: r.subtitle, heading_color: r.heading_color, cover_path: r.cover_path, count: r.count }} />
-              </div>
-            </div>
-          ))}
-          {rows && visible.length === 0 && <p style={{ margin: 0, padding: '36px 8px', color: '#7A6458', fontSize: 15 }}>No published sets yet. The Quiz screen will be empty until you publish one.</p>}
-        </div>
-      </section>
 
       <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCC8', overflowX: 'auto' }}>
         <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', fontSize: 15 }}>

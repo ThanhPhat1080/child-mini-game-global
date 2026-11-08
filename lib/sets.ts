@@ -103,7 +103,8 @@ export async function loadSet(id: string): Promise<ESet | null> {
     return { id: q.id, text: q.prompt_text ?? '', voice: q.prompt_audio_path, qimg: q.prompt_image_path, imgs, texts, readAnswers: q.read_answers, hideAnswerText: !!q.hide_answer_text, correct, count: slots === 2 ? 2 : 3 };
   });
   const [me, role] = await Promise.all([getMyUserId(), getMyRole()]);
-  const superOwned = role === 'super_admin' && r.owner_id === me;
+  // A Super Admin edits their own sets, platform sets with no owner, and every global set (the Global tab).
+  const superOwned = role === 'super_admin' && (r.owner_id === me || r.owner_id === null || r.visibility === 'global');
   const copied = !superOwned && r.owner_id === me && r.owner_id !== null && (await copiedIds('quiz_sets', [r.id])).has(r.id);
   return { id: r.id, isNew: false, name: r.title, subtitle: r.subtitle ?? '', color: r.heading_color, cover: r.cover_path, published: r.status === 'published', qs, visibility: r.visibility, ownerId: r.owner_id, superOwned, copied };
 }

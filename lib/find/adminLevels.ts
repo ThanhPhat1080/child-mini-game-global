@@ -4,7 +4,7 @@ import { commitPendingMap, isPending, removeMedia } from '@/lib/media';
 import { isBucketPath, pathsToDelete } from '@/lib/mediaPaths';
 import { DEFAULT_R, MAX_OBJECTS, MAX_R, MIN_R, SMALL_R, checkObjects } from '@/lib/find/validate';
 import type { FindObject } from '@/lib/find/types';
-import { copiedIds, getMyRole, getMyUserId, lockedOwn, type Visibility } from '@/lib/review';
+import { copiedIds, getMyRole, getMyUserId, inScope, lockedOwn, type Visibility } from '@/lib/review';
 
 export type EObject = FindObject;
 
@@ -62,8 +62,11 @@ export const smallCount = (l: ELevel): number => l.objects.filter((o) => o.r < S
 export const levelMediaPaths = (l: ELevel): string[] =>
   [l.image, ...l.objects.map((o) => o.audio_path)].filter(isBucketPath);
 
-/** The signed-in user's own levels, active or not (admin view), in the order they were created. Saving writes that order as the play order. */
-export async function loadFindLevels(): Promise<ELevel[]> {
+/**
+ * The signed-in user's own levels, active or not (admin view), in the order they were created. Saving writes that order as the play order.
+ * `scope: 'global'` (Super Admin, Global tab): every global level whoever owns it.
+ */
+export async function loadFindLevels(scope: 'mine' | 'global' = 'mine'): Promise<ELevel[]> {
   const { data, error } = await createSupabaseBrowserClient()
     .from('find_levels')
     .select('id, image_path, objects, active, sort_order, owner_id, visibility')
@@ -71,7 +74,7 @@ export async function loadFindLevels(): Promise<ELevel[]> {
     .order('sort_order');
   if (error) throw new Error(error.message);
   const [me, role] = await Promise.all([getMyUserId(), getMyRole()]);
-  const mine = ((data ?? []) as Row[]).filter((r) => r.owner_id === me);
+  const mine = ((data ?? []) as Row[]).filter((r) => inScope(r, scope, me, role));
   const superOwned = role === 'super_admin';
   const copies = superOwned ? new Set<string>() : await copiedIds('find_levels', mine.map((r) => r.id));
   return mine.map((r) => ({
@@ -90,7 +93,7 @@ export async function loadFindLevels(): Promise<ELevel[]> {
  * Saves the levels: uploads picked files, writes the table, then frees files nothing uses any more.
  * A database failure leaves old files alone and removes this attempt's uploads.
  */
-export async function saveFindLevels(saved: ELevel[], draft: ELevel[]): Promise<{ error: string | null; warning: string | null }> {
+export async function saveFindLevels(saved: ELevel[], draft: ELevel[], scope: 'mine' | 'global' = 'mine'): Promise<{ error: string | null; warning: string | null }> {
   const wanted = new Map<string, string>();
   for (const l of draft) {
     if (isPending(l.image)) wanted.set(l.image!, 'find');
@@ -126,7 +129,7 @@ export async function saveFindLevels(saved: ELevel[], draft: ELevel[]): Promise<
   const writable = final.map((l, i) => ({ l, i })).filter(({ l }) => !lockedOwn(l.visibility, l.superOwned));
   if (writable.length) {
     const { error } = await sb.from('find_levels').upsert(
-      writable.map(({ l, i }) => ({ id: l.id, image_path: l.image, objects: l.objects, active: l.active, sort_order: i })),
+      writable.map(({ l, i }) => ({ id: l.id, image_path: l.image, objects: l.objects, active: l.active, ...(scope === 'global' ? {} : { sort_order: i }) })), // the Global tab shows other owners' rows too: leave the play order alone
       { onConflict: 'id' },
     );
     if (error) return fail(error.message);

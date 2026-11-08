@@ -34,7 +34,7 @@ vi.mock('@/lib/superAdmin', async (orig) => ({
 import { ContentTabs } from '@/components/admin/ContentTabs';
 import { ShareToggle } from '@/components/admin/ShareToggle';
 import { VisibilityBadge } from '@/components/admin/VisibilityBadge';
-import { dropOwnCopies, isLocked, lockedOwn, validScope } from '@/lib/review';
+import { dropOwnCopies, inScope, isLocked, lockedOwn, validScope } from '@/lib/review';
 import { approveItem, pendingCounts, PENDING_CHANGED, publishOwn } from '@/lib/superAdmin';
 import SetsPage from '@/app/admin/(panel)/sets/page';
 
@@ -49,7 +49,8 @@ afterEach(() => {
 describe('scope and lock rules (V8, V9)', () => {
   it('a stored scope the role may not use falls back to Mine', () => {
     expect(validScope('queue', 'parent')).toBe('mine');
-    expect(validScope('global', 'super_admin')).toBe('mine');
+    expect(validScope('global', 'super_admin')).toBe('global');
+    expect(validScope('bogus', 'super_admin')).toBe('mine');
     expect(validScope('parents', 'super_admin')).toBe('parents');
     expect(validScope('global', 'parent')).toBe('global');
     expect(validScope(null, null)).toBe('mine');
@@ -58,10 +59,28 @@ describe('scope and lock rules (V8, V9)', () => {
   it("a Super Admin's own row is never locked; someone else's is", () => {
     expect(isLocked('global', 'sa', 'sa', 'super_admin')).toBe(false);
     expect(isLocked('private', 'sa', 'sa', 'super_admin')).toBe(false);
-    expect(isLocked('global', 'p1', 'sa', 'super_admin')).toBe(true);
+    // Every global row is editable by a Super Admin (Global tab); a parent's private or pending row is view only.
+    expect(isLocked('global', 'p1', 'sa', 'super_admin')).toBe(false);
+    expect(isLocked('global', null, 'sa', 'super_admin')).toBe(false);
+    expect(isLocked('private', 'p1', 'sa', 'super_admin')).toBe(true);
+    expect(isLocked('pending', 'p1', 'sa', 'super_admin')).toBe(true);
     // A parent keeps the current rule.
     expect(isLocked('global', 'p1', 'p1', 'parent')).toBe(true);
     expect(isLocked('private', 'p1', 'p1', 'parent')).toBe(false);
+  });
+
+  it('inScope: Mine is the user\'s own rows; Global is every global row, whoever owns it', () => {
+    const row = (owner_id: string | null, visibility: 'private' | 'pending' | 'global') => ({ owner_id, visibility });
+    expect(inScope(row('sa', 'private'), 'mine', 'sa', 'super_admin')).toBe(true);
+    expect(inScope(row('p1', 'global'), 'mine', 'sa', 'super_admin')).toBe(false);
+    // Platform rows with no owner belong to the Super Admin, so unpublishing one never loses it.
+    expect(inScope(row(null, 'private'), 'mine', 'sa', 'super_admin')).toBe(true);
+    expect(inScope(row(null, 'private'), 'mine', 'p1', 'parent')).toBe(false);
+    expect(inScope(row('p1', 'global'), 'global', 'sa', 'super_admin')).toBe(true);
+    expect(inScope(row(null, 'global'), 'global', 'sa', 'super_admin')).toBe(true);
+    expect(inScope(row('sa', 'global'), 'global', 'sa', 'super_admin')).toBe(true);
+    expect(inScope(row('p1', 'pending'), 'global', 'sa', 'super_admin')).toBe(false);
+    expect(inScope(row('sa', 'private'), 'global', 'sa', 'super_admin')).toBe(false);
   });
 
   it('lockedOwn: own rows are locked unless private or the Super Admin owns them', () => {
@@ -85,12 +104,12 @@ describe('scope and lock rules (V8, V9)', () => {
 });
 
 describe('tabs per role (V9)', () => {
-  it('a Super Admin gets Mine, Review queue (with the count) and Parent published', () => {
+  it('a Super Admin gets Mine, Global, Review queue (with the count) and Parent published', () => {
     render(<ContentTabs scope="mine" onChange={() => undefined} role="super_admin" pending={2} />);
     expect(screen.getByRole('tab', { name: 'Mine' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Review queue, 2 pending' })).toBeTruthy();
     expect(screen.getByRole('tab', { name: 'Parent published' })).toBeTruthy();
-    expect(screen.queryByRole('tab', { name: 'Global' })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Global' })).toBeTruthy();
   });
 
   it('the review tab has no dot and no count when nothing waits', () => {

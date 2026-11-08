@@ -4,7 +4,7 @@ import { commitPendingMap, isPending, removeMedia } from '@/lib/media';
 import { isBucketPath, pathsToDelete } from '@/lib/mediaPaths';
 import { checkDifferences } from '@/lib/spot/validate';
 import type { Difference } from '@/lib/spot/types';
-import { copiedIds, getMyRole, getMyUserId, lockedOwn, type Visibility } from '@/lib/review';
+import { copiedIds, getMyRole, getMyUserId, inScope, lockedOwn, type Visibility } from '@/lib/review';
 
 export type ELevel = {
   id: string; isNew: boolean; a: string | null; b: string | null; differences: Difference[]; active: boolean; visibility?: Visibility;
@@ -25,8 +25,11 @@ export function isLevelComplete(l: ELevel): boolean {
 /** Bucket files a level points to (bundled art, links and unsaved picks are not ours to delete). */
 export const levelMediaPaths = (l: ELevel): string[] => [l.a, l.b].filter(isBucketPath);
 
-/** The signed-in user's own levels, active or not (admin view), in the order they were created. Saving writes that order as the play order. */
-export async function loadLevels(): Promise<ELevel[]> {
+/**
+ * The signed-in user's own levels, active or not (admin view), in the order they were created. Saving writes that order as the play order.
+ * `scope: 'global'` (Super Admin, Global tab): every global level whoever owns it.
+ */
+export async function loadLevels(scope: 'mine' | 'global' = 'mine'): Promise<ELevel[]> {
   const { data, error } = await createSupabaseBrowserClient()
     .from('spot_levels')
     .select('id, image_a_path, image_b_path, differences, active, sort_order, owner_id, visibility')
@@ -34,7 +37,7 @@ export async function loadLevels(): Promise<ELevel[]> {
     .order('sort_order');
   if (error) throw new Error(error.message);
   const [me, role] = await Promise.all([getMyUserId(), getMyRole()]);
-  const mine = ((data ?? []) as Row[]).filter((r) => r.owner_id === me);
+  const mine = ((data ?? []) as Row[]).filter((r) => inScope(r, scope, me, role));
   const superOwned = role === 'super_admin';
   const copies = superOwned ? new Set<string>() : await copiedIds('spot_levels', mine.map((r) => r.id));
   return mine.map((r) => ({ id: r.id, isNew: false, a: r.image_a_path, b: r.image_b_path, differences: r.differences, active: r.active, visibility: r.visibility, superOwned, copied: copies.has(r.id) }));
@@ -44,7 +47,7 @@ export async function loadLevels(): Promise<ELevel[]> {
  * Saves the levels: uploads picked files, writes the table, then frees files nothing uses any more.
  * A database failure leaves old files alone and removes this attempt's uploads.
  */
-export async function saveLevels(saved: ELevel[], draft: ELevel[]): Promise<{ error: string | null; warning: string | null }> {
+export async function saveLevels(saved: ELevel[], draft: ELevel[], scope: 'mine' | 'global' = 'mine'): Promise<{ error: string | null; warning: string | null }> {
   const wanted = new Map<string, string>();
   for (const l of draft) {
     if (isPending(l.a)) wanted.set(l.a!, 'spot');
@@ -76,7 +79,7 @@ export async function saveLevels(saved: ELevel[], draft: ELevel[]): Promise<{ er
   const writable = final.map((l, i) => ({ l, i })).filter(({ l }) => !lockedOwn(l.visibility, l.superOwned));
   if (writable.length) {
     const { error } = await sb.from('spot_levels').upsert(
-      writable.map(({ l, i }) => ({ id: l.id, image_a_path: l.a, image_b_path: l.b, differences: l.differences, active: l.active, sort_order: i })),
+      writable.map(({ l, i }) => ({ id: l.id, image_a_path: l.a, image_b_path: l.b, differences: l.differences, active: l.active, ...(scope === 'global' ? {} : { sort_order: i }) })), // the Global tab shows other owners' rows too: leave the play order alone
       { onConflict: 'id' },
     );
     if (error) return fail(error.message);

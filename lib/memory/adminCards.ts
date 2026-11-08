@@ -2,7 +2,7 @@ import { randomId } from '@/lib/randomId';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { commitPendingMap, isPending, removeMedia } from '@/lib/media';
 import { isBucketPath, pathsToDelete } from '@/lib/mediaPaths';
-import { copiedIds, getMyRole, getMyUserId, lockedOwn, type Visibility } from '@/lib/review';
+import { copiedIds, getMyRole, getMyUserId, inScope, lockedOwn, type Visibility } from '@/lib/review';
 
 export type ECard = {
   id: string; isNew: boolean; word: string; image: string | null; audio: string | null; active: boolean; groupId: string | null; visibility?: Visibility;
@@ -37,15 +37,18 @@ export function duplicateWords(cards: ECard[]): Set<string> {
 /** Bucket files a card points to (bundled art, links and unsaved picks are not ours to delete). */
 export const cardMediaPaths = (c: ECard): string[] => [c.image, c.audio].filter(isBucketPath);
 
-/** The signed-in user's own cards, active or not (admin view), newest first. Other families' global cards are not editable here. */
-export async function loadCards(): Promise<ECard[]> {
+/**
+ * The signed-in user's own cards, active or not (admin view), newest first. `scope: 'global'` (Super Admin, Global tab)
+ * lists every global card whoever owns it. Other families' global cards are not editable by a parent.
+ */
+export async function loadCards(scope: 'mine' | 'global' = 'mine'): Promise<ECard[]> {
   const { data, error } = await createSupabaseBrowserClient()
     .from('memory_cards')
     .select('id, word, image_path, audio_path, active, group_id, owner_id, visibility')
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
   const [me, role] = await Promise.all([getMyUserId(), getMyRole()]);
-  const mine = ((data ?? []) as Row[]).filter((r) => r.owner_id === me);
+  const mine = ((data ?? []) as Row[]).filter((r) => inScope(r, scope, me, role));
   const superOwned = role === 'super_admin';
   const copies = superOwned ? new Set<string>() : await copiedIds('memory_cards', mine.map((r) => r.id));
   return mine.map((r) => ({ id: r.id, isNew: false, word: r.word, image: r.image_path, audio: r.audio_path, active: r.active, groupId: r.group_id ?? null, visibility: r.visibility, superOwned, copied: copies.has(r.id) }));
@@ -121,12 +124,12 @@ export function pruneDeletedGroups(cards: ECard[], groups: EGroup[]): ECard[] {
   return cards.map((c) => (c.groupId && !ids.has(c.groupId) ? { ...c, groupId: null } : { ...c }));
 }
 
-/** The signed-in user's own groups, oldest first (admin only). A card keeps its group's owner. */
-export async function loadGroups(): Promise<EGroup[]> {
+/** The signed-in user's own groups, oldest first (admin only). A card keeps its group's owner. `global`: every group, to name the groups of global cards. */
+export async function loadGroups(scope: 'mine' | 'global' = 'mine'): Promise<EGroup[]> {
   const { data, error } = await createSupabaseBrowserClient().from('card_groups').select('id, name, owner_id').order('created_at');
   if (error) throw new Error(error.message);
   const me = await getMyUserId();
-  return ((data ?? []) as { id: string; name: string; owner_id: string | null }[]).filter((r) => r.owner_id === me).map((r) => ({ id: r.id, isNew: false, name: r.name }));
+  return ((data ?? []) as { id: string; name: string; owner_id: string | null }[]).filter((r) => scope === 'global' || r.owner_id === me).map((r) => ({ id: r.id, isNew: false, name: r.name }));
 }
 
 /** Writes new and renamed groups. Call before saveCards so cards can point to them. */

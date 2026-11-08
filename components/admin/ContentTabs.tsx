@@ -5,7 +5,7 @@ import { RedDot } from './RedDot';
 
 /**
  * The tabs of a game's content area. A parent has "Mine" and "Global" (N3). A Super Admin has "Mine",
- * "Review queue" (with a red dot and the count, V3) and "Parent published" (view only, V9).
+ * "Global" (every global row, editable), "Review queue" (with a red dot and the count, V3) and "Parent published" (view only, V9).
  */
 export function ContentTabs({ scope, onChange, role, pending = 0 }: {
   scope: Scope; onChange: (s: Scope) => void; role?: Role | null; pending?: number;
@@ -28,6 +28,7 @@ export function ContentTabs({ scope, onChange, role, pending = 0 }: {
       {tab('mine', 'Mine')}
       {role === 'super_admin' ? (
         <>
+          {tab('global', 'Global')}
           {tab(
             'queue',
             'Review queue',

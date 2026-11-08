@@ -65,7 +65,8 @@ export function SpotLevelPanel({ l, n, message, shapeWarning, startCrop, onCropp
   /** Called after a picture is cropped and uploaded, with its side and the crop used. */
   onCropped: (side: Side, crop: Crop) => void;
   onEdit: (patch: Partial<ELevel>) => void; onChooseLibrary: (side: Side, path: string) => void; onSvg: (side: Side, code: string) => void;
-  onAskDelete: () => void;
+  /** Absent in the Super Admin's Global tab: a global level is unpublished, not deleted. */
+  onAskDelete?: () => void;
   /** The row was shared (it is now under review). */
   onVisibility?: (v: Visibility) => void;
 }) {
@@ -93,7 +94,7 @@ export function SpotLevelPanel({ l, n, message, shapeWarning, startCrop, onCropp
           {!l.isNew && (
             <Link href={`/games/spot/${l.id}?preview=1`} target="_blank" rel="noopener" className={`${s.btn} ${s.ghost}`} style={{ ...small, display: 'inline-flex', alignItems: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>Preview as child</Link>
           )}
-          <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete level ${n}`} onClick={onAskDelete} style={{ ...dangerBtn, height: 34 }}>Delete</button>
+          {onAskDelete && <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete level ${n}`} onClick={onAskDelete} style={{ ...dangerBtn, height: 34 }}>Delete</button>}
         </div>
         </EditLock>
       </div>

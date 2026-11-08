@@ -55,7 +55,8 @@ export function FindLevelPanel({ l, n, message, onEdit, onSvg, onAskDelete, onVi
   l: ELevel; n: number; message: string | null;
   onEdit: (patch: Partial<ELevel>) => void;
   onSvg: (code: string) => void;
-  onAskDelete: () => void;
+  /** Absent in the Super Admin's Global tab: a global level is unpublished, not deleted. */
+  onAskDelete?: () => void;
   /** The row was shared (it is now under review). */
   onVisibility?: (v: Visibility) => void;
 }) {
@@ -85,7 +86,7 @@ export function FindLevelPanel({ l, n, message, onEdit, onSvg, onAskDelete, onVi
           {!l.isNew && (
             <Link href={`/games/find/${l.id}?preview=1`} target="_blank" rel="noopener" className={`${s.btn} ${s.ghost}`} style={{ ...small, display: 'inline-flex', alignItems: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>Preview as child</Link>
           )}
-          <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete level ${n}`} onClick={onAskDelete} style={{ ...dangerBtn, height: 34 }}>Delete</button>
+          {onAskDelete && <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete level ${n}`} onClick={onAskDelete} style={{ ...dangerBtn, height: 34 }}>Delete</button>}
         </div>
         </EditLock>
       </div>

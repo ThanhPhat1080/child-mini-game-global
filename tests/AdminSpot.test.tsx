@@ -193,7 +193,7 @@ describe('Admin Spot page (A14-A16)', () => {
     h.loadLevels.mockResolvedValue([level(1, { active: false })]);
     fireEvent.click(saveBtn());
     await waitFor(() => expect(h.loadLevels).toHaveBeenCalledTimes(2));
-    expect(h.saveLevels).toHaveBeenCalledWith(first, [level(1, { active: false })]);
+    expect(h.saveLevels).toHaveBeenCalledWith(first, [level(1, { active: false })], 'mine');
     await waitFor(() => expect(saveBtn().disabled).toBe(true));
   });
 

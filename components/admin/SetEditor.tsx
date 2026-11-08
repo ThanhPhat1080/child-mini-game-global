@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { clearPending, commitPendingMedia, materializeSvg, mediaUrl, removeMedia, svgToPending } from '@/lib/media';
 import { pathsToDelete, setMediaPaths } from '@/lib/mediaPaths';
-import { SetCard } from '@/components/SetCard';
+import { SET_CARD_WIDTH, SetCard } from '@/components/SetCard';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { ImportDialog } from '@/components/admin/ImportDialog';
 import { PRESETS, type PresetKey, blankSet, deleteSet, isQuestionComplete, loadSet, luminance, newQuestion, presetKeyFor, saveSet, tintFor, type EQuestion, type ESet } from '@/lib/sets';
@@ -246,7 +246,7 @@ export function SetEditor({ setId }: { setId: string }) {
       {!d.isNew && d.visibility && !deleted && (
         <section style={{ ...panel, padding: '16px 24px', flexDirection: 'row', flexWrap: 'wrap', gap: 24, alignItems: 'center' }} aria-label="Sharing">
           <VisibilityBadge visibility={d.visibility} copied={d.copied} />
-          {d.ownerId === me || me === undefined ? (
+          {d.ownerId === me || me === undefined || d.superOwned ? (
             <ShareToggle table="quiz_sets" id={d.id} visibility={d.visibility} superOwned={d.superOwned}
               onChanged={(v) => { setD((x) => (x ? { ...x, visibility: v } : x)); setSaved((x) => (x ? { ...x, visibility: v } : x)); }} />
           ) : (
@@ -328,14 +328,14 @@ export function SetEditor({ setId }: { setId: string }) {
 
               <div style={{ paddingTop: 18, borderTop: '1px solid #F1E7DA', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                 <button type="button" className={s.btn} onClick={() => setImportOpen(true)} style={{ height: 42, padding: '0 16px', borderRadius: 10, border: 'none', background: '#3F73B5', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' }}>+ Quick import questions</button>
-                {!d.isNew && <button type="button" className={s.danger} onClick={() => setConfirm({ type: 'set' })} style={{ ...dangerBtn, height: 42, padding: '0 16px' }}>Delete this quiz set</button>}
+                {!d.isNew && d.visibility !== 'global' && <button type="button" className={s.danger} onClick={() => setConfirm({ type: 'set' })} style={{ ...dangerBtn, height: 42, padding: '0 16px' }}>Delete this quiz set</button>}
               </div>
             </div>
 
             <div style={{ flex: '0 0 300px', maxWidth: '100%', boxSizing: 'border-box', padding: '22px 20px 28px', borderRadius: 16, background: '#FBF4E9', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, margin: '0 auto' }}>
               <span style={{ alignSelf: 'flex-start', fontSize: 14, fontWeight: 700 }}>Front page preview</span>
-              <div style={{ width: 240, height: 350 }}>
-                <div style={{ transform: 'scale(0.5)', transformOrigin: 'top left', width: 480, height: 700 }}>
+              <div style={{ width: 240, height: 300 }}>
+                <div style={{ transform: `scale(${240 / SET_CARD_WIDTH})`, transformOrigin: 'top left', width: SET_CARD_WIDTH, height: 700 }}>
                   <SetCard hintEmptyCover set={{ id: d.id, title: d.name.trim() || 'Set name', subtitle: d.subtitle.trim() || null, heading_color: cardTitleColor, cover_path: d.cover, count: completeCount }} />
                 </div>
               </div>
