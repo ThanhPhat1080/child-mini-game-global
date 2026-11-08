@@ -71,7 +71,7 @@ export function BackButton({ href, label = 'Back', home = false, game }: { href:
 
 /**
  * "Leave now?" over a faint light backdrop: the game's icon, No (stays, on the left) and Yes (light pink, goes back).
- * X at the top left, a click outside, Esc and No all stay. Left and Right move between No and Yes.
+ * X at the top right, a click outside, Esc and No all stay. Left and Right move between No and Yes.
  * The backdrop is `fixed`, so it covers the whole 1920x1080 stage (its transform is the containing block).
  */
 function LeaveAsk({ game, onYes, onNo }: { game: Game['id']; onYes(): void; onNo(): void }) {
@@ -114,7 +114,7 @@ function LeaveAsk({ game, onYes, onNo }: { game: Game['id']; onYes(): void; onNo
         onKeyDown={onKey}
         style={{ position: 'relative', width: 720, boxSizing: 'border-box', padding: '72px 56px 56px', borderRadius: 72, background: '#fff', boxShadow: '0 16px 0 #EADCC8', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 36 }}
       >
-        <ModalClose size="child" side="left" onClick={onNo} />
+        <ModalClose size="child" onClick={onNo} />
         <div style={{ position: 'relative', width: 220, height: 220 }} aria-hidden="true">
           <div style={{ position: 'absolute', left: 0, top: 0, transform: 'scale(2)', transformOrigin: 'top left' }}>
             <GameIcon id={game} />

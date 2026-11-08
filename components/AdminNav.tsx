@@ -36,11 +36,12 @@ const SHARED: Item[] = [
   { href: '/admin/find', text: 'Find', glyph: <g><rect x="3" y="4" width="18" height="16" rx="3" /><circle cx="9" cy="10" r="2.2" /><path d="M21 16l-5-5-8 8" /></g> },
 ];
 
-export function AdminNav() {
+export function AdminNav({ initialRole = null }: { initialRole?: Role | null }) {
   const pathname = usePathname();
   const router = useRouter();
-  // Links that depend on the role appear once the profile is known; the shared ones show at once.
-  const [role, setRole] = useState<Role | null>(null);
+  // The server layout passes the role, so the menu is complete on the first paint and does not blank when a
+  // navigation crosses from one route group to the other (the nav remounts). The client read below only confirms it.
+  const [role, setRole] = useState<Role | null>(initialRole);
   const [collapsed, setCollapsed] = useState(false);
   // The width animation turns on one frame after the first breakpoint check, so a phone does not
   // animate the rail from full width on page load (and the layout is final before the first paint of content).
@@ -60,7 +61,7 @@ export function AdminNav() {
 
   useEffect(() => {
     let live = true;
-    getMyProfile(createSupabaseBrowserClient()).then((p) => { if (live) setRole(p?.role ?? null); }, () => undefined);
+    getMyProfile(createSupabaseBrowserClient()).then((p) => { if (live) setRole((r) => p?.role ?? r); }, () => undefined);
     return () => { live = false; };
   }, []);
 
