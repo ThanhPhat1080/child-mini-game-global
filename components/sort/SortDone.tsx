@@ -27,8 +27,7 @@ export function SortDone({ wrong, childName, completeUrl, onAgain, gamesHref }: 
     if (spoken.current) return;
     spoken.current = true;
     if (completeUrl) { praise.current = playFile(completeUrl) ?? null; return; }
-    praise.current = applause(3) ?? null;
-    speakKid(greeting, { pitch: 1.9, rate: 0.9 });
+    praise.current = applause(3, () => speakKid(greeting, { pitch: 1.9, rate: 0.9 })) ?? null;
   }, [completeUrl, greeting]);
 
   // A layout effect, so the keys are live in the same task that autoFocus puts the focus on Play again.

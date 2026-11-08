@@ -15,7 +15,7 @@ vi.mock('@/lib/media', () => ({
   MAX_IMAGE_BYTES: 2 * 1024 * 1024,
 }));
 vi.mock('@/lib/media/rename', () => ({ renameMedia: lib.rename }));
-vi.mock('@/lib/crop/render', () => ({ cropToSquare: lib.cropToSquare }));
+vi.mock('@/lib/crop/render', () => ({ cropToAspect: (file: File, crop: unknown) => lib.cropToSquare(file, crop), cropToSquare: lib.cropToSquare }));
 
 import { MediaLibraryDialog } from '@/components/admin/MediaLibraryDialog';
 

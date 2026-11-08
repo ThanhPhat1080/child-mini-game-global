@@ -2,8 +2,10 @@
 
 import { ContentTabs } from '@/components/admin/ContentTabs';
 import { GlobalContent } from '@/components/admin/GlobalContent';
-import { useContentScope } from '@/lib/review';
-import type { Visibility } from '@/lib/review';
+import { useContentScope, useMyRole } from '@/lib/review';
+import { ReviewQueue } from '@/components/admin/ReviewQueue';
+import { usePendingCounts } from '@/lib/superAdmin';
+import type { ContentTable, Visibility } from '@/lib/review';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { isLevelComplete, loadFindLevels, newFindLevel, saveFindLevels, type ELevel } from '@/lib/find/adminLevels';
 import { clearPending, svgToPending } from '@/lib/media';
@@ -15,10 +17,15 @@ import { CardsHeaderActions } from '@/components/admin/CardsHeaderActions';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { SortToggle, displayOrder } from '@/components/admin/LevelSort';
 import { FindLevelPanel } from '@/components/admin/FindLevelPanel';
+import { AdminLoading } from '@/components/admin/AdminLoading';
+
+const FIND_TABLES: ContentTable[] = ['find_levels'];
 
 /** Find It level builder (A20-A22). Nothing is uploaded or written until Save. */
 export default function FindPage() {
-  const { scope, setScope } = useContentScope();
+  const role = useMyRole();
+  const { scope, setScope } = useContentScope(role);
+  const pending = usePendingCounts(role).find;
   const [saved, setSaved] = useState<ELevel[] | null>(null);
   const [draft, setDraft] = useState<ELevel[] | null>(null);
   const [msgs, setMsgs] = useState<Record<string, string>>({});
@@ -56,7 +63,7 @@ export default function FindPage() {
     return (
       <>
         <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Find It</h1>
-        {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <p style={{ color: '#7A6458' }}>Loading…</p>}
+        {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <AdminLoading />}
       </>
     );
   }
@@ -117,8 +124,12 @@ export default function FindPage() {
         </div>
       </div>
 
-      <ContentTabs scope={scope} onChange={setScope} />
-      {scope === 'global' ? (
+      <ContentTabs scope={scope} onChange={setScope} role={role} pending={pending} />
+      {scope === 'queue' ? (
+        <ReviewQueue tables={FIND_TABLES} />
+      ) : scope === 'parents' ? (
+        <GlobalContent table="find_levels" mode="parents" />
+      ) : scope === 'global' ? (
         <GlobalContent table="find_levels" />
       ) : (
         <>

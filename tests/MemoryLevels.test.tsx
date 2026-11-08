@@ -74,11 +74,12 @@ describe('Memory level select (M1)', () => {
     expect(screen.queryByRole('button', { name: /cards/ })).toBeNull();
   });
 
-  it('a fetch error shows the same friendly screen, not an alert', async () => {
+  it('a fetch error shows a retry screen, not "coming soon"', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
     h.fetchActiveCards.mockRejectedValue(new Error('boom'));
     render(<MemoryLevels />);
-    expect(await screen.findByRole('status')).toBeTruthy();
-    expect(screen.queryByRole('alert')).toBeNull();
+    expect(await screen.findByRole('alert', { name: /went wrong/ })).toBeTruthy();
+    expect(screen.queryByRole('status')).toBeNull();
     expect(screen.queryByRole('button', { name: /cards/ })).toBeNull();
   });
 

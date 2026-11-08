@@ -11,13 +11,17 @@ import s from '@/components/admin/admin-ui.module.css';
 import { Pic } from '@/components/Pic';
 import { ContentTabs } from '@/components/admin/ContentTabs';
 import { VisibilityBadge } from '@/components/admin/VisibilityBadge';
-import { getMyUserId, useContentScope, type Visibility } from '@/lib/review';
+import { copiedIds, getMyRole, getMyUserId, useContentScope, useMyRole, type ContentTable, type Visibility } from '@/lib/review';
+import { ReviewQueue } from '@/components/admin/ReviewQueue';
+import { parentNames, usePendingCounts } from '@/lib/superAdmin';
+
+const SET_TABLES: ContentTable[] = ['quiz_sets'];
 
 type Row = {
   id: string; title: string; subtitle: string | null; heading_color: string; cover_path: string | null; status: string; updated_at: string; owner_id: string | null; visibility: Visibility;
   questions: { prompt_text: string | null; prompt_audio_path: string | null; answers: { slot: number; image_path: string | null; text: string | null; is_correct: boolean }[] }[];
 };
-type View = { id: string; title: string; subtitle: string | null; heading_color: string; cover_path: string | null; pub: boolean; visibility: Visibility; owner: string | null; count: number; total: number; updated: string };
+type View = { id: string; title: string; subtitle: string | null; heading_color: string; cover_path: string | null; pub: boolean; visibility: Visibility; owner: string | null; count: number; total: number; updated: string; copied?: boolean };
 
 function toView(r: Row): View {
   const complete = r.questions.filter((q) => {
@@ -40,17 +44,26 @@ export default function SetsPage() {
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<View | null>(null);
   const [busy, setBusy] = useState(false);
-  const { scope, setScope } = useContentScope();
+  const role = useMyRole();
+  const { scope, setScope } = useContentScope(role);
+  const pending = usePendingCounts(role).sets;
   const [me, setMe] = useState<string | null>(null);
+  /** Parent accounts by id (Super Admin only): the "Parent published" tab and its owner column. */
+  const [owners, setOwners] = useState<Map<string, string>>(new Map());
   useEffect(() => { void getMyUserId().then(setMe, () => setMe(null)); }, []);
+  useEffect(() => { if (role === 'super_admin') void parentNames().then(setOwners, () => undefined); }, [role]);
 
   const load = useCallback(async () => {
     const { data, error: e } = await createSupabaseBrowserClient()
       .from('quiz_sets')
       .select('id, title, subtitle, heading_color, cover_path, status, updated_at, owner_id, visibility, questions(prompt_text, prompt_audio_path, answers(slot, image_path, text, is_correct))')
       .order('position');
-    if (e) setError(e.message);
-    else setRows(((data as unknown as Row[]) ?? []).map(toView));
+    if (e) { setError(e.message); return; }
+    const all = (data as unknown as Row[]) ?? [];
+    const [who, myRole] = await Promise.all([getMyUserId(), getMyRole()]);
+    // V10: a parent's set that a Super Admin copied shows "Global copy".
+    const copies = myRole === 'super_admin' ? new Set<string>() : await copiedIds('quiz_sets', all.filter((r) => r.owner_id === who).map((r) => r.id));
+    setRows(all.map((r) => ({ ...toView(r), copied: copies.has(r.id) })));
   }, []);
   useEffect(() => { void load(); }, [load]);
 
@@ -64,8 +77,14 @@ export default function SetsPage() {
     await load();
   }
 
-  // "Mine" = my own sets (any state); "Global" = approved sets of other families, read-only (N3).
-  const mine = (rows ?? []).filter((r) => (scope === 'mine' ? r.owner === me : r.visibility === 'global' && r.owner !== me));
+  // "Mine" = my own sets (any state); "Global" = approved sets of other families, read-only (N3);
+  // "Parent published" = published sets of every parent, of any status, view only (V9, Super Admin).
+  const mine = (rows ?? []).filter((r) =>
+    scope === 'mine' ? r.owner === me
+      : scope === 'parents' ? r.pub && owners.has(r.owner ?? '')
+      : r.visibility === 'global' && r.owner !== me);
+  // A Super Admin edits their own sets, copies included (V8); a parent edits a private set of their own.
+  const editable = (r: View) => scope === 'mine' && (r.visibility === 'private' || (role === 'super_admin' && r.owner === me));
   const visible = mine.filter((r) => r.pub && r.count > 0);
   const th = { padding: '16px 12px', fontWeight: 700 } as const;
 
@@ -81,8 +100,9 @@ export default function SetsPage() {
           New quiz set
         </Link>}
       </div>
-      <ContentTabs scope={scope} onChange={setScope} />
+      <ContentTabs scope={scope} onChange={setScope} role={role} pending={pending} />
       {error && <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700, fontSize: 14 }}>{error}</p>}
+      {scope === 'queue' ? <ReviewQueue tables={SET_TABLES} /> : (<>
 
       <section style={{ background: '#fff', borderRadius: 18, padding: '22px 24px 24px', boxShadow: '0 1px 0 #EADCC8', display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
@@ -106,6 +126,7 @@ export default function SetsPage() {
           <thead>
             <tr style={{ textAlign: 'left', color: '#7A6458', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.6 }}>
               <th style={{ ...th, padding: '16px 20px' }}>Set</th>
+              {scope === 'parents' && <th style={th}>Owner</th>}
               <th style={th}>Questions</th>
               <th style={th}>Status</th>
               <th style={th}>Updated</th>
@@ -124,25 +145,27 @@ export default function SetsPage() {
                     </span>
                   </Link>
                 </td>
+                {scope === 'parents' && <td style={{ padding: '12px 12px', fontWeight: 700 }}>{owners.get(r.owner ?? '') || 'Parent'}</td>}
                 <td style={{ padding: '12px 12px' }}>{r.count}{r.total > r.count ? <span style={{ color: '#7A5410', fontSize: 13 }}> · {r.total - r.count} incomplete</span> : null}</td>
                 <td style={{ padding: '12px 12px' }}>
                   <span style={{ display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ display: 'inline-block', padding: '4px 12px', borderRadius: 999, fontSize: 13, fontWeight: 700, ...(r.pub ? { background: '#E3EEDD', color: '#3F6B48' } : { background: '#F3ECE3', color: '#6E5A4E' }) }}>{r.pub ? 'Published' : 'Draft'}</span>
-                    <VisibilityBadge visibility={r.visibility} />
+                    <VisibilityBadge visibility={r.visibility} copied={r.copied} />
                   </span>
                 </td>
                 <td style={{ padding: '12px 12px', color: '#7A6458' }}>{r.updated}</td>
                 <td style={{ padding: '12px 20px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                  <Link href={`/admin/sets/${r.id}`} className={s.link} style={{ fontWeight: 700, marginRight: 8, padding: '8px 10px' }}>{scope === 'mine' && r.visibility === 'private' ? 'Edit' : 'View'}</Link>
+                  <Link href={`/admin/sets/${r.id}`} className={s.link} style={{ fontWeight: 700, marginRight: 8, padding: '8px 10px' }}>{editable(r) ? 'Edit' : 'View'}</Link>
                   {scope === 'mine' && r.visibility === 'private' && <button type="button" className={s.danger} aria-label={`Delete ${r.title}`} onClick={() => setConfirm(r)} style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 15, color: '#A8484F', background: 'transparent', border: 'none', borderRadius: 8, padding: '8px 10px', cursor: 'pointer' }}>Delete</button>}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {rows && mine.length === 0 && <p style={{ margin: 0, padding: '32px 20px', textAlign: 'center', color: '#7A6458' }}>{scope === 'mine' ? 'No quiz sets yet. Create your first one with “New quiz set”.' : 'No global quiz sets yet.'}</p>}
+        {rows && mine.length === 0 && <p style={{ margin: 0, padding: '32px 20px', textAlign: 'center', color: '#7A6458' }}>{scope === 'mine' ? 'No quiz sets yet. Create your first one with “New quiz set”.' : scope === 'parents' ? 'No parent has published a quiz set yet.' : 'No global quiz sets yet.'}</p>}
       </div>
       <p style={{ margin: 0, fontSize: 13, color: '#7A6458' }}>A set needs at least one complete question before it can be published.</p>
+      </>)}
 
       {confirm && (
         <ConfirmDialog

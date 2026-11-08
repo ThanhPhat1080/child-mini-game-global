@@ -4,13 +4,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { listMyChildren, type Child } from '@/lib/children';
 import { getMyUserId } from '@/lib/review';
-import { setActiveChild } from '@/lib/childSession';
+import { setActiveChild, setGuestPlay } from '@/lib/childSession';
 import { handleChoiceKey, isPressKey } from '@/lib/keynav';
 import { Stage } from '@/components/Stage';
+import { BounceText } from '@/components/BounceText';
 import AdultCheck from '@/components/auth/AdultCheck';
 import StopHandIcon from '@/components/auth/StopHandIcon';
 import LogoutButton from '@/components/auth/LogoutButton';
 import ChildPickCard from '@/components/play/ChildPickCard';
+import GuestPickCard from '@/components/play/GuestPickCard';
 import ParentConfigCard from '@/components/play/ParentConfigCard';
 import { SkyScene } from '@/components/play/SkyScene';
 import PinEntry from '@/components/play/PinEntry';
@@ -69,6 +71,12 @@ export default function Play() {
     router.push('/');
   }
 
+  // No child yet: Guest plays without a PIN (there is no child to protect), global content only.
+  function onGuest() {
+    setGuestPlay();
+    router.push('/');
+  }
+
   return (
     <Stage>
       <SkyScene festive />
@@ -84,7 +92,7 @@ export default function Play() {
       ) : (
         kids && (
           <>
-            <h1 className={styles.title}>Who are you?</h1>
+            <h1 className={styles.title}><BounceText text="Who are you?" delay={0.3} /></h1>
             <div
               style={{ position: 'absolute', left: 60, right: 60, top: 240, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: size === 'large' ? 32 : 24 }}
               onKeyDown={(e) => {
@@ -98,6 +106,7 @@ export default function Play() {
               {kids.map((c) => (
                 <ChildPickCard key={c.id} child={c} size={size} onPick={() => { lastPicked.current = c.id; setPicked(c); }} />
               ))}
+              {kids.length === 0 && <GuestPickCard size={size} onPick={onGuest} />}
               <ParentConfigCard size={size} onOpen={() => setCheck(true)} />
             </div>
           </>

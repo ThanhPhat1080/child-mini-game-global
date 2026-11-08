@@ -15,7 +15,7 @@ import { Pic } from '@/components/Pic';
 import { EditLock } from './EditLock';
 import { ShareToggle } from './ShareToggle';
 import { VisibilityBadge } from './VisibilityBadge';
-import type { Visibility } from '@/lib/review';
+import { lockedOwn, type Visibility } from '@/lib/review';
 
 /** Accepted level pictures (A14). */
 export const SPOT_IMG_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
@@ -26,8 +26,8 @@ const hint = { fontSize: 12, color: '#7A6458' } as const;
 type Side = 'a' | 'b';
 
 /** One of the two pictures. A collapsed level keeps small previews; the buttons and the SVG box show only when it is open. */
-function PicturePicker({ side, n, path, open, onLibrary, onSvg, startCrop, onCropped }: {
-  side: Side; n: number; open: boolean; path: string | null; onLibrary: (path: string) => void; onSvg: (code: string) => void;
+function PicturePicker({ side, n, path, open, locked = false, onLibrary, onSvg, startCrop, onCropped }: {
+  side: Side; n: number; open: boolean; locked?: boolean; path: string | null; onLibrary: (path: string) => void; onSvg: (code: string) => void;
   startCrop?: Crop; onCropped: (crop: Crop) => void;
 }) {
   const [svg, setSvg] = useState('');
@@ -44,7 +44,7 @@ function PicturePicker({ side, n, path, open, onLibrary, onSvg, startCrop, onCro
         <LibraryButton kind="image" label={`level ${n} picture ${label}`} onChoose={onLibrary} startCrop={startCrop} onCropped={onCropped} />
         {path && <span style={{ ...hint, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>{fileName(path)}</span>}
       </div>
-      <details>
+      <details style={locked ? { visibility: 'hidden' } : undefined}>
         <summary style={{ fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Or paste SVG code</summary>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 6 }}>
           <textarea className={s.in} aria-label={`SVG code for picture ${label} of level ${n}`} rows={3} value={svg} onChange={(e) => setSvg(e.target.value)} placeholder="<svg …>…</svg>"
@@ -71,20 +71,20 @@ export function SpotLevelPanel({ l, n, message, shapeWarning, startCrop, onCropp
 }) {
   const [open, setOpen] = useState(l.isNew); // a saved level starts collapsed: only its header shows
   // Under review or global: read-only (V2, V3). Only the sharing row below stays usable.
-  const locked = !!l.visibility && l.visibility !== 'private';
+  const locked = lockedOwn(l.visibility, l.superOwned);
   const problem = checkDifferences(l.differences);
   const missing = !l.a || !l.b ? 'two pictures' : problem ? 'at least 3 spots (up to 10)' : '';
   return (
     <article aria-label={`Level ${n}`} style={{ ...panel, padding: 18, gap: 14, opacity: l.active ? 1 : 0.8, border: missing ? '1.5px dashed #E5C979' : '1.5px solid transparent' }}>
-      <EditLock locked={locked}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
         <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>
-          <button type="button" aria-expanded={open} aria-label={`${open ? 'Collapse' : 'Expand'} level ${n}`} onClick={() => setOpen(!open)}
+          <button type="button" data-nav aria-expanded={open} aria-label={`${open ? 'Collapse' : 'Expand'} level ${n}`} onClick={() => setOpen(!open)}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'inherit', cursor: 'pointer' }}>
             <Chevron open={open} />Level {n}
             {!open && missing && <span style={{ fontSize: 12, fontWeight: 700, color: '#7A5410', background: '#FCF1D2', borderRadius: 8, padding: '1px 8px' }}>Incomplete</span>}
           </button>
         </h2>
+        <EditLock locked={locked}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
             <input type="checkbox" role="switch" aria-label={`Level ${n} on`} checked={l.active} onChange={() => onEdit({ active: !l.active })} style={{ width: 18, height: 18, margin: 0, accentColor: '#3F6B48' }} />
@@ -95,28 +95,31 @@ export function SpotLevelPanel({ l, n, message, shapeWarning, startCrop, onCropp
           )}
           <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete level ${n}`} onClick={onAskDelete} style={{ ...dangerBtn, height: 34 }}>Delete</button>
         </div>
+        </EditLock>
       </div>
 
+      <EditLock locked={locked}>
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-        <PicturePicker side="a" n={n} path={l.a} open={open} onLibrary={(p) => onChooseLibrary('a', p)} onSvg={(c) => onSvg('a', c)} onCropped={(c) => onCropped('a', c)} />
-        <PicturePicker side="b" n={n} path={l.b} open={open} onLibrary={(p) => onChooseLibrary('b', p)} onSvg={(c) => onSvg('b', c)} startCrop={startCrop} onCropped={(c) => onCropped('b', c)} />
+        <PicturePicker side="a" n={n} path={l.a} open={open} locked={locked} onLibrary={(p) => onChooseLibrary('a', p)} onSvg={(c) => onSvg('a', c)} onCropped={(c) => onCropped('a', c)} />
+        <PicturePicker side="b" n={n} path={l.b} open={open} locked={locked} onLibrary={(p) => onChooseLibrary('b', p)} onSvg={(c) => onSvg('b', c)} startCrop={startCrop} onCropped={(c) => onCropped('b', c)} />
       </div>
 
       {open && (
         <>
       {shapeWarning && <span role="status" style={{ fontSize: 13, fontWeight: 700, color: '#7A5410' }}>The two pictures have different shapes. The spots may not line up on picture B, so use pictures of the same size.</span>}
 
-      <SpotMarkerEditor srcA={mediaUrl(l.a)} srcB={mediaUrl(l.b)} differences={l.differences} onChange={(differences) => onEdit({ differences })} />
+      {/* View mode: the same pictures and spots, shown larger and read-only */}
+      <SpotMarkerEditor srcA={mediaUrl(l.a)} srcB={mediaUrl(l.b)} differences={l.differences} onChange={(differences) => onEdit({ differences })} readOnly={locked} />
 
-      {message && <span role="alert" style={{ fontSize: 13, fontWeight: 700, color: '#A8484F' }}>{message}</span>}
-      {missing && <span style={{ fontSize: 13, color: '#7A5410' }}>Needs {missing} before you can save.</span>}
+      {!locked && message && <span role="alert" style={{ fontSize: 13, fontWeight: 700, color: '#A8484F' }}>{message}</span>}
+      {!locked && missing && <span style={{ fontSize: 13, color: '#7A5410' }}>Needs {missing} before you can save.</span>}
         </>
       )}
       </EditLock>
       {!l.isNew && l.visibility && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start', borderTop: '1px solid #F1E7DA', paddingTop: 10 }}>
-          <VisibilityBadge visibility={l.visibility} />
-          <ShareToggle table="spot_levels" id={l.id} visibility={l.visibility} onChanged={onVisibility} />
+          <VisibilityBadge visibility={l.visibility} copied={l.copied} />
+          <ShareToggle table="spot_levels" id={l.id} visibility={l.visibility} superOwned={l.superOwned} onChanged={onVisibility} />
         </div>
       )}
     </article>

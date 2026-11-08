@@ -22,8 +22,7 @@ export function FindDone({ childName, completeUrl, onAgain, levelsHref }: {
     let handle: SoundHandle | void;
     if (completeUrl) handle = playFile(completeUrl);
     else {
-      handle = applause(3);
-      speakKid(greeting, { pitch: 1.9, rate: 0.9 });
+      handle = applause(3, () => speakKid(greeting, { pitch: 1.9, rate: 0.9 }));
     }
     return () => {
       handle?.stop();

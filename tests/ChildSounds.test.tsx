@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const h = vi.hoisted(() => ({ getChildSettings: vi.fn(), updateChildSettings: vi.fn(), removeMedia: vi.fn() }));
 vi.mock('@/lib/settings', () => ({ getChildSettings: h.getChildSettings, updateChildSettings: h.updateChildSettings }));
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null | undefined) => (p ? `/media/${p}` : null), removeMedia: h.removeMedia }));
-vi.mock('@/lib/sfx', () => ({ applause: vi.fn(), ohOh: vi.fn(), speakKid: vi.fn(), yay: vi.fn() }));
+vi.mock('@/lib/sfx', () => ({ applause: vi.fn((_s?: number, speak?: () => void) => { speak?.(); return undefined as unknown; }), ohOh: vi.fn(), speakKid: vi.fn(), yay: vi.fn() }));
 vi.mock('@/lib/media/renames', () => ({ useMediaRenamed: () => undefined }));
 vi.mock('@/components/admin/LibraryButton', () => ({
   LibraryButton: ({ label, onChoose }: { label: string; onChoose: (p: string) => void }) => (

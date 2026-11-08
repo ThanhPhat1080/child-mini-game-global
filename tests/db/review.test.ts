@@ -41,14 +41,16 @@ describe('review workflow (V2-V5, V7)', () => {
     child = await createChild(a);
   });
 
-  it('walks private -> pending -> global -> unpublished -> private', async () => {
+  // V8: approve sends the original back to private and creates a Super Admin global copy.
+  it('walks private -> pending -> approved (original private, copy global) -> unpublished copy', async () => {
     const id = await card(a);
     await call(a, 'share_item', 'memory_cards', id);
     expect(await vis(id)).toBe('pending');
-    await call(sa, 'review_approve', 'memory_cards', id);
-    expect(await vis(id)).toBe('global');
-    await call(sa, 'unpublish_item', 'memory_cards', id);
+    const [{ id: copy }] = await as(sa).query<{ id: string }>(`select public.review_approve('memory_cards', $1) as id`, [id]);
     expect(await vis(id)).toBe('private');
+    expect(await vis(copy)).toBe('global');
+    await call(sa, 'unpublish_item', 'memory_cards', copy);
+    expect(await vis(copy)).toBe('private');
   });
 
   it('works on quiz_sets too', async () => {
@@ -58,9 +60,14 @@ describe('review workflow (V2-V5, V7)', () => {
       [a],
     );
     await call(a, 'share_item', 'quiz_sets', s[0].id);
-    await call(sa, 'review_approve', 'quiz_sets', s[0].id);
-    const r = await superQuery<{ visibility: string }>(`select visibility from public.quiz_sets where id = $1`, [s[0].id]);
-    expect(r[0].visibility).toBe('global');
+    const [{ id: copy }] = await as(sa).query<{ id: string }>(`select public.review_approve('quiz_sets', $1) as id`, [s[0].id]);
+    const r = await superQuery<{ visibility: string; owner_id: string }>(
+      `select visibility, owner_id from public.quiz_sets where id = $1`,
+      [copy],
+    );
+    expect(r[0]).toEqual({ visibility: 'global', owner_id: sa });
+    const orig = await superQuery<{ visibility: string }>(`select visibility from public.quiz_sets where id = $1`, [s[0].id]);
+    expect(orig[0].visibility).toBe('private');
   });
 
   it('reject returns to private with a readable note; an empty note raises', async () => {

@@ -5,13 +5,14 @@ import { isCardComplete, type ECard, type EGroup } from '@/lib/memory/adminCards
 import { mediaUrl } from '@/lib/media';
 import { LEVELS, levelsAvailable, pairsOf } from '@/lib/memory/deck';
 import s from './admin-ui.module.css';
+import { selectArrowStyle } from './selectArrow';
 import { LibraryButton } from './LibraryButton';
 import { PicIcon, dangerBtn, fileName, ghostBtn, inputStyle, panel } from './editor-parts';
 import { Pic } from '@/components/Pic';
 import { EditLock } from './EditLock';
 import { ShareToggle } from './ShareToggle';
 import { VisibilityBadge } from './VisibilityBadge';
-import type { Visibility } from '@/lib/review';
+import { lockedOwn, type Visibility } from '@/lib/review';
 
 export const WORD_MAX = 40;
 /** Accepted picture and pronunciation files (A11). */
@@ -57,7 +58,7 @@ export function CardPanel({ c, n, duplicate, message, autoFocus, groups, weakGro
   onVisibility?: (v: Visibility) => void;
 }) {
   // Under review or global: read-only (V2, V3). Only the sharing row below stays usable.
-  const locked = !!c.visibility && c.visibility !== 'private';
+  const locked = lockedOwn(c.visibility, c.superOwned);
   const [svg, setSvg] = useState('');
   const len = c.word.trim().length;
   const img = mediaUrl(c.image);
@@ -106,7 +107,7 @@ export function CardPanel({ c, n, duplicate, message, autoFocus, groups, weakGro
       <label htmlFor={`cg-${c.id}`} style={{ fontSize: 13, fontWeight: 700 }}>Group</label>
       <select id={`cg-${c.id}`} className={s.in} aria-label={`Group for card ${n}`} value={groupValue}
         onChange={(e) => onEdit({ groupId: e.target.value || null })}
-        style={{ ...inputStyle, height: 40, width: '100%', boxSizing: 'border-box', padding: '0 10px', fontSize: 15, cursor: 'pointer' }}>
+        style={{ ...inputStyle, height: 40, width: '100%', boxSizing: 'border-box', padding: '0 10px', fontSize: 15, cursor: 'pointer', ...selectArrowStyle }}>
         <option value="">No group</option>
         {groups.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
       </select>
@@ -120,8 +121,8 @@ export function CardPanel({ c, n, duplicate, message, autoFocus, groups, weakGro
       </EditLock>
       {!c.isNew && c.visibility && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start', borderTop: '1px solid #F1E7DA', paddingTop: 10 }}>
-          <VisibilityBadge visibility={c.visibility} />
-          <ShareToggle table="memory_cards" id={c.id} visibility={c.visibility} onChanged={onVisibility} />
+          <VisibilityBadge visibility={c.visibility} copied={c.copied} />
+          <ShareToggle table="memory_cards" id={c.id} visibility={c.visibility} superOwned={c.superOwned} onChanged={onVisibility} />
         </div>
       )}
     </article>

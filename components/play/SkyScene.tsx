@@ -3,6 +3,20 @@ import styles from './SkyScene.module.css';
 const BLADES = [60, 130, 210, 340, 470, 760, 880, 1040, 1260, 1380, 1560, 1700, 1820];
 const FLOWERS: [number, number, string][] = [[150, 985, '#EBB7BC'], [420, 1010, '#F6E2A6'], [690, 990, '#FFFFFF'], [1010, 1015, '#EBB7BC'], [1300, 992, '#F6E2A6'], [1640, 1005, '#FFFFFF'], [1780, 985, '#EBB7BC']];
 
+/** Lively clouds: [start x, y, scale, seconds to cross the sky, opacity]. Each one travels left to right and wraps around. */
+const CLOUDS: [number, number, number, number, number][] = [
+  [180, 150, 1, 120, 0.92],
+  [760, 300, 0.8, 160, 0.78],
+  [1320, 110, 1.2, 100, 0.88],
+  [1620, 340, 0.6, 190, 0.66],
+  [520, 60, 0.7, 140, 0.72],
+];
+/** Lively birds: three in a V crossing left to right, two smaller and farther away crossing right to left. */
+const FLOCKS = [
+  { y: 200, scale: 1.3, fly: 'flockA', dur: 42, delay: 1.4, color: '#7A5C50', birds: [[0, 0], [-70, -34], [-70, 34]] },
+  { y: 330, scale: 0.8, fly: 'flockB', dur: 58, delay: -26, color: '#9A8076', birds: [[0, 0], [60, 28]] },
+] as const;
+
 /**
  * The sky, sun, clouds and hills behind the play area (FS1). `festive` adds balloons and stars (FS1, Task 8).
  * `lively` (grown-up sign-in page) adds drifting clouds, birds crossing the sky and swaying grass and flowers.
@@ -13,13 +27,17 @@ export function SkyScene({ festive = false, lively = false }: { festive?: boolea
     <svg aria-hidden="true" width="100%" height="100%" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
       <circle cx="1620" cy="190" r="96" fill="#F6E2A6" />
       <circle cx="1620" cy="190" r="140" fill="#F6E2A6" opacity="0.35" />
-      <g className={styles.drift}>
-        <ellipse cx="320" cy="180" rx="130" ry="44" fill="#FFFFFF" opacity="0.9" />
-        <ellipse cx="400" cy="160" rx="90" ry="40" fill="#FFFFFF" opacity="0.9" />
-      </g>
-      <g className={styles.drift}>
-        <ellipse cx="1100" cy="120" rx="110" ry="36" fill="#FFFFFF" opacity="0.8" />
-      </g>
+      {!lively && (
+        <>
+          <g className={styles.drift}>
+            <ellipse cx="320" cy="180" rx="130" ry="44" fill="#FFFFFF" opacity="0.9" />
+            <ellipse cx="400" cy="160" rx="90" ry="40" fill="#FFFFFF" opacity="0.9" />
+          </g>
+          <g className={styles.drift}>
+            <ellipse cx="1100" cy="120" rx="110" ry="36" fill="#FFFFFF" opacity="0.8" />
+          </g>
+        </>
+      )}
       <path d="M0 860 C 320 760 620 800 960 860 C 1300 920 1600 820 1920 840 L1920 1080 L0 1080 Z" fill="#D9E3CC" />
       <path d="M0 950 C 400 880 800 930 1180 970 C 1500 1000 1720 940 1920 950 L1920 1080 L0 1080 Z" fill="#C7D6BA" />
       <circle cx="260" cy="930" r="10" fill="#EBB7BC" />
@@ -28,23 +46,35 @@ export function SkyScene({ festive = false, lively = false }: { festive?: boolea
       <circle cx="1540" cy="940" r="8" fill="#FFFFFF" />
       {lively && (
         <>
-          <g className={styles.driftSlow}>
-            <ellipse cx="760" cy="300" rx="120" ry="38" fill="#FFFFFF" opacity="0.75" />
-            <ellipse cx="830" cy="282" rx="80" ry="34" fill="#FFFFFF" opacity="0.75" />
-          </g>
-          <g className={styles.driftFast}>
-            <ellipse cx="1500" cy="330" rx="100" ry="32" fill="#FFFFFF" opacity="0.7" />
-            <ellipse cx="1560" cy="314" rx="64" ry="28" fill="#FFFFFF" opacity="0.7" />
-          </g>
-          {[
-            { y: 220, d: '0s', cls: styles.birdA },
-            { y: 150, d: '-9s', cls: styles.birdB },
-            { y: 280, d: '-17s', cls: styles.birdC },
-          ].map((b, i) => (
-            <g key={i} transform={`translate(0 ${b.y})`}>
-              <g className={b.cls} style={{ animationDelay: b.d }}>
-                <g className={styles.flap}>
-                  <path transform="scale(1.8)" d="M-18 0 Q-9 -14 0 0 Q9 -14 18 0" fill="none" stroke="#7A5C50" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+          {CLOUDS.map(([x, y, sc, dur, op], i) => {
+            // the travel is relative to the start x, so the cloud wraps just outside the sky; the negative delay parks it at x when the page opens
+            const from = -x - 380 * sc;
+            const to = 1920 - x + 380 * sc;
+            const delay = -((x + 380 * sc) / (to - from)) * dur;
+            return (
+              <g key={i} transform={`translate(${x} ${y}) scale(${sc})`}>
+                <g className={styles.cloudRun} style={{ ['--from' as string]: `${from / sc}px`, ['--to' as string]: `${to / sc}px`, animationDuration: `${dur}s`, animationDelay: `${delay}s` }}>
+                  <g fill="#FFFFFF" opacity={op}>
+                    <ellipse cx="0" cy="0" rx="140" ry="40" />
+                    <ellipse cx="-62" cy="-26" rx="66" ry="38" />
+                    <ellipse cx="22" cy="-42" rx="82" ry="46" />
+                    <ellipse cx="92" cy="-14" rx="58" ry="32" />
+                  </g>
+                </g>
+              </g>
+            );
+          })}
+          {FLOCKS.map((f, i) => (
+            <g key={i} transform={`translate(0 ${f.y})`}>
+              <g className={styles[f.fly]} style={{ animationDuration: `${f.dur}s`, animationDelay: `${f.delay}s` }}>
+                <g className={styles.birdWave} style={{ animationDelay: `${-i * 1.7}s` }}>
+                  {f.birds.map(([dx, dy], j) => (
+                    <g key={j} transform={`translate(${dx * f.scale} ${dy * f.scale}) scale(${f.scale})`}>
+                      <g className={styles.flap} style={{ animationDelay: `${-j * 0.23 - i * 0.4}s` }}>
+                        <path transform="scale(1.6)" d="M-18 0 Q-9 -14 0 0 Q9 -14 18 0" fill="none" stroke={f.color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                      </g>
+                    </g>
+                  ))}
                 </g>
               </g>
             </g>

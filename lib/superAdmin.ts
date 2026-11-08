@@ -1,5 +1,9 @@
+import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import type { ContentTable, Visibility } from '@/lib/review';
+import type { Role } from '@/lib/auth/roles';
+import { CHILD_COLUMNS, type Child } from '@/lib/children';
+import type { Difference } from '@/lib/spot/types';
 
 /**
  * Super Admin console data layer (N5, N9, U15, U17, V3, V5). Every write is a database function that checks
@@ -23,15 +27,76 @@ async function rpc(client: Client, name: string, args: Record<string, unknown>):
   if (error) throw new Error(error.message);
 }
 
-// ---- review (V3, V5) ----
-export const approveItem = (table: ContentTable, id: string, client: Client = createSupabaseBrowserClient()) =>
-  rpc(client, 'review_approve', { p_table: table, p_id: id });
-export const rejectItem = (table: ContentTable, id: string, note: string, client: Client = createSupabaseBrowserClient()) =>
-  rpc(client, 'review_reject', { p_table: table, p_id: id, p_note: note });
+// ---- review (V3, V5, V8-V13) ----
+
+/** Tells the admin nav (red dots) and the review tabs that the pending lists changed. */
+export const PENDING_CHANGED = 'cp:pending-changed';
+function announcePendingChanged(): void {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(PENDING_CHANGED));
+}
+
+/**
+ * V8: approve. The original goes back to private and a Super Admin global copy is created; returns the copy's id.
+ */
+export async function approveItem(table: ContentTable, id: string, client: Client = createSupabaseBrowserClient()): Promise<string> {
+  const { data, error } = await client.rpc('review_approve', { p_table: table, p_id: id });
+  announcePendingChanged();
+  if (error) throw new Error(error.message);
+  return String(data);
+}
+export async function rejectItem(table: ContentTable, id: string, note: string, client: Client = createSupabaseBrowserClient()): Promise<void> {
+  try {
+    await rpc(client, 'review_reject', { p_table: table, p_id: id, p_note: note });
+  } finally {
+    announcePendingChanged();
+  }
+}
 export const unpublishItem = (table: ContentTable, id: string, client: Client = createSupabaseBrowserClient()) =>
   rpc(client, 'unpublish_item', { p_table: table, p_id: id });
+/** V10: a Super Admin publishes their own private row, without a review. */
+export const publishOwn = (table: ContentTable, id: string, client: Client = createSupabaseBrowserClient()) =>
+  rpc(client, 'publish_own', { p_table: table, p_id: id });
 export const deleteItem = (table: ContentTable, id: string, client: Client = createSupabaseBrowserClient()) =>
   rpc(client, 'delete_item', { p_table: table, p_id: id });
+
+/** Waiting rows per game for the red dots (V3, V8): quiz sets; cards (cards and their groups); spot; find. */
+export type PendingCounts = { sets: number; cards: number; spot: number; find: number };
+
+export async function pendingCounts(client: Client = createSupabaseBrowserClient()): Promise<PendingCounts> {
+  const count = async (table: ContentTable): Promise<number> => {
+    const { count: n, error } = await client.from(table).select('id', { count: 'exact', head: true }).eq('visibility', 'pending');
+    if (error) throw new Error(error.message);
+    return n ?? 0;
+  };
+  const [sets, cardsOnly, groups, spot, find] = await Promise.all([
+    count('quiz_sets'), count('memory_cards'), count('card_groups'), count('spot_levels'), count('find_levels'),
+  ]);
+  return { sets, cards: cardsOnly + groups, spot, find };
+}
+
+/**
+ * The pending counts for a Super Admin, refreshed on mount, on `key` (the page path for the nav) and on every
+ * PENDING_CHANGED. For anyone else the counts stay zero and nothing is read.
+ */
+export function usePendingCounts(role: Role | null | undefined, key?: string): PendingCounts {
+  const [counts, setCounts] = useState<PendingCounts>({ sets: 0, cards: 0, spot: 0, find: 0 });
+  useEffect(() => {
+    if (role !== 'super_admin') return;
+    let live = true;
+    const refresh = () => { pendingCounts().then((c) => { if (live) setCounts(c); }, () => undefined); };
+    refresh();
+    window.addEventListener(PENDING_CHANGED, refresh);
+    return () => { live = false; window.removeEventListener(PENDING_CHANGED, refresh); };
+  }, [role, key]);
+  return counts;
+}
+
+/** Parent accounts by id, for the "Parent published" tab (owner names and whether they are banned). */
+export async function parentNames(client: Client = createSupabaseBrowserClient()): Promise<Map<string, string>> {
+  const { data, error } = await client.from('profiles').select('user_id, display_name').eq('role', 'parent');
+  if (error) throw new Error(error.message);
+  return new Map(((data ?? []) as { user_id: string; display_name: string | null }[]).map((p) => [p.user_id, p.display_name ?? '']));
+}
 
 // ---- parents (U15, Q4) ----
 export const banParent = (userId: string, code: string, note: string, client: Client = createSupabaseBrowserClient()) =>
@@ -50,12 +115,14 @@ export type ContentItem = {
   title: string;
   images: string[];
   sounds: string[];
+  /** Spot levels only: the marked differences, for the read-only view. */
+  differences?: Difference[];
 };
 
 type Raw = Record<string, unknown>;
 const str = (v: unknown): string[] => (typeof v === 'string' && v ? [v] : []);
 
-const SELECT: Record<ContentTable, { cols: string; map: (r: Raw) => Pick<ContentItem, 'title' | 'images' | 'sounds'> }> = {
+const SELECT: Record<ContentTable, { cols: string; map: (r: Raw) => Pick<ContentItem, 'title' | 'images' | 'sounds' | 'differences'> }> = {
   quiz_sets: {
     cols: 'id, owner_id, visibility, title, cover_path, questions(prompt_image_path, prompt_audio_path, answers(image_path))',
     map: (r) => {
@@ -72,8 +139,8 @@ const SELECT: Record<ContentTable, { cols: string; map: (r: Raw) => Pick<Content
     map: (r) => ({ title: String(r.word ?? ''), images: str(r.image_path), sounds: str(r.audio_path) }),
   },
   spot_levels: {
-    cols: 'id, owner_id, visibility, image_a_path, image_b_path',
-    map: (r) => ({ title: 'Spot the differences', images: [...str(r.image_a_path), ...str(r.image_b_path)], sounds: [] }),
+    cols: 'id, owner_id, visibility, image_a_path, image_b_path, differences',
+    map: (r) => ({ title: 'Spot the differences', images: [...str(r.image_a_path), ...str(r.image_b_path)], sounds: [], differences: (r.differences as Difference[]) ?? [] }),
   },
   card_groups: { cols: 'id, owner_id, visibility, name', map: (r) => ({ title: String(r.name ?? ''), images: [], sounds: [] }) },
   find_levels: {
@@ -85,12 +152,18 @@ const SELECT: Record<ContentTable, { cols: string; map: (r: Raw) => Pick<Content
   },
 };
 
-/** Content of every table, optionally one visibility only. A Super Admin reads all rows (RLS). */
-export async function listContent(visibility?: Visibility, client: Client = createSupabaseBrowserClient()): Promise<ContentItem[]> {
+/** Content of every table, optionally one visibility and/or one owner only. A Super Admin reads all rows (RLS). */
+export async function listContent(
+  visibility?: Visibility,
+  options: { ownerId?: string; tables?: ContentTable[] } = {},
+  client: Client = createSupabaseBrowserClient(),
+): Promise<ContentItem[]> {
   const out: ContentItem[] = [];
-  for (const table of TABLES) {
-    const q = client.from(table).select(SELECT[table].cols);
-    const { data, error } = await (visibility ? q.eq('visibility', visibility) : q).order('created_at');
+  for (const table of options.tables ?? TABLES) {
+    let q = client.from(table).select(SELECT[table].cols);
+    if (visibility) q = q.eq('visibility', visibility);
+    if (options.ownerId) q = q.eq('owner_id', options.ownerId);
+    const { data, error } = await q.order('created_at');
     if (error) throw new Error(error.message);
     for (const r of (data ?? []) as unknown as Raw[]) {
       out.push({ table, id: String(r.id), ownerId: (r.owner_id as string | null) ?? null, visibility: r.visibility as Visibility, ...SELECT[table].map(r) });
@@ -98,7 +171,7 @@ export async function listContent(visibility?: Visibility, client: Client = crea
   }
   return out;
 }
-export const listPending = (client?: Client) => listContent('pending', client);
+export const listPending = (client?: Client, tables?: ContentTable[]) => listContent('pending', { tables }, client);
 
 // ---- people ----
 export type PersonRow = {
@@ -110,41 +183,46 @@ export type PersonRow = {
   banNote: string | null;
   bannedAt: string | null;
   quotaBytes: number;
+  createdAt: string;
 };
 
 type ProfileRaw = {
   user_id: string; role: PersonRow['role']; display_name: string | null; banned: boolean;
-  ban_reason_code: string | null; ban_note: string | null; banned_at: string | null; quota_bytes: number | string;
+  ban_reason_code: string | null; ban_note: string | null; banned_at: string | null; quota_bytes: number | string; created_at: string;
 };
 
 export async function listPeople(role: PersonRow['role'], client: Client = createSupabaseBrowserClient()): Promise<PersonRow[]> {
   const { data, error } = await client
     .from('profiles')
-    .select('user_id, role, display_name, banned, ban_reason_code, ban_note, banned_at, quota_bytes')
+    .select('user_id, role, display_name, banned, ban_reason_code, ban_note, banned_at, quota_bytes, created_at')
     .eq('role', role)
     .order('created_at');
   if (error) throw new Error(error.message);
   return ((data ?? []) as ProfileRaw[]).map((p) => ({
     userId: p.user_id, role: p.role, name: p.display_name ?? '', banned: p.banned,
-    banReasonCode: p.ban_reason_code, banNote: p.ban_note, bannedAt: p.banned_at, quotaBytes: Number(p.quota_bytes),
+    banReasonCode: p.ban_reason_code, banNote: p.ban_note, bannedAt: p.banned_at, quotaBytes: Number(p.quota_bytes), createdAt: p.created_at,
   }));
 }
 
-// ---- children (N5, K13) ----
-export type AdminChild = { id: string; display_name: string; child_name: string; parent_id: string; parent_name: string | null };
+// ---- children (N5, K13, N15) ----
+export type AdminChild = Child & { parent_name: string | null; parent_banned: boolean };
 
-/** Every child with the parent's name. Two queries; if the names fail to load the list still shows, unnamed. */
+/** Every child with the parent's name and ban state. Two queries; if the parent rows fail to load the list still shows, unnamed. */
 export async function listAllChildren(client: Client = createSupabaseBrowserClient()): Promise<AdminChild[]> {
-  const { data, error } = await client.from('children').select('id, display_name, child_name, parent_id').order('created_at');
+  const { data, error } = await client.from('children').select(CHILD_COLUMNS).order('created_at');
   if (error) throw new Error('Could not load the children.');
-  const kids = (data ?? []) as Omit<AdminChild, 'parent_name'>[];
+  const kids = (data ?? []) as Child[];
   const ids = [...new Set(kids.map((k) => k.parent_id))];
-  const names = new Map<string, string | null>();
+  const parents = new Map<string, { name: string | null; banned: boolean }>();
   if (ids.length > 0) {
-    const res = await client.from('profiles').select('user_id, display_name').in('user_id', ids);
-    if (!res.error) for (const p of (res.data ?? []) as { user_id: string; display_name: string | null }[]) names.set(p.user_id, p.display_name);
+    const res = await client.from('profiles').select('user_id, display_name, banned').in('user_id', ids);
+    if (!res.error) {
+      for (const p of (res.data ?? []) as { user_id: string; display_name: string | null; banned: boolean }[]) {
+        parents.set(p.user_id, { name: p.display_name, banned: !!p.banned });
+      }
+    }
   }
-  return kids.map((k) => ({ id: k.id, display_name: k.display_name, child_name: k.child_name, parent_id: k.parent_id, parent_name: names.get(k.parent_id) ?? null }));
+  return kids.map((k) => ({ ...k, parent_name: parents.get(k.parent_id)?.name ?? null, parent_banned: parents.get(k.parent_id)?.banned ?? false }));
 }
 
 /** Removes a child through the Super Admin delete policy. */
@@ -179,6 +257,32 @@ export async function createAccount(input: NewAccount, fetchFn: typeof fetch = f
   const body = (await res.json().catch(() => null)) as { error?: string; userId?: string } | null;
   if (!res.ok) throw new Error(CREATE_ERRORS[body?.error ?? ''] ?? 'Could not create the account.');
   return body?.userId ?? '';
+}
+
+/** Unresolved messages across all parents (N18): the number for the red dot on Messages. */
+/** A parent as the Super Admin sees them for a reply: name, sign-in email and phone (SA1, SA2). */
+export type ParentContact = { userId: string; displayName: string; email: string; phone: string | null };
+
+/** The contact details of every parent. Only a Super Admin may read them; the database raises otherwise. */
+export async function listParentContacts(client: Client = createSupabaseBrowserClient()): Promise<ParentContact[]> {
+  const { data, error } = await client.rpc('super_admin_parent_contacts');
+  if (error) throw new Error(error.message);
+  return ((data ?? []) as { user_id: string; display_name: string | null; email: string; phone: string | null }[]).map((r) => ({
+    userId: r.user_id, displayName: r.display_name ?? '', email: r.email, phone: r.phone,
+  }));
+}
+
+export async function pendingMessageCount(client: Client = createSupabaseBrowserClient()): Promise<number> {
+  const { count, error } = await client.from('support_messages').select('id', { count: 'exact', head: true }).is('resolved_at', null);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+/** The parents (user ids) who have at least one unresolved message (N12). */
+export async function pendingSenders(client: Client = createSupabaseBrowserClient()): Promise<Set<string>> {
+  const { data, error } = await client.from('support_messages').select('from_user').is('resolved_at', null);
+  if (error) throw new Error(error.message);
+  return new Set(((data ?? []) as { from_user: string }[]).map((r) => r.from_user));
 }
 
 // ---- support messages (U17) ----

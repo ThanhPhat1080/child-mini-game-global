@@ -50,6 +50,11 @@ describe('createChild', () => {
     expect(calls.insert[0][0]).toEqual({ ...base, celebrate_a_path: null, celebrate_b_path: null, child_name: 'La n' });
     expect(calls.insert[0][0]).not.toHaveProperty('parent_id');
   });
+  it('sends parent_id only when a Super Admin passes one (N16)', async () => {
+    const { client, calls } = fake({ data: row, error: null });
+    await createChild({ ...base }, client, 'p1');
+    expect(calls.insert[0][0]).toMatchObject({ parent_id: 'p1' });
+  });
   it('maps 23505 to name_taken', async () => {
     const { client } = fake({ error: { code: '23505', message: 'dup' } });
     expect(await createChild({ ...base }, client)).toEqual({ ok: false, error: 'name_taken' });
@@ -65,6 +70,14 @@ describe('createChild', () => {
       expect(r).toEqual({ ok: false, error: 'failed' });
       expect(JSON.stringify(r)).not.toContain('secret');
     }
+  });
+});
+
+describe('children reads include created_at (N10, N15)', () => {
+  it('selects created_at with the other columns', async () => {
+    const { client, calls } = fake({ data: [row], error: null });
+    await listMyChildren(client);
+    expect(calls.select[0][0]).toContain('created_at');
   });
 });
 

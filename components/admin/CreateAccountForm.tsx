@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { createAccount, type CreatedRole } from '@/lib/superAdmin';
 import styles from '@/app/admin/admin.module.css';
+import { selectArrowStyle } from './selectArrow';
 
 /** Super Admin creates a parent or Super Admin through /api/users (N5, U8). */
 export function CreateAccountForm({ roles, onCreated, onError }: {
@@ -34,7 +35,7 @@ export function CreateAccountForm({ roles, onCreated, onError }: {
       {roles.length > 1 && (
         <div className={styles.fieldGroup}>
           <label htmlFor="acc-role">Role</label>
-          <select id="acc-role" className={styles.input} value={role} onChange={(e) => setRole(e.target.value as CreatedRole)}>
+          <select id="acc-role" className={styles.input} style={selectArrowStyle} value={role} onChange={(e) => setRole(e.target.value as CreatedRole)}>
             {roles.map((r) => <option key={r} value={r}>{r === 'super_admin' ? 'Super Admin' : 'Parent'}</option>)}
           </select>
         </div>

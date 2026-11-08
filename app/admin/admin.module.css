@@ -20,17 +20,72 @@
 .foot { margin: 0; font-size: 13px; color: #7a6458; text-align: center; }
 
 /* panel */
-.shell { min-height: 100vh; background: #fbf4e9; font-family: 'Nunito', sans-serif; color: #4a3830; display: flex; flex-wrap: wrap; align-items: flex-start; }
-.nav { flex: 1 1 240px; max-width: 280px; min-width: 220px; padding: 28px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; }
-.navBrand { white-space: nowrap; display: flex; align-items: center; gap: 10px; padding: 0 12px 20px; font-size: 22px; }
+.shell { min-height: 100vh; background: #fbf4e9; font-family: 'Nunito', sans-serif; color: #4a3830; display: flex; align-items: flex-start; }
+/* Sticky while the page scrolls. Overflow stays scrollable on short screens, but the scrollbar is hidden. */
+.nav { flex: none; width: 248px; padding: 28px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 6px; position: sticky; top: 0; align-self: flex-start; max-height: 100vh; overflow-x: hidden; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+/* Added after the first breakpoint check (AdminNav), so the initial collapse does not animate. */
+.navAnimated { transition: width 0.3s ease, padding 0.3s ease; }
+.nav::-webkit-scrollbar { display: none; }
+.navBrand { white-space: nowrap; display: flex; align-items: center; gap: 8px; padding: 0 4px 20px; font-size: 19px; min-height: 52px; box-sizing: border-box; }
+.navBrandText { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; transition: opacity 0.2s ease, max-width 0.3s ease; max-width: 160px; }
+.navToggle { margin-left: auto; flex: none; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border: none; border-radius: 10px; background: transparent; color: #7a6458; cursor: pointer; transition: background 0.2s ease, margin 0.3s ease; }
+.navToggle:hover { background: #f6eadc; }
+.navToggle:focus-visible, .navLink:focus-visible { outline: 3px solid #c77d85; outline-offset: 2px; }
+.navToggleIcon { transition: transform 0.3s ease; }
+.crownDot { width: 36px; height: 36px; }
+.navLabel { white-space: nowrap; overflow: hidden; transition: opacity 0.2s ease; }
+/* Collapsed: a rail just wide enough for the icons. Labels fade out but stay in the DOM for screen readers. */
+.navCollapsed { width: 68px; padding: 28px 8px; }
+.navCollapsed .navBrand { padding: 0 0 20px; justify-content: center; align-items: flex-start; min-height: 56px; position: relative; }
+.navCollapsed .navBrandText { max-width: 0; opacity: 0; flex: none; position: absolute; }
+/* Collapsed: the toggle sits exactly over the crown and fades in on hover or keyboard focus. */
+.navCollapsed .navToggle { position: absolute; top: 0; left: 50%; margin: 0 0 0 -18px; width: 36px; height: 36px; border-radius: 50%; background: #f5d9c4; color: #8a5560; opacity: 0; }
+.navCollapsed .navBrand:hover .navToggle, .navCollapsed .navToggle:focus-visible { opacity: 1; }
+.navCollapsed .navToggle:hover { background: #efc9b0; }
+.navCollapsed .navToggleIcon { transform: rotate(180deg); }
+.navCollapsed .navLabel { opacity: 0; width: 0; }
+.navCollapsed .navLink { gap: 0; padding: 12px 0; justify-content: center; }
+.navCollapsed .divider { margin: 10px 8px; }
+.navLink { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; color: #4a3830; font-weight: 600; text-decoration: none; background: transparent; border: none; font-family: 'Nunito', sans-serif; font-size: 16px; cursor: pointer; text-align: left; transition: background 0.2s ease, padding 0.3s ease, gap 0.3s ease; }
+.navLink svg { flex: none; }
+.navLink:hover { background: #f6eadc; }
+.navActive { background: #fff; font-weight: 700; box-shadow: 0 1px 0 #eadcc8; }
+.navActive:hover { background: #fff; }
+.navRose, .navRose:hover { color: #c0646c; }
+.navRose:hover { background: #fbe9e9; }
+.navGreen, .navGreen:hover { color: #4f8f62; }
+.navGreen:hover { background: #e8f3e8; }
+/* Game settings group: a soft rule above, a small title, hidden title when collapsed. */
+.navGroup { display: flex; flex-direction: column; gap: 6px; }
+.navGroupTitle { padding: 2px 14px 4px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #a08a7a; white-space: nowrap; overflow: hidden; max-height: 20px; transition: opacity 0.2s ease, max-height 0.3s ease, padding 0.3s ease; }
+.navCollapsed .navGroupTitle { opacity: 0; max-height: 0; padding: 0; }
+/* Tooltip beside a collapsed icon; fixed so the nav's scroll area cannot clip it. */
+.navTip { position: fixed; left: 76px; transform: translateY(-50%); background: #5a4038; color: #fff; font-size: 14px; font-weight: 700; padding: 6px 12px; border-radius: 10px; white-space: nowrap; pointer-events: none; z-index: 50; box-shadow: 0 6px 18px rgba(90, 64, 56, 0.2); animation: navTipIn 0.15s ease; }
+@keyframes navTipIn { from { opacity: 0; margin-left: -6px; } to { opacity: 1; margin-left: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .nav, .navBrandText, .navToggle, .navToggleIcon, .crownDot, .navLabel, .navLink { transition: none; }
+  .navTip { animation: none; }
+}
+.divider { width: 24px; margin: 10px 0; }
 .navLink { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; color: #4a3830; font-weight: 600; text-decoration: none; background: transparent; border: none; font-family: 'Nunito', sans-serif; font-size: 16px; cursor: pointer; text-align: left; }
 .navLink:hover { background: #f6eadc; }
 .navActive { background: #fff; font-weight: 700; box-shadow: 0 1px 0 #eadcc8; }
 .navActive:hover { background: #fff; }
-.navMuted { color: #7a6458; }
+.navRose, .navRose:hover { color: #c0646c; }
+.navRose:hover { background: #fbe9e9; }
+.navGreen, .navGreen:hover { color: #4f8f62; }
+.navGreen:hover { background: #e8f3e8; }
+/* Game settings group: a soft rule above, a small title, hidden title when collapsed. */
+.navGroup { display: flex; flex-direction: column; gap: 6px; }
+.navGroupTitle { padding: 2px 14px 4px; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #a08a7a; white-space: nowrap; overflow: hidden; max-height: 20px; transition: opacity 0.2s ease, max-height 0.3s ease, padding 0.3s ease; }
+.navCollapsed .navGroupTitle { opacity: 0; max-height: 0; padding: 0; }
 .divider { height: 1px; background: #eadcc8; margin: 14px 12px; }
-.main { flex: 999 1 560px; min-width: 0; padding: 36px 32px 64px; box-sizing: border-box; }
-.mainInner { max-width: 880px; display: flex; flex-direction: column; gap: 24px; }
+.main { flex: 1 1 0; min-width: 0; padding: 36px 32px 64px; box-sizing: border-box; }
+/* Phones: the collapsed rail takes 68px beside the page, so the side gutter shrinks to 16px. */
+@media (max-width: 640px) {
+  .main { padding: 24px 16px 48px; }
+}
+.mainInner { display: flex; flex-direction: column; gap: 24px; }
 .head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; }
 .head h1 { margin: 0; font-size: 30px; font-weight: 700; }
 .section { background: #fff; border-radius: 18px; padding: 28px; box-shadow: 0 1px 0 #eadcc8; display: flex; flex-direction: column; gap: 16px; }

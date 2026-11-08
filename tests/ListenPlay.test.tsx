@@ -280,9 +280,12 @@ describe('Listen & Pick play screen (L1-L5, L8, L10)', () => {
     expect(h.yay).toHaveBeenCalledTimes(1);
   });
 
-  it('Esc goes back to the game list', async () => {
+  it('Esc asks "Leave now?"; Yes goes back to the game list', async () => {
     await ready();
     fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Leave now?' })).toBeTruthy();
+    expect(h.push).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Yes' }));
     expect(h.push).toHaveBeenCalledWith('/games');
   });
 
@@ -383,7 +386,6 @@ describe('Listen & Pick play screen (L1-L5, L8, L10)', () => {
 
   it.each([
     ['fewer than 3 usable cards', () => h.fetchActiveCards.mockResolvedValue([...cards(2), { ...cards(3)[2], active: false }])],
-    ['a load failure', () => h.fetchActiveCards.mockRejectedValue(new Error('boom'))],
     ['two cards with the same word only', () => h.fetchActiveCards.mockResolvedValue([...cards(2), { ...cards(3)[2], word: ' Word0 ' }])],
   ])('%s: friendly status screen, no answers', async (_name, arrange) => {
     arrange();
@@ -395,6 +397,16 @@ describe('Listen & Pick play screen (L1-L5, L8, L10)', () => {
     expect(question()).toBeNull();
     await advance(5000);
     expect(h.sayWord).not.toHaveBeenCalled();
+  });
+
+  it('a load failure: a retry screen (not "coming soon"), no answers', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    h.fetchActiveCards.mockRejectedValue(new Error('boom'));
+    render(<ListenPlay />);
+    await advance(PRELOAD_MS + 10);
+    expect(screen.getByRole('alert', { name: /went wrong/ })).toBeTruthy();
+    expect(screen.queryByRole('status', { name: 'New cards are coming soon' })).toBeNull();
+    expect(answers()).toHaveLength(0);
   });
 
   it('5 usable cards give 5 questions, then data-done after FINISH_DELAY_MS', async () => {

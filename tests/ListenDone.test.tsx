@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MemoryCard } from '@/lib/memory/types';
 
-const h = vi.hoisted(() => ({ applause: vi.fn(), speakKid: vi.fn(), playFile: vi.fn(), push: vi.fn(), sayWord: vi.fn() }));
+const h = vi.hoisted(() => ({ applause: vi.fn((_s?: number, speak?: () => void) => { speak?.(); return undefined as unknown; }), speakKid: vi.fn(), playFile: vi.fn(), push: vi.fn(), sayWord: vi.fn() }));
 vi.mock('@/lib/sfx', () => ({ applause: h.applause, speakKid: h.speakKid, playFile: h.playFile }));
 vi.mock('@/lib/memory/cards', () => ({ sayWord: h.sayWord }));
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p}` : null) }));
@@ -143,7 +143,7 @@ describe('ListenDone (L6, L7)', () => {
   it('Back to games and Esc each stop the praise sound', () => {
     for (const act of [() => fireEvent.click(back()), () => fireEvent.keyDown(window, { key: 'Escape' })]) {
       const stop = vi.fn();
-      h.applause.mockReturnValue({ stop, ms: 3000 });
+      h.applause.mockImplementation((_s?: number, speak?: () => void) => { speak?.(); return { stop, ms: 3000 }; });
       setup();
       act();
       expect(stop).toHaveBeenCalledTimes(1);

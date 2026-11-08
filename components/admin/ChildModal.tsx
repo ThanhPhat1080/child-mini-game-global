@@ -5,6 +5,7 @@ import { createChild, updateChild, validateChild, type Child, type NewChild } fr
 import { getChildSettings, updateChildSettings } from '@/lib/settings';
 import { GENDER_THEME, type AgeBand, type Gender } from '@/lib/childTheme';
 import { mediaUrl, removeMedia } from '@/lib/media';
+import { CELEBRATION_ASPECT } from '@/lib/celebration';
 import { useMediaRenamed } from '@/lib/media/renames';
 import { replacePath } from '@/lib/mediaPaths';
 import { LibraryButton } from '@/components/admin/LibraryButton';
@@ -23,9 +24,11 @@ const baseName = (p: string | null) => (p ? p.split('/').pop() ?? p : null);
 /**
  * Add or edit one child (KU3-KU8). Not optimistic: Save waits for the request. The colors follow the Boy/Girl choice at once.
  * `onNotice` lets the page show a toast after the modal has closed (for example "sound not saved").
+ * `parentId` is the Super Admin mode (N16): the child belongs to that parent, and only the non-media fields are shown and saved.
+ * `compact` makes the dialog narrower; the Super Admin Children page uses it, since it has no pictures or sounds.
  */
-export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
-  mode: 'create' | 'edit'; child?: Child; onClose: () => void; onSaved: (c: Child) => void; onNotice?: Notice;
+export function ChildModal({ mode, child, parentId, compact, onClose, onSaved, onNotice }: {
+  mode: 'create' | 'edit'; child?: Child; parentId?: string; compact?: boolean; onClose: () => void; onSaved: (c: Child) => void; onNotice?: Notice;
 }) {
   const titleId = useId();
   const dialog = useRef<HTMLDivElement>(null);
@@ -43,13 +46,18 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
   const [celBDraft, setCelBDraft] = useState<string | null>(null);
   const [savedGreeting, setSavedGreeting] = useState<string | null>(null);
   const [greetingDraft, setGreetingDraft] = useState<string | null>(null);
-  const [settingsReady, setSettingsReady] = useState(mode === 'create');
+  const [settingsReady, setSettingsReady] = useState(mode === 'create' || !!parentId);
   const [soundsFailed, setSoundsFailed] = useState(false);
   const [errors, setErrors] = useState<Errors>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [more, setMore] = useState(false);
   const [playing, setPlaying] = useState(false);
+  /** The child this modal just added: the modal stays open and becomes an edit of it, so the sounds can be added (N16). */
+  const [created, setCreated] = useState<Child | null>(null);
+  const moreBtn = useRef<HTMLButtonElement>(null);
+  const target = child ?? created ?? undefined;
+  const editMode = mode === 'edit' || created !== null;
   const audio = useRef<HTMLAudioElement | null>(null);
   const theme = GENDER_THEME[gender];
 
@@ -62,7 +70,7 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
 
   // edit mode: the saved welcome sound, so Save knows which file it replaces
   useEffect(() => {
-    if (mode !== 'edit' || !child) return;
+    if (mode !== 'edit' || !child || parentId) return;
     let live = true;
     getChildSettings(child.id).then(
       (r) => { if (!live) return; setSavedGreeting(r?.greeting_path ?? null); setSettingsReady(true); },
@@ -70,6 +78,11 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
     );
     return () => { live = false; };
   }, [mode, child]);
+
+  // Just after adding: the "More sounds" button takes focus, so the parent can go straight to the sounds.
+  useEffect(() => {
+    if (created) moreBtn.current?.focus();
+  }, [created]);
 
   // focus moves into the dialog and returns to the opener on close
   useEffect(() => {
@@ -118,22 +131,22 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
   async function save() {
     setFormError(null);
     const input: NewChild = { child_name: loginName, display_name: displayName, avatar_path: avatarShown, celebrate_a_path: celAShown, celebrate_b_path: celBShown, gender, age_band: age, pin };
-    const found = validateChild(input, mode);
+    const found = validateChild(input, editMode ? 'edit' : 'create');
     setErrors(found);
     if (Object.keys(found).length > 0) return;
     setBusy(true);
     try {
-      if (mode === 'create') await doCreate(input); else await doEdit(input);
+      if (!editMode) await doCreate(input); else await doEdit(input);
     } finally {
       setBusy(false);
     }
   }
 
   async function doCreate(input: NewChild) {
-    const res = await createChild(input);
+    const res = parentId ? await createChild(input, undefined, parentId) : await createChild(input);
     if (!res.ok) {
       if (res.error === 'name_taken') setErrors({ child_name: 'That name is already used. Choose another.' });
-      else if (res.error === 'child_limit') setFormError('You already have 5 children.');
+      else if (res.error === 'child_limit') setFormError(parentId ? 'This parent already has 5 children.' : 'You already have 5 children.');
       else setFormError('Could not save the child. Try again.');
       return;
     }
@@ -143,12 +156,31 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
     }
     onSaved(res.child);
     if (warn) onNotice?.('warning', 'Child added, but the welcome sound was not saved. Edit the child to add it again.');
-    onClose();
+    // The modal stays open on the new child, so the parent can add the sounds (More sounds).
+    setSavedAvatar(avatarShown);
+    setAvatarDraft(null);
+    setSavedCelA(celAShown);
+    setCelADraft(null);
+    setSavedCelB(celBShown);
+    setCelBDraft(null);
+    setSavedGreeting(greetingDraft ?? savedGreeting);
+    setGreetingDraft(null);
+    setCreated(res.child);
   }
 
   async function doEdit(input: NewChild) {
-    if (!child) return;
+    if (!target) return;
+    const child = target;
     const { child_name: _login, ...patch } = input;
+    if (parentId) {
+      // Super Admin mode: the pictures and sounds are never sent, so nothing there can change or be removed.
+      const { avatar_path: _avatar, celebrate_a_path: _a, celebrate_b_path: _b, ...fields } = patch;
+      const saved = await updateChild(child.id, fields);
+      if (!saved.ok) { setFormError('Could not save the child. Try again.'); return; }
+      onSaved({ ...child, ...fields });
+      onClose();
+      return;
+    }
     const res = await updateChild(child.id, patch);
     if (!res.ok) { setFormError('Could not save the child. Try again.'); return; }
     const replaced: string[] = [];
@@ -179,13 +211,24 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className={s.modal}
-        style={{ background: theme.modalBg, color: theme.text, border: `4px solid ${theme.accent}` }}
+        className={`${s.modal} ${compact ? s.modalCompact : ''}`}
+        // Prince or princess fills the whole form; a soft wash of the form color keeps the fields readable.
+        style={{
+          backgroundColor: theme.modalBg,
+          backgroundImage: `linear-gradient(${theme.modalBg}CC, ${theme.modalBg}B3), url(${theme.hero})`,
+          backgroundSize: 'contain',
+          backgroundPosition: 'left top',
+          backgroundRepeat: 'no-repeat',
+          color: theme.text,
+          border: `4px solid ${theme.accent}`,
+        }}
         onKeyDown={onKeyDown}
       >
         <ModalClose onClick={requestClose} disabled={busy} />
-        <h2 id={titleId} style={{ color: theme.text }}>{mode === 'create' ? 'Add child' : 'Edit child'}</h2>
+        <h2 id={titleId} style={{ color: theme.text }}>{editMode ? 'Edit child' : 'Add child'}</h2>
 
+        <div className={s.modalCols} style={parentId ? { gridTemplateColumns: '1fr' } : undefined}>
+          <div className={s.modalCol}>
         <div className={s.genderAgeRow}>
           <div className={s.modalField} role="group" aria-label="Gender">
             <span className={s.modalLabel}>Gender</span>
@@ -214,7 +257,7 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
         </div>
 
         <div className={s.modalField}>
-          {mode === 'create' ? (
+          {!editMode ? (
             <>
               <label htmlFor={`${titleId}-ln`}>Login name</label>
               <input id={`${titleId}-ln`} className={s.modalInput} value={loginName} maxLength={40} autoCapitalize="none" aria-invalid={!!errors.child_name} onChange={(e) => setLoginName(e.target.value)} />
@@ -224,16 +267,23 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
             <>
               <span className={s.modalLabel}>Login name</span>
               <span style={{ fontWeight: 700 }}>
-                <span role="img" aria-label="Login name locked">🔒</span> {child?.child_name}
+                <span role="img" aria-label="Login name locked">🔒</span> {target?.child_name}
               </span>
             </>
           )}
         </div>
 
         <div className={s.modalField}>
+          <label htmlFor={`${titleId}-pin`}>PIN</label>
+          <input id={`${titleId}-pin`} className={s.modalInput} value={pin} maxLength={4} autoComplete="off" aria-invalid={!!errors.pin} onChange={(e) => setPin(e.target.value)} />
+          {errors.pin && <span className={s.fieldError}>{errors.pin}</span>}
+        </div>
+          </div>
+          {!parentId && <div className={s.modalCol}>
+        <div className={s.modalField}>
           <span className={s.modalLabel}>Avatar</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-            <span className={s.childAvatar} style={{ borderColor: theme.accent }}>
+            <span className={`${s.childAvatar} ${s.childAvatarLg}`} style={{ borderColor: theme.accent }}>
               {mediaUrl(avatarShown) ? <Pic src={mediaUrl(avatarShown) ?? ''} alt="Avatar" className={s.childAvatarImg} /> : <span aria-hidden="true" style={{ fontSize: 28 }}>{theme.icon}</span>}
             </span>
             <LibraryButton kind="image" label="avatar" onChoose={setAvatarDraft} />
@@ -243,45 +293,54 @@ export function ChildModal({ mode, child, onClose, onSaved, onNotice }: {
 
         <div className={s.modalField}>
           <span className={s.modalLabel}>Celebration pictures</span>
-          <span style={{ fontSize: 13 }}>Two pictures of {displayName.trim() || 'your child'}. They sway on the screen after a game is finished.</span>
+          <span style={{ fontSize: 13, overflowWrap: 'anywhere' }}>Two pictures of {displayName.trim() || 'your child'}. They sway on the screen after a game is finished. Each one is cropped to a tall frame (3:5).</span>
+          <span style={{ fontSize: 13, overflowWrap: 'anywhere', color: '#7A6458' }}>
+            Tip: use a picture with a <strong>transparent background</strong> (PNG or WebP) so it looks nicer on the screen. A JPG has no transparency, so its background stays.
+          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             {([
               ['A', celAShown, setCelADraft, celADraft],
               ['B', celBShown, setCelBDraft, celBDraft],
             ] as const).map(([k, shown, setDraft, draft]) => (
               <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span className={s.childAvatar} style={{ borderColor: theme.accent }}>
+                <span className={`${s.childAvatar} ${s.childAvatarLg}`} style={{ borderColor: theme.accent, borderRadius: 18 }}>
                   {mediaUrl(shown) ? <Pic src={mediaUrl(shown) ?? ''} alt={`Celebration picture ${k}`} className={s.childAvatarImg} /> : <span aria-hidden="true" style={{ fontSize: 22 }}>{k}</span>}
                 </span>
-                <LibraryButton kind="image" label={`celebration picture ${k}`} onChoose={setDraft} />
-                {draft && <span style={{ fontSize: 13 }}>Applied when you press Save.</span>}
+                {/* The note sits under the button, so it does not push the button sideways. */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+                  <LibraryButton kind="image" label={`celebration picture ${k}`} onChoose={setDraft} aspect={CELEBRATION_ASPECT} />
+                  {draft && <span style={{ fontSize: 13 }}>Applied when you press Save.</span>}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
         <div className={s.modalField}>
-          <label htmlFor={`${titleId}-pin`}>PIN</label>
-          <input id={`${titleId}-pin`} className={s.modalInput} value={pin} maxLength={4} autoComplete="off" aria-invalid={!!errors.pin} onChange={(e) => setPin(e.target.value)} />
-          {errors.pin && <span className={s.fieldError}>{errors.pin}</span>}
-        </div>
-
-
-        <div className={s.modalField}>
           <span className={s.modalLabel}>Welcome sound</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             {greetingShown && <PlayButton playing={playing} label={playing ? 'Pause welcome sound' : 'Play welcome sound'} onClick={togglePlay} />}
-            <span style={{ fontWeight: 600 }}>{baseName(greetingShown) ?? 'No welcome sound yet'}</span>
+            <span style={{ fontWeight: 600, fontSize: 15 }}>{baseName(greetingShown) ?? 'No welcome sound yet'}</span>
             {soundsFailed ? <span style={{ fontSize: 13 }}>Not available right now.</span> : <LibraryButton kind="audio" label="welcome sound" onChoose={(p) => { audio.current?.pause(); setPlaying(false); setGreetingDraft(p); }} />}
           </div>
         </div>
 
-        {mode === 'edit' && child && (
+          </div>}
+        </div>
+
+        {editMode && target && !parentId && (
           <div>
-            <button type="button" className={s.moreToggle} aria-expanded={more} onClick={() => setMore((v) => !v)}>
+            {created && !more && <span style={{ fontSize: 13 }}>Child added. Add the sounds now, or press Save to finish.</span>}
+            <button
+              ref={moreBtn}
+              type="button"
+              className={`${s.moreToggle} ${created && !more ? s.morePulse : ''}`}
+              aria-expanded={more}
+              onClick={() => setMore((v) => !v)}
+            >
               {more ? '▾' : '▸'} More sounds
             </button>
-            {more && <div className={s.modalSounds}><ChildSounds childId={child.id} /></div>}
+            {more && <div className={s.modalSounds}><ChildSounds childId={target.id} /></div>}
           </div>
         )}
 

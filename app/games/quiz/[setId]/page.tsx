@@ -12,12 +12,10 @@ import { MusicButton } from '@/components/MusicButton';
 import { ohOh, yay, speakKid } from '@/lib/sfx';
 import { Confetti } from '@/components/Confetti';
 import { handleChoiceKey } from '@/lib/keynav';
-import { hasAnswerContent } from '@/lib/sets';
+import { isPlayableQuestion, sortAnswers, type QuizQuestion as Question } from '@/lib/quiz/playable';
 import { clearProgress, deviceStore, firstUnfinished, loadProgress, nextUnfinished, saveProgress } from '@/lib/quizProgress';
 import { Pic } from '@/components/Pic';
 
-type Answer = { slot: number; image_path: string | null; text: string | null; is_correct: boolean };
-type Question = { id: string; position: number; prompt_text: string | null; prompt_image_path: string | null; prompt_audio_path: string | null; read_answers: boolean; hide_answer_text: boolean; answers: Answer[] };
 
 const BADGE = ['#C77D85', '#5F86A8', '#8A6A2A'];
 const SHADOW = ['#D9A0A6', '#7FA0BE', '#D2B466'];
@@ -78,8 +76,8 @@ export default function QuestionPage() {
       .eq('set_id', setId)
       .order('position')
       .then(({ data }) => {
-        const rows = ((data as unknown as Question[]) ?? []).map((r) => ({ ...r, answers: [...r.answers].sort((a, b) => a.slot - b.slot) }));
-        setQs(rows.filter((r) => (!!r.prompt_text?.trim() || !!r.prompt_audio_path) && r.answers.length >= 2 && r.answers.every((a) => hasAnswerContent(a.image_path, a.text)) && r.answers.filter((a) => a.is_correct).length === 1));
+        const rows = ((data as unknown as Question[]) ?? []).map(sortAnswers);
+        setQs(rows.filter(isPlayableQuestion));
       });
   }, [setId]);
 
@@ -211,7 +209,7 @@ export default function QuestionPage() {
   return (
     <Stage>
       <div style={{ position: 'absolute', top: 48, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <BackButton href="/games/quiz" label="Back to quiz sets" />
+        <BackButton href="/games/quiz" label="Back to quiz sets" game="quiz" />
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
           <div style={{ display: 'flex', gap: 8 }} role="group" aria-label={`Question ${q + 1} of ${qs.length}`}>
             {qs.map((_, i) => (

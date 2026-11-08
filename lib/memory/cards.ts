@@ -1,5 +1,5 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
+import { dropOwnCopies, familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
 import { mediaUrl } from '@/lib/media';
 import { speakKid } from '@/lib/sfx';
 import type { MemoryCard } from '@/lib/memory/types';
@@ -8,11 +8,11 @@ import type { MemoryCard } from '@/lib/memory/types';
 export async function fetchActiveCards(): Promise<MemoryCard[]> {
   const me = await playerId();
   const { data, error } = await familyOrGlobal(
-    createSupabaseBrowserClient().from('memory_cards').select('id, word, image_path, audio_path, active, owner_id').eq('active', true),
+    createSupabaseBrowserClient().from('memory_cards').select('id, word, image_path, audio_path, active, owner_id, source_id').eq('active', true),
     me,
   ).order('created_at');
   if (error) throw new Error(error.message);
-  return prepareCards((data ?? []) as MemoryCard[], me);
+  return prepareCards(dropOwnCopies((data ?? []) as MemoryCard[], me), me);
 }
 
 const normWord = (w: string) => w.trim().toLowerCase().replace(/\s+/g, ' ');

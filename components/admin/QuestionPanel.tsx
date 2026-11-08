@@ -1,8 +1,10 @@
 'use client';
 
+import { useRef } from 'react';
 import { hasAnswerContent, isQuestionComplete, type EQuestion, type ESet } from '@/lib/sets';
 import s from './admin-ui.module.css';
 import { LibraryButton } from './LibraryButton';
+import { EditLock } from './EditLock';
 import { SvgPaste } from './SvgPaste';
 import { CheckOption, Img, PicIcon, dangerBtn, fileName, ghostBtn, inputStyle, panel } from './editor-parts';
 
@@ -15,9 +17,12 @@ const arrowBtn = { width: 26, height: 20, border: 'none', background: 'transpare
 
 type Pick = { kind: 'qimg' } | { kind: 'voice' } | { kind: 'answer'; i: number };
 
-/** Question list (left) + question editor (right). Matches the AdminEditor board. */
-export function QuestionPanel({ d, cur, q, onSelect, onAdd, onMove, onEdit, onAskDelete, onChooseLibrary, onSvg, onPlay }: {
-  d: ESet; cur: number; q: EQuestion | null;
+/**
+ * Question list (sidebar, left) + question editor (right). In View mode the list still selects questions,
+ * but adding, moving and editing are hidden or locked.
+ */
+export function QuestionPanel({ d, cur, q, locked, onSelect, onAdd, onMove, onEdit, onAskDelete, onChooseLibrary, onSvg, onPlay }: {
+  d: ESet; cur: number; q: EQuestion | null; locked: boolean;
   onSelect: (i: number) => void; onAdd: () => void; onMove: (i: number, dir: -1 | 1) => void;
   onEdit: (patch: Partial<EQuestion>) => void; onAskDelete: () => void;
   /** A picture or sound already in the library: the bucket path, nothing uploaded (A24). */
@@ -25,6 +30,14 @@ export function QuestionPanel({ d, cur, q, onSelect, onAdd, onMove, onEdit, onAs
   /** SVG code pasted for a picture: the page checks it and stores it as a file (A11 rules). */
   onSvg: (t: Pick, code: string) => void; onPlay: (path: string) => void;
 }) {
+  const listRef = useRef<HTMLDivElement>(null);
+  /** Narrow screens: Previous/Next move the question carousel by one card (the CSS snaps it into place). */
+  function slide(dir: -1 | 1) {
+    const el = listRef.current;
+    if (!el) return;
+    const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: reduce ? 'auto' : 'smooth' });
+  }
   const incomplete = d.qs.filter((x) => !isQuestionComplete(x)).length;
   const checks = q ? [
     { label: 'Question text or voice', done: !!q.text.trim() || !!q.voice, optional: false },
@@ -34,36 +47,45 @@ export function QuestionPanel({ d, cur, q, onSelect, onAdd, onMove, onEdit, onAs
   ] : [];
 
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, alignItems: 'flex-start' }}>
-      <section style={{ ...panel, flex: '1 1 260px', maxWidth: 340, padding: 16, gap: 6 }}>
+    <div className={s.qLayout}>
+      <section className={s.qSide} style={{ ...panel, padding: 16, gap: 6 }} aria-label="Questions">
         <h2 style={{ margin: '4px 8px 8px', fontSize: 16, fontWeight: 700 }}>Questions <span style={{ color: '#7A6458', fontWeight: 600 }}>· {d.qs.length}</span></h2>
+        <div className={s.qList} ref={listRef} aria-roledescription={d.qs.length > 1 ? 'carousel' : undefined} aria-label={d.qs.length > 1 ? 'Questions carousel' : undefined}>
         {d.qs.map((it, i) => {
           const sel = cur === i;
           const blank = !it.text.trim();
           return (
-            <div key={it.id} style={{ display: 'flex', alignItems: 'center', borderRadius: 12, ...(sel ? { background: '#FBF4E9', boxShadow: 'inset 0 0 0 1.5px #E5C9B4' } : { background: '#fff' }) }}>
-              <button type="button" className={`${s.q} ${s.btn}`} onClick={() => onSelect(i)} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, padding: '10px 6px 10px 12px', border: 'none', background: 'transparent', borderRadius: 12, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', fontSize: 14, color: '#4A3830' }}>
+            <div key={it.id} className={s.qItem} style={sel ? { background: '#FBF4E9', boxShadow: 'inset 0 0 0 1.5px #E5C9B4' } : { background: '#fff' }}>
+              <button type="button" data-nav className={`${s.q} ${s.btn}`} aria-current={sel ? 'true' : undefined} onClick={() => onSelect(i)} style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, padding: '10px 6px 10px 12px', border: 'none', background: 'transparent', borderRadius: 12, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', fontSize: 14, color: '#4A3830' }}>
                 <span style={{ width: 28, height: 28, borderRadius: 14, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 13, ...(sel ? { background: '#5A4038', color: '#fff' } : { background: '#F1E7DA', color: '#4A3830' }) }}>{i + 1}</span>
                 <span style={{ flex: 1, minWidth: 0, textAlign: 'left', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...(blank ? { color: '#8A766A', fontStyle: 'italic' } : {}) }}>{blank ? (it.voice ? 'Voice only' : 'New question') : it.text}</span>
                 {!isQuestionComplete(it) && <span title="Incomplete" aria-label="Incomplete" style={{ flex: 'none', width: 10, height: 10, borderRadius: 5, background: '#E5A24A' }} />}
               </button>
               {sel && (
-                <span style={{ display: 'flex', flexDirection: 'column', paddingRight: 6 }}>
-                  <button type="button" className={`${s.ghost} ${s.btn}`} aria-label="Move question up" disabled={i === 0} onClick={() => onMove(i, -1)} style={arrowBtn}>▲</button>
-                  <button type="button" className={`${s.ghost} ${s.btn}`} aria-label="Move question down" disabled={i === d.qs.length - 1} onClick={() => onMove(i, 1)} style={arrowBtn}>▼</button>
+                <span style={{ display: 'flex', flexDirection: 'column', paddingRight: 6, ...(locked ? { visibility: 'hidden' } : {}) }}>
+                  <button type="button" className={`${s.ghost} ${s.btn}`} aria-label="Move question up" disabled={i === 0} onClick={locked ? undefined : () => onMove(i, -1)} style={arrowBtn}>▲</button>
+                  <button type="button" className={`${s.ghost} ${s.btn}`} aria-label="Move question down" disabled={i === d.qs.length - 1} onClick={locked ? undefined : () => onMove(i, 1)} style={arrowBtn}>▼</button>
                 </span>
               )}
             </div>
           );
         })}
+        </div>
         {d.qs.length === 0 && <p style={{ margin: '4px 8px 8px', fontSize: 14, color: '#7A6458' }}>No questions yet.</p>}
-        <button type="button" className={`${s.dash} ${s.btn}`} onClick={onAdd} style={{ marginTop: 6, height: 46, borderRadius: 12, border: '1.5px dashed #D9C6B2', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+        {d.qs.length > 1 && (
+          <div className={s.qNav}>
+            <button type="button" className={`${s.ghost} ${s.btn}`} aria-label="Previous questions" onClick={() => slide(-1)} style={{ ...ghostBtn, height: 34, width: 40, padding: 0, fontSize: 16 }}>‹</button>
+            <button type="button" className={`${s.ghost} ${s.btn}`} aria-label="Next questions" onClick={() => slide(1)} style={{ ...ghostBtn, height: 34, width: 40, padding: 0, fontSize: 16 }}>›</button>
+          </div>
+        )}
+        <button type="button" className={`${s.dash} ${s.btn}`} onClick={locked ? undefined : onAdd} style={{ marginTop: 6, height: 46, borderRadius: 12, border: '1.5px dashed #D9C6B2', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, ...(locked ? { visibility: 'hidden' } : {}) }}>
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>Add question
         </button>
         {incomplete > 0 && <p style={{ margin: '8px 8px 4px', fontSize: 13, color: '#7A6458', lineHeight: 1.4 }}>{incomplete} {incomplete === 1 ? 'question is' : 'questions are'} incomplete (amber dot). The child will not see them until they are finished.</p>}
       </section>
 
-      <section style={{ ...panel, flex: '999 1 560px', minWidth: 0, padding: 28, gap: 24 }}>
+      <EditLock locked={locked}>
+      <section style={{ ...panel, minWidth: 0, padding: 28, gap: 24 }}>
         {d.qs.length === 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, padding: '56px 16px', textAlign: 'center' }}>
             <span style={{ width: 72, height: 72, borderRadius: 36, background: '#F8DCDF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -183,6 +205,7 @@ export function QuestionPanel({ d, cur, q, onSelect, onAdd, onMove, onEdit, onAs
           </>
         )}
       </section>
+      </EditLock>
     </div>
   );
 }

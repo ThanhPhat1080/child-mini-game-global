@@ -1,9 +1,9 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
+import { dropOwnCopies, familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
 import type { SpotLevel } from '@/lib/spot/types';
 
 const COLUMNS = 'id, image_a_path, image_b_path, differences, active, sort_order';
-const LIST_COLUMNS = `${COLUMNS}, owner_id`;
+const LIST_COLUMNS = `${COLUMNS}, owner_id, source_id`;
 
 /** Active levels only, in play order (`sort_order`, then `created_at`). Throws Error(message) when Supabase fails. */
 export async function fetchActiveLevels(): Promise<SpotLevel[]> {
@@ -15,7 +15,7 @@ export async function fetchActiveLevels(): Promise<SpotLevel[]> {
     .order('sort_order')
     .order('created_at');
   if (error) throw new Error(error.message);
-  return ownerFirst((data ?? []) as SpotLevel[], me);
+  return ownerFirst(dropOwnCopies((data ?? []) as SpotLevel[], me), me);
 }
 
 /**

@@ -30,8 +30,7 @@ export default function Done() {
     if (spoken.current || !loaded) return;
     spoken.current = true;
     if (custom) { playFile(custom); return; }
-    applause(3);
-    speakKid(`You did it${name ? `, ${name}` : ''}!`, { pitch: 1.9, rate: 0.9 });
+    applause(3, () => speakKid(`You did it${name ? `, ${name}` : ''}!`, { pitch: 1.9, rate: 0.9 }));
   }, [loaded, name, custom]);
 
   useEffect(() => {

@@ -113,8 +113,8 @@ test('no mistakes: the completion screen shows 12 flips', async ({ page }) => {
   await expect(page.getByText('Total 12 times')).toBeVisible();
   await expect(page.locator('[data-total] [data-flips]')).toHaveText('12');
   await expect(page.getByRole('img', { name: '3 stars earned' })).toBeVisible();
-  await expect(page.locator('[data-memory-done] img[src$="girl.webp"]')).toBeVisible();
-  await expect(page.locator('[data-memory-done] img[src$="girl-beret.webp"]')).toBeVisible();
+  // The e2e child is a girl with no uploaded pictures: the built-in princess.
+  await expect(page.locator('[data-memory-done] img[src$="princess.webp"]')).toBeVisible();
   await expect(root(page)).toHaveAttribute('data-won', 'true');
   await expect(page.locator('[data-memory-done] :is(button, a[href])')).toHaveCount(2);
   await expect(page.getByRole('button', { name: 'Play again' })).toBeFocused();

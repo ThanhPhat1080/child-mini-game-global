@@ -141,7 +141,7 @@ export default function SpotPlay() {
           <>
             <Hills />
             <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', alignItems: 'center' }}>
-              <BackButton href={LEVELS} />
+              <BackButton href={LEVELS} game="spot" />
             </div>
           </>
         )}

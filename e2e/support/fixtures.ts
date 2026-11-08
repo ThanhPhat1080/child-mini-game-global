@@ -39,6 +39,7 @@ export type StandinState = {
   card_groups: Row[];
   spot_levels: Row[];
   find_levels: Row[];
+  puzzle_pictures: Row[];
   children: Row[];
   child_settings: Row[];
   quiz_sets: Row[];
@@ -149,16 +150,16 @@ export const ACCOUNTS = {
 /** The seed child (a `children` row of the parent, not an account): picks its card on /play, then types the PIN. */
 export const CHILD = { id: '33333333-3333-4333-8333-333333333333', name: 'Test', pin: '1234' } as const;
 
-/** Signs in through the real admin form as the parent (admin@test.local / secret); a parent lands on /admin/children. */
+/** Signs in through the real admin form as the parent (admin@test.local / secret); a parent lands on /admin/profile (PR12). */
 export async function signInAsAdmin(page: Page): Promise<void> {
   await signInAdminForm(page, ACCOUNTS.parent);
-  await page.waitForURL('**/admin/children');
+  await page.waitForURL('**/admin/profile');
 }
 
-/** Signs in through the real admin form as the Super Admin; the landing page is the review queue. */
+/** Signs in through the real admin form as the Super Admin; the landing page is the parents list (V8, N5). */
 export async function signInAsSuper(page: Page): Promise<void> {
   await signInAdminForm(page, ACCOUNTS.super);
-  await page.waitForURL('**/admin/queue');
+  await page.waitForURL('**/admin/parents');
 }
 
 async function signInAdminForm(page: Page, who: { email: string; password: string }): Promise<void> {

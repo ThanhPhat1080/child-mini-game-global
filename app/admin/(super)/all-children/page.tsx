@@ -1,14 +1,25 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listAllChildren, removeChild, type AdminChild } from '@/lib/superAdmin';
+import { matches, sortBy, type SortOrder } from '@/lib/people';
+import { ChildCard } from '@/components/admin/ChildCard';
+import { ChildModal } from '@/components/admin/ChildModal';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
+import { ListToolbar } from '@/components/admin/ListToolbar';
 import { Toast, useToast } from '@/components/admin/Toast';
 import styles from '../../admin.module.css';
+import ui from '@/components/admin/admin-ui.module.css';
 
-/** Every child with their parent (N5). Read-only except removing a child, which asks first. */
+/**
+ * Every child with their parent (N15): large cards in two columns, search by login, display or parent name, sort.
+ * Super Admin edits go through ChildModal in parent mode (N16); removing asks first.
+ */
 export default function AllChildrenPage() {
   const [kids, setKids] = useState<AdminChild[] | null>(null);
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<SortOrder>('newest');
+  const [editing, setEditing] = useState<AdminChild | null>(null);
   const [target, setTarget] = useState<AdminChild | null>(null);
   const [busy, setBusy] = useState(false);
   const { toast, show, close } = useToast();
@@ -19,6 +30,12 @@ export default function AllChildrenPage() {
     } catch (e) { show('error', (e as Error).message); }
   }, [show]);
   useEffect(() => { void load(); }, [load]);
+
+  const shown = useMemo(() => sortBy(
+    (kids ?? []).filter((k) => matches(query, k.display_name, k.child_name, k.parent_name)),
+    sort,
+    (k) => ({ created: k.created_at ?? '', name: k.display_name || k.child_name }),
+  ), [kids, query, sort]);
 
   async function confirmRemove() {
     if (!target) return;
@@ -41,21 +58,48 @@ export default function AllChildrenPage() {
       <div className={styles.head}>
         <div>
           <h1>Children</h1>
-          <p className={styles.sub}>All children and the parent each belongs to.</p>
+          <p className={styles.sub}>Every child and the parent each belongs to.</p>
         </div>
       </div>
+
+      <ListToolbar
+        query={query}
+        onQuery={setQuery}
+        searchLabel="Search children and parents"
+        placeholder="Search by login, name or parent"
+        sort={sort}
+        onSort={setSort}
+      />
+
       {kids && kids.length === 0 && <p className={styles.note}>No children yet.</p>}
-      <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gap: 10 }}>
-        {(kids ?? []).map((k) => (
-          <li key={k.id} className={styles.row}>
-            <div className={styles.rowText}>
-              <div className={styles.rowTitle}>{k.display_name || k.child_name || 'Unnamed child'}</div>
-              <div className={styles.rowMeta}>Parent: {k.parent_name || 'Unknown parent'}</div>
-            </div>
-            <button type="button" className={styles.ghost} onClick={() => setTarget(k)}>Remove</button>
+      {kids && kids.length > 0 && shown.length === 0 && <p className={styles.note}>No children match.</p>}
+
+      <ul className={`${ui.childGrid} ${ui.childGridLg}`}>
+        {shown.map((k) => (
+          <li key={k.id}>
+            <ChildCard
+              child={k}
+              size="lg"
+              onEdit={() => setEditing(k)}
+              onRemove={() => setTarget(k)}
+              parent={{ id: k.parent_id, name: k.parent_name ?? '', banned: !!k.parent_banned }}
+            />
           </li>
         ))}
       </ul>
+
+      {editing && (
+        <ChildModal
+          mode="edit"
+          compact
+          child={editing}
+          parentId={editing.parent_id}
+          onClose={() => setEditing(null)}
+          onSaved={() => { show('success', 'Saved'); void load(); }}
+          onNotice={show}
+        />
+      )}
+
       {target && (
         <ConfirmDialog
           title="Remove this child?"

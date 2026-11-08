@@ -6,17 +6,20 @@ import { MAX_SOUND_BYTES, cardAudioType } from './CardPanel';
 import { ghostBtn } from './editor-parts';
 import { mediaUrl, uploadToLibrary, isMediaInUse, deleteMedia, MAX_IMAGE_BYTES } from '@/lib/media';
 import { listLibrary } from '@/lib/media/library';
+import { getMyUserId } from '@/lib/review';
 import { renameMedia } from '@/lib/media/rename';
 import { editableStem, libraryOrder, renamedPath } from '@/lib/mediaPaths';
 import { Toast, useToast } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import s from './admin-ui.module.css';
-import { cropToSquare } from '@/lib/crop/render';
+import { selectArrowStyle } from './selectArrow';
+import { cropToAspect } from '@/lib/crop/render';
 import type { Crop } from '@/lib/crop/geometry';
 import { useSoundPreview } from './useSoundPreview';
 import { PlayButton } from './PlayButton';
 import { CropDialog } from './CropDialog';
 import { ModalClose } from '@/components/ModalClose';
+import { AdminLoading } from './AdminLoading';
 
 /** Picture types the library accepts (the same as the Cards and Spot pictures). */
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
@@ -82,7 +85,7 @@ function RenameableName({ path, editing, onStart, onSave, onCancel, style }: {
 const audioNameStyle = { display: 'block', flex: 1, minWidth: 0, textAlign: 'left', fontWeight: 700, fontSize: 15, color: '#4A3830', fontFamily: 'Nunito, sans-serif', overflowWrap: 'anywhere' } as const;
 
 /** Small trash button for one file; `label` names it for screen readers. */
-const DeleteButton = ({ label, busy, onClick, style }: { label: string; busy: boolean; onClick: () => void; style?: React.CSSProperties }) => (
+const DeleteButton = ({ label, busy, onClick, style, hidden }: { label: string; busy: boolean; onClick: () => void; style?: React.CSSProperties; hidden?: boolean }) => hidden ? null : (
   <button type="button" aria-label={label} title="Delete" disabled={busy} onClick={onClick}
     style={{ width: 30, height: 30, borderRadius: 15, border: 'none', background: 'rgba(255,255,255,0.9)', color: '#A8484F', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.5 : 1, padding: 0, flex: 'none', ...style }}>
     <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M6 6l1 14h10l1-14" /><path d="M10 11v5M14 11v5" /></svg>
@@ -106,17 +109,6 @@ const PictureViewer = ({ url, name, onClose }: { url: string; name: string; onCl
   </div>
 );
 
-/** The wait while the library loads: the bundled fish bobbing over soft water ripples (honors reduced motion). */
-const Loading = () => (
-  <div role="status" className={s.loadingBox}>
-    <div className={s.loadingWater} aria-hidden="true">
-      <span className={s.loadingRipple} /><span className={s.loadingRipple} /><span className={s.loadingRipple} />
-      <Image className={s.loadingFish} src="/seed/fish.svg" alt="" width={60} height={60} unoptimized />
-    </div>
-    <span className={s.loadingText}>Loading...</span>
-  </div>
-);
-
 /** Header icons: a picture frame for images, a sol note (eighth note) for sounds. */
 const TitleIcon = ({ kind }: { kind: 'image' | 'audio' }) => (kind === 'image' ? (
   <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5A4038" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
@@ -128,7 +120,7 @@ const TitleIcon = ({ kind }: { kind: 'image' | 'audio' }) => (kind === 'image' ?
  * "Choose from library" modal (A23, A24). Clicking an item only highlights it; OK applies it (a preview until the page saves).
  * Cancel, Escape or a click outside leave everything as it was. "Upload new" uploads the file at once and lists it.
  */
-export function MediaLibraryDialog(props: { kind: 'image' | 'audio'; onChoose: (path: string) => void; onClose: () => void; startCrop?: Crop; onCropped?: (crop: Crop) => void }) {
+export function MediaLibraryDialog(props: { kind: 'image' | 'audio'; onChoose: (path: string) => void; onClose: () => void; startCrop?: Crop; aspect?: number; onCropped?: (crop: Crop) => void }) {
   return <MediaLibrary mode="dialog" {...props} />;
 }
 
@@ -136,11 +128,15 @@ export function MediaLibraryDialog(props: { kind: 'image' | 'audio'; onChoose: (
  * The library itself. `mode="dialog"` is the picker above (choose + OK). `mode="page"` is the admin Media page:
  * the same list, rename, sort, delete, upload and full-size view, without choosing.
  */
-export function MediaLibrary({ mode = 'dialog', kind, onChoose, onClose, startCrop, onCropped }: {
+export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, onClose, startCrop, aspect = 1, onCropped }: {
   mode?: 'dialog' | 'page';
+  /** `all`: every owner's files (a Super Admin's Media page). Files of other owners are view only. */
+  scope?: 'own' | 'all';
   kind: 'image' | 'audio'; onChoose?: (path: string) => void; onClose?: () => void;
   /** The crop to start from when a picture is cropped (Spot's picture B starts from picture A's crop). */
   startCrop?: Crop;
+  /** The shape of the cropped picture, width / height. 1 is a square (A24); the celebration frame is another (A32). */
+  aspect?: number;
   /** Called after a cropped picture is uploaded, with the crop that was used. */
   onCropped?: (crop: Crop) => void;
 }) {
@@ -171,14 +167,21 @@ export function MediaLibrary({ mode = 'dialog', kind, onChoose, onClose, startCr
   const fileInput = useRef<HTMLInputElement | null>(null);
   const listBox = useRef<HTMLDivElement | null>(null);
 
+  const [me, setMe] = useState<string | null>(null);
+  useEffect(() => {
+    if (scope === 'all') void getMyUserId().then(setMe, () => setMe(null));
+  }, [scope]);
+  // Only the user's own files can be renamed or deleted (the bucket allows writes to the own folder only).
+  const canEdit = (p: string) => scope !== 'all' || p.split('/')[0] === me;
+
   useEffect(() => {
     let live = true;
-    listLibrary(kind).then(
+    (scope === 'all' ? listLibrary(kind, 'all') : listLibrary(kind)).then(
       (p) => { if (live) setPaths(p); },
       () => { if (live) setFailed(true); },
     );
     return () => { live = false; };
-  }, [kind]);
+  }, [kind, scope]);
 
   // The page behind does not scroll while the library is open.
   useEffect(() => {
@@ -282,7 +285,7 @@ export function MediaLibrary({ mode = 'dialog', kind, onChoose, onClose, startCr
     }
   }
 
-  /** Save in the crop window: crops the picked file to the chosen square, uploads it and lists it. */
+  /** Save in the crop window: crops the picked file to the chosen frame, uploads it and lists it. */
   async function saveCrop(crop: Crop) {
     const picked = cropping;
     if (!picked) return;
@@ -290,9 +293,9 @@ export function MediaLibrary({ mode = 'dialog', kind, onChoose, onClose, startCr
     setUploadError(null);
     setUploading(true);
     try {
-      const square = await cropToSquare(picked, crop);
-      if (square.size > MAX_IMAGE_BYTES) throw new Error('Image must be 2 MB or smaller.');
-      const path = await uploadToLibrary(square);
+      const cropped = await cropToAspect(picked, crop, aspect);
+      if (cropped.size > MAX_IMAGE_BYTES) throw new Error('Image must be 2 MB or smaller.');
+      const path = await uploadToLibrary(cropped);
       addUploaded(path);
       onCropped?.(crop);
     } catch (e) {
@@ -339,7 +342,7 @@ export function MediaLibrary({ mode = 'dialog', kind, onChoose, onClose, startCr
   const canOk = !!selected && !pendingRenames.has(selected) && !removing.has(selected);
   let body: React.ReactNode;
   if (failed) body = <p role="alert" style={{ margin: 0, color: '#A8484F' }}>Could not load the library.</p>;
-  else if (paths === null) body = <Loading />;
+  else if (paths === null) body = <AdminLoading />;
   else if (paths.length === 0) body = <p style={{ margin: 0, color: '#6E5A4E' }}>Nothing in the library yet.</p>;
   else if (kind === 'image') body = (
     <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 10 }}>
@@ -360,8 +363,8 @@ export function MediaLibrary({ mode = 'dialog', kind, onChoose, onClose, startCr
               )}
             </button>
             {phase && <RemovingText phase={phase} style={{ position: 'absolute', top: 8, right: 40, background: 'rgba(255,255,255,0.9)', borderRadius: 8, padding: '1px 6px' }} />}
-            <DeleteButton label={`Delete ${name}`} busy={!!phase} onClick={() => void askDelete(p)} style={{ position: 'absolute', top: 4, right: 4, boxShadow: '0 1px 4px rgba(74,56,48,0.25)' }} />
-            <RenameableName path={p} editing={renaming === p} onStart={() => !pendingRenames.has(p) && !phase && setRenaming(p)} onSave={(n) => void rename(p, n)} onCancel={() => setRenaming(null)}
+            <DeleteButton hidden={!canEdit(p)} label={`Delete ${name}`} busy={!!phase} onClick={() => void askDelete(p)} style={{ position: 'absolute', top: 4, right: 4, boxShadow: '0 1px 4px rgba(74,56,48,0.25)' }} />
+            <RenameableName path={p} editing={renaming === p} onStart={() => canEdit(p) && !pendingRenames.has(p) && !phase && setRenaming(p)} onSave={(n) => void rename(p, n)} onCancel={() => setRenaming(null)}
               style={{ flex: 'none', width: '100%', padding: '4px 6px', boxSizing: 'border-box', fontSize: 12, fontWeight: 700, color: '#4A3830', fontFamily: 'Nunito, sans-serif', background: on ? '#F6EADC' : '#FBF4E9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'text' }} />
           </li>
         );
@@ -384,16 +387,16 @@ export function MediaLibrary({ mode = 'dialog', kind, onChoose, onClose, startCr
               dialog ? (
                 <button type="button" aria-label={`Choose ${name}`} aria-pressed={on} disabled={!!phase} onClick={() => setSelected(p)}
                   style={{ flex: 1, minWidth: 0, textAlign: 'left', background: 'none', border: 'none', padding: 0, cursor: phase ? 'default' : 'pointer' }}>
-                  <RenameableName path={p} editing={false} onStart={() => !pendingRenames.has(p) && !phase && setRenaming(p)} onSave={() => undefined} onCancel={() => undefined} style={audioNameStyle} />
+                  <RenameableName path={p} editing={false} onStart={() => canEdit(p) && !pendingRenames.has(p) && !phase && setRenaming(p)} onSave={() => undefined} onCancel={() => undefined} style={audioNameStyle} />
                 </button>
               ) : (
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <RenameableName path={p} editing={false} onStart={() => !pendingRenames.has(p) && !phase && setRenaming(p)} onSave={() => undefined} onCancel={() => undefined} style={audioNameStyle} />
+                  <RenameableName path={p} editing={false} onStart={() => canEdit(p) && !pendingRenames.has(p) && !phase && setRenaming(p)} onSave={() => undefined} onCancel={() => undefined} style={audioNameStyle} />
                 </div>
               )
             )}
             {phase && <RemovingText phase={phase} />}
-            <DeleteButton label={`Delete ${name}`} busy={!!phase} onClick={() => void askDelete(p)} style={{ background: 'transparent' }} />
+            <DeleteButton hidden={!canEdit(p)} label={`Delete ${name}`} busy={!!phase} onClick={() => void askDelete(p)} style={{ background: 'transparent' }} />
           </li>
         );
       })}
@@ -410,7 +413,7 @@ export function MediaLibrary({ mode = 'dialog', kind, onChoose, onClose, startCr
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: '#6E5A4E' }}>
         Sort by
         <select aria-label="Sort by" value={sortBy} onChange={(e) => setSortBy(e.target.value as 'created' | 'name')}
-          style={{ height: 38, borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14, padding: '0 8px' }}>
+          style={{ height: 38, borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14, padding: '0 8px', ...selectArrowStyle }}>
           <option value="created">Created (newest)</option>
           <option value="name">Name (A to Z)</option>
         </select>
@@ -431,7 +434,7 @@ export function MediaLibrary({ mode = 'dialog', kind, onChoose, onClose, startCr
       {deleting && <ConfirmDialog title="Delete this file?" body={`${fileName(deleting)} will be removed for good. No page uses it.`} button="Delete" onCancel={() => setDeleting(null)} onConfirm={() => void confirmDelete(deleting)} />}
       {viewing && <PictureViewer url={mediaUrl(viewing) ?? ''} name={fileName(viewing)} onClose={() => setViewing(null)} />}
       <Toast toast={toast} onClose={closeToast} />
-      {cropping && <CropDialog file={cropping} start={startCrop} onCancel={() => setCropping(null)} onSave={saveCrop} />}
+      {cropping && <CropDialog file={cropping} start={startCrop} aspect={aspect} onCancel={() => setCropping(null)} onSave={saveCrop} />}
     </>
   );
 

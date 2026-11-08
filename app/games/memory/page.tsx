@@ -7,6 +7,7 @@ import { BackButton } from '@/components/BackButton';
 import { MusicButton } from '@/components/MusicButton';
 import { MemoryHelp } from '@/components/MemoryHelp';
 import { LevelButton } from '@/components/memory/LevelButton';
+import { LoadError } from '@/components/LoadError';
 import { fetchActiveCards } from '@/lib/memory/cards';
 import { LEVELS, levelsAvailable } from '@/lib/memory/deck';
 import { handleChoiceKey } from '@/lib/keynav';
@@ -16,14 +17,17 @@ const links = () => Array.from(document.querySelectorAll<HTMLElement>('a[data-le
 /** Memory Match level select (M1): 12 / 16 / 20 / 24 / 30 cards; a level needs half as many active cards. */
 export default function MemoryLevels() {
   const [count, setCount] = useState<number | null>(null);
+  const [failed, setFailed] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
   const [help, setHelp] = useState(false);
   const helpBtn = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let live = true;
-    fetchActiveCards().then((c) => live && setCount(c.length), () => live && setCount(0));
+    setFailed(null);
+    fetchActiveCards().then((c) => live && setCount(c.length), (e) => { if (live) { setFailed(e ?? true); setCount(0); } });
     return () => { live = false; };
-  }, []);
+  }, [attempt]);
 
   const avail = levelsAvailable(count ?? 0);
   const any = LEVELS.some((l) => avail[l]);
@@ -55,7 +59,8 @@ export default function MemoryLevels() {
           <span style={{ fontSize: 44, fontWeight: 600, color: '#B8737B', lineHeight: 1 }}>Memory Match</span>
         </button>
       </div>
-      {count === 0 && (
+      {!!failed && <LoadError error={failed} onRetry={() => { setCount(null); setAttempt((n) => n + 1); }} />}
+      {!failed && count === 0 && (
         <div role="status" aria-label="New cards are coming soon" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg aria-hidden="true" width="480" height="480" viewBox="0 0 24 24">
             <rect x="3" y="3" width="18" height="18" rx="4" fill="#F8DCDF" stroke="#EBB7BC" strokeWidth="0.6" />

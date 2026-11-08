@@ -1,5 +1,6 @@
 'use client';
 
+import { LoadError } from '@/components/LoadError';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Stage } from '@/components/Stage';
 import { Hills } from '@/components/Hills';
@@ -40,6 +41,8 @@ const reducedMotion = () => typeof window !== 'undefined' && !!window.matchMedia
 /** Sort It (R1-R6, R8-R10): drag each object into the basket of its kind. Mouse only; no timers on the child, no penalty. */
 export default function SortPlay() {
   const [phase, setPhase] = useState<'loading' | 'empty' | 'play' | 'done'>('loading');
+  const [loadErr, setLoadErr] = useState<unknown>(null);
+  const [attempt, setAttempt] = useState(0);
   /** The round's chosen cards (baskets with their examples, and the 6 objects). */
   const [round, setRound] = useState<SortRound | null>(null);
   /** Row state of each object by id; 'lifted' comes from the drag. */
@@ -124,10 +127,10 @@ export default function SortPlay() {
           setPhase('play');
         });
       },
-      () => live && setPhase('empty'),
+      (e) => { if (live) { setLoadErr(e ?? true); setPhase('empty'); } },
     );
     return () => { live = false; stopPreload?.(); };
-  }, [roundNo]);
+  }, [roundNo, attempt]);
 
   // A custom oh-oh sound (as in Quiz); any error keeps the built-in one.
   useEffect(() => {
@@ -326,7 +329,7 @@ export default function SortPlay() {
           <>
           <Hills />
           <div style={{ position: 'absolute', top: 48, zIndex: 4, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <BackButton href="/games" label="Back to games" />
+            <BackButton href="/games" label="Back to games" game="sort" />
             {!done && (
               <button
                 type="button"
@@ -340,7 +343,8 @@ export default function SortPlay() {
               </button>
             )}
           </div>
-          {phase === 'empty' && (
+          {!!loadErr && <LoadError error={loadErr} onRetry={() => { setLoadErr(null); setPhase('loading'); setAttempt((n) => n + 1); }} />}
+          {!loadErr && phase === 'empty' && (
             <div role="status" aria-label="New cards are coming soon" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg aria-hidden="true" width="420" height="420" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10.5" fill="#F0ECF8" stroke="#C9BFE4" strokeWidth="0.6" />

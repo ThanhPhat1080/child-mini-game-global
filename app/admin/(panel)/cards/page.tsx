@@ -2,7 +2,9 @@
 
 import { ContentTabs } from '@/components/admin/ContentTabs';
 import { GlobalContent } from '@/components/admin/GlobalContent';
-import { useContentScope } from '@/lib/review';
+import { useContentScope, useMyRole } from '@/lib/review';
+import { ReviewQueue } from '@/components/admin/ReviewQueue';
+import { usePendingCounts } from '@/lib/superAdmin';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   deleteGroups, duplicateWords, isCardComplete, loadCards, loadGroups, newCard, newGroup, pruneDeletedGroups, saveCards, saveGroups, validateGroupName,
@@ -22,14 +24,20 @@ import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { GroupsPanel } from '@/components/admin/GroupsPanel';
 import { CardPanel, poolHealth } from '@/components/admin/CardPanel';
 import s from '@/components/admin/admin-ui.module.css';
-import type { Visibility } from '@/lib/review';
+import type { ContentTable, Visibility } from '@/lib/review';
+import { AdminLoading } from '@/components/admin/AdminLoading';
 
 /** The database refuses a second group with the same name (unique index on lower(btrim(name))). */
 const groupSaveError = (e: string) => (/duplicate|23505/i.test(e) ? 'A group with that name already exists.' : e);
 
+/** Review of cards: a card's group is reviewed with it (V3, V8). */
+const CARD_TABLES: ContentTable[] = ['memory_cards', 'card_groups'];
+
 /** Memory Match card pool (A11) with pool health (A13) and Sort It groups (A17, A18). Nothing is uploaded or written until Save (T15). */
 export default function CardsPage() {
-  const { scope, setScope } = useContentScope();
+  const role = useMyRole();
+  const { scope, setScope } = useContentScope(role);
+  const pending = usePendingCounts(role).cards;
   const [saved, setSaved] = useState<ECard[] | null>(null);
   const [draft, setDraft] = useState<ECard[] | null>(null);
   const [savedGroups, setSavedGroups] = useState<EGroup[] | null>(null);
@@ -75,7 +83,7 @@ export default function CardsPage() {
     return (
       <>
         <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Memory cards</h1>
-        {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <p style={{ color: '#7A6458' }}>Loading…</p>}
+        {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <AdminLoading />}
       </>
     );
   }
@@ -200,8 +208,12 @@ export default function CardsPage() {
         </div>
       </div>
 
-      <ContentTabs scope={scope} onChange={setScope} />
-      {scope === 'global' ? (
+      <ContentTabs scope={scope} onChange={setScope} role={role} pending={pending} />
+      {scope === 'queue' ? (
+        <ReviewQueue tables={CARD_TABLES} />
+      ) : scope === 'parents' ? (
+        <GlobalContent table="memory_cards" mode="parents" />
+      ) : scope === 'global' ? (
         <GlobalContent table="memory_cards" />
       ) : (
         <>

@@ -16,13 +16,30 @@ vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p
 vi.mock('@/components/MusicButton', () => ({ MusicButton: () => null }));
 
 import Games from '@/app/games/page';
-import { FIND_PEACH, LISTEN_PURPLE, MEMORY_GREEN, MEMORY_ICON, SORT_GOLD, SPOT_BLUE } from '@/components/games/GameArt';
+import { FIND_PEACH, LISTEN_PURPLE, MEMORY_GREEN, MEMORY_ICON, PAIRS_BERRY, SORT_GOLD, SPOT_BLUE } from '@/components/games/GameArt';
 
 const icon = (id: string) => document.querySelector(`[data-game-icon="${id}"]`) as HTMLElement;
 const frame = (name: string) => screen.getByRole('link', { name }) as HTMLElement;
 
-beforeEach(() => h.push.mockReset());
+beforeEach(() => { h.push.mockReset(); sessionStorage.clear(); });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
+
+describe('games carousel position', () => {
+  it('opens on the game that was centered when the child left', () => {
+    sessionStorage.setItem('childPlayer:games:index', '2');
+    render(<Games />);
+    expect(screen.getByRole('button', { name: 'Go to game 3' }).getAttribute('aria-current')).toBe('true');
+  });
+
+  it('remembers each move, so leaving and coming back keeps it', () => {
+    render(<Games />);
+    fireEvent.click(screen.getByRole('button', { name: 'Go to game 4' }));
+    expect(sessionStorage.getItem('childPlayer:games:index')).toBe('3');
+    cleanup();
+    render(<Games />);
+    expect(screen.getByRole('button', { name: 'Go to game 4' }).getAttribute('aria-current')).toBe('true');
+  });
+});
 
 describe('games list decorative icons', () => {
   it('has no help buttons and no dialog; clicking an icon never opens a popup', () => {
@@ -33,9 +50,9 @@ describe('games list decorative icons', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('every game card (Quiz, Memory, Listen, Sort, Spot, Find) has a decorative 130 px icon at the same spot', () => {
+  it('every game card (Quiz, Memory, Listen, Sort, Spot, Find, Caro, Pairs) has a decorative 130 px icon at the same spot', () => {
     render(<Games />);
-    for (const id of ['quiz', 'memory', 'listen', 'sort', 'spot', 'find']) {
+    for (const id of ['quiz', 'memory', 'listen', 'sort', 'spot', 'find', 'caro', 'pairs']) {
       const el = icon(id);
       expect(el).toBeTruthy();
       expect(el.getAttribute('aria-hidden')).toBe('true');
@@ -56,7 +73,7 @@ describe('games list decorative icons', () => {
     expect(icon('spot').style.top).toBe(icon('quiz').style.top);
     expect(icon('find').style.left).toBe(icon('quiz').style.left);
     expect(icon('find').style.top).toBe(icon('quiz').style.top);
-    expect(document.querySelectorAll('[data-game-icon]')).toHaveLength(6);
+    expect(document.querySelectorAll('[data-game-icon]')).toHaveLength(8);
   });
 
   it('the Memory icon is two flower cards, different from the Quiz question mark', () => {
@@ -198,6 +215,26 @@ describe('games list decorative icons', () => {
     const circle = svg.querySelector('circle')!;
     expect(circle.getAttribute('fill')).toBe('#FCEFE2');
     expect(circle.getAttribute('stroke')).toBe(FIND_PEACH);
+  });
+
+  it('Puzzle Pairs is a playable link with a berry border, a berry title and a berry icon; distinct from the others', () => {
+    render(<Games />);
+    expect(PAIRS_BERRY).toBe('#A2577F');
+    const pairs = frame('Play Puzzle Pairs');
+    expect(pairs.getAttribute('href')).toBe('/games/pairs');
+    expect(pairs.style.border).toContain('rgb(227, 181, 207)');
+    const title = pairs.lastElementChild as HTMLElement;
+    expect(title.textContent).toBe('Puzzle Pairs');
+    expect(title.style.color).toBe('rgb(162, 87, 127)');
+    for (const other of ['Play Quiz', 'Play Memory Match', 'Play Listen & Pick', 'Play Sort It', 'Play Spot the Differences', 'Play Find It']) {
+      expect(pairs.style.borderColor).not.toBe(frame(other).style.borderColor);
+      expect(title.style.color).not.toBe((frame(other).lastElementChild as HTMLElement).style.color);
+    }
+    const circle = icon('pairs').querySelector('circle')!;
+    expect(circle.getAttribute('fill')).toBe('#F8EAF2');
+    expect(circle.getAttribute('stroke')).toBe(PAIRS_BERRY);
+    expect(icon('pairs').querySelector('svg')!.getAttribute('aria-hidden')).toBe('true');
+    expect(icon('pairs').querySelectorAll('a, button, [tabindex]')).toHaveLength(0);
   });
 
   it('Enter on the focused carousel opens a ready game', () => {
