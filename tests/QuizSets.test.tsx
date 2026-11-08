@@ -199,15 +199,15 @@ describe('Quiz set selection (T9, C3, C11)', () => {
     render(<QuizSets />);
     const animals = await screen.findByRole('link', { name: 'Animals, 2 questions' });
     const colors = screen.getByRole('link', { name: 'Colors, 1 questions' });
-    expect(track(animals).style.transform).toBe('translateX(720px)');
+    expect(track(animals).style.transform).toBe('translateX(680px)');
     fireEvent.click(screen.getByRole('button', { name: 'Go to set 2' }));
-    expect(track(animals).style.transform).toBe('translateX(176px)');
+    expect(track(animals).style.transform).toBe('translateX(56px)');
     expect(screen.getByRole('button', { name: 'Go to set 2' }).getAttribute('aria-current')).toBe('true');
     fireEvent.click(screen.getByRole('button', { name: 'Previous set' }));
-    expect(track(animals).style.transform).toBe('translateX(720px)');
+    expect(track(animals).style.transform).toBe('translateX(680px)');
     fireEvent.keyDown(window, { key: 'ArrowRight' });
     expect(document.activeElement).toBe(colors);
-    expect(track(animals).style.transform).toBe('translateX(176px)');
+    expect(track(animals).style.transform).toBe('translateX(56px)');
   });
 
   it('TC13: dragging with the mouse moves past the 120 px threshold; a drag never opens a set', async () => {
@@ -218,11 +218,11 @@ describe('Quiz set selection (T9, C3, C11)', () => {
     ptr(v, 'pointerdown', 900);
     ptr(v, 'pointermove', 850);
     ptr(v, 'pointerup');
-    expect(track(animals).style.transform).toBe('translateX(720px)'); // under 120 px: stays
+    expect(track(animals).style.transform).toBe('translateX(680px)'); // under 120 px: stays
     ptr(v, 'pointerdown', 900);
     ptr(v, 'pointermove', 700);
     ptr(v, 'pointerup');
-    expect(track(animals).style.transform).toBe('translateX(176px)');
+    expect(track(animals).style.transform).toBe('translateX(56px)');
     expect(fireEvent.click(animals)).toBe(false); // click after a drag is cancelled
   });
 
@@ -235,7 +235,7 @@ describe('Quiz set selection (T9, C3, C11)', () => {
     ptr(v, 'pointerdown', 1500);
     ptr(v, 'pointerup');
     expect(fireEvent.click(colors)).toBe(false);
-    expect(track(animals).style.transform).toBe('translateX(176px)');
+    expect(track(animals).style.transform).toBe('translateX(56px)');
     ptr(v, 'pointerdown', 960);
     ptr(v, 'pointerup');
     expect(fireEvent.click(colors)).toBe(true);

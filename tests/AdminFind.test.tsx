@@ -175,7 +175,7 @@ describe('Admin Find page (A20-A22)', () => {
     h.loadFindLevels.mockResolvedValue([level(1, { active: false })]);
     fireEvent.click(saveBtn());
     await waitFor(() => expect(h.loadFindLevels).toHaveBeenCalledTimes(2));
-    expect(h.saveFindLevels).toHaveBeenCalledWith(first, [level(1, { active: false })]);
+    expect(h.saveFindLevels).toHaveBeenCalledWith(first, [level(1, { active: false })], 'mine');
     await waitFor(() => expect(saveBtn().disabled).toBe(true));
   });
 

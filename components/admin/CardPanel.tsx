@@ -53,7 +53,9 @@ export function CardPanel({ c, n, duplicate, message, autoFocus, groups, weakGro
   onEdit: (patch: Partial<ECard>) => void;
   /** A picture or sound already in the library: the bucket path, nothing uploaded (A24). */
   onChooseLibrary: (kind: 'image' | 'audio', path: string) => void;
-  onSvg: (code: string) => void; onPlay: () => void; onAskDelete: () => void;
+  onSvg: (code: string) => void; onPlay: () => void;
+  /** Absent in the Super Admin's Global tab: a global card is unpublished, not deleted. */
+  onAskDelete?: () => void;
   /** The row was shared (it is now under review). */
   onVisibility?: (v: Visibility) => void;
 }) {
@@ -117,7 +119,7 @@ export function CardPanel({ c, n, duplicate, message, autoFocus, groups, weakGro
       {duplicate && <span role="status" style={{ fontSize: 13, fontWeight: 700, color: '#7A5410' }}>Another card has the same word.</span>}
       {missing && <span style={{ fontSize: 13, color: '#7A5410' }}>Needs {missing} before you can save.</span>}
 
-      <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete card ${n}`} onClick={onAskDelete} style={{ ...dangerBtn, height: 36, alignSelf: 'flex-start' }}>Delete</button>
+      {onAskDelete && <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete card ${n}`} onClick={onAskDelete} style={{ ...dangerBtn, height: 36, alignSelf: 'flex-start' }}>Delete</button>}
       </EditLock>
       {!c.isNew && c.visibility && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'flex-start', borderTop: '1px solid #F1E7DA', paddingTop: 10 }}>

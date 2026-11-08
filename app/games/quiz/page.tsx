@@ -7,7 +7,7 @@ import { dropOwnCopies, familyOrGlobal, ownerFirst, playerId } from '@/lib/revie
 import { Stage } from '@/components/Stage';
 import { Hills } from '@/components/Hills';
 import { BackButton } from '@/components/BackButton';
-import { SetCard, type SetCardData } from '@/components/SetCard';
+import { SET_CARD_WIDTH, SetCard, type SetCardData } from '@/components/SetCard';
 import { MusicButton } from '@/components/MusicButton';
 import { LoadError } from '@/components/LoadError';
 import { QuizHelp } from '@/components/QuizHelp';
@@ -18,7 +18,8 @@ import { rememberIndex, recallIndex } from '@/lib/carouselMemory';
 /** The set centered when the child last left this list; kept for the tab so a return lands on the same set. */
 const INDEX_KEY = 'childPlayer:quiz:index';
 
-const PITCH = 544; // card width 480 + gap 64
+const PITCH = SET_CARD_WIDTH + 64; // card width + gap 64
+const STAGE_CENTER = 960; // the 1920 px stage's middle
 const cards = () => Array.from(document.querySelectorAll<HTMLElement>('a[data-set-card]'));
 
 type Row = Omit<SetCardData, 'count'> & { questions: { prompt_text: string | null; prompt_audio_path: string | null; answers: { image_path: string | null; text: string | null; is_correct: boolean }[] }[] };
@@ -100,7 +101,7 @@ export default function QuizSets() {
   }, [help, idx]);
 
   const go = (d: number) => { setIdx((v) => Math.max(0, Math.min(n - 1, v + d))); setDx(0); setDragging(false); };
-  const base = 720 - idx * PITCH;
+  const base = STAGE_CENTER - SET_CARD_WIDTH / 2 - idx * PITCH;
   const slide = dragging ? 'none' : 'transform .7s cubic-bezier(.3,.7,.2,1)';
   const arrow = (side: 'left' | 'right'): React.CSSProperties => ({ position: 'absolute', [side]: 56, top: 440, width: 120, height: 120, borderRadius: 60, border: 'none', background: '#fff', boxShadow: '0 8px 0 #EADCC8', display: 'flex', alignItems: 'center', justifyContent: 'center' });
 
@@ -145,7 +146,7 @@ export default function QuizSets() {
         >
           <div style={{ position: 'absolute', top: 180, left: 0, display: 'flex', gap: 64, transform: `translateX(${base + dx}px)`, transition: slide }}>
             {sets.map((s, i) => (
-              <div key={s.id} style={{ flex: 'none', width: 480, height: 700, transform: `scale(${i === idx ? 1 : 0.86})`, opacity: i === idx ? 1 : 0.7, transition: dragging ? 'none' : 'transform .7s cubic-bezier(.3,.7,.2,1), opacity .7s ease' }}>
+              <div key={s.id} style={{ flex: 'none', width: SET_CARD_WIDTH, height: 700, transform: `scale(${i === idx ? 1 : 0.86})`, opacity: i === idx ? 1 : 0.7, transition: dragging ? 'none' : 'transform .7s cubic-bezier(.3,.7,.2,1), opacity .7s ease' }}>
                 <Link
                   href={`/games/quiz/${s.id}`}
                   data-set-card

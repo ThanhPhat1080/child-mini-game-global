@@ -10,8 +10,9 @@ export type ContentTable = 'quiz_sets' | 'memory_cards' | 'spot_levels' | 'card_
 export type Visibility = 'private' | 'pending' | 'global';
 /**
  * Tabs of a content area. A parent has "mine" (the family's own content) and "global" (approved content).
- * A Super Admin has "mine" (their own rows, including global copies), "queue" (review) and "parents" (what parents
- * published, view only). A stored scope the role may not use falls back to "mine" (spec V8-V13).
+ * A Super Admin has "mine" (their own rows, including global copies), "global" (every global row, whoever owns it,
+ * editable and can be unpublished), "queue" (review) and "parents" (what parents published, view only). A stored
+ * scope the role may not use falls back to "mine" (spec V8-V13).
  */
 export type Scope = 'mine' | 'global' | 'queue' | 'parents';
 
@@ -41,7 +42,8 @@ export async function getMyUserId(client: Client = createSupabaseBrowserClient()
  */
 export const isLocked = (visibility: Visibility | undefined, ownerId: string | null | undefined, me: string | null, role?: Role | null): boolean => {
   if (visibility === undefined) return false;
-  if (role === 'super_admin') return (ownerId ?? null) !== me;
+  // A Super Admin edits their own rows and every global row (the Global tab); other private/pending rows are view only.
+  if (role === 'super_admin') return visibility !== 'global' && (ownerId ?? null) !== me;
   return visibility !== 'private' || (ownerId ?? null) !== me;
 };
 
@@ -54,9 +56,16 @@ export const lockedOwn = (visibility: Visibility | undefined, superOwned?: boole
 
 /** The scope a role may use: a stored value outside the role's tabs becomes "mine". */
 export function validScope(s: string | null | undefined, role: Role | null | undefined): Scope {
-  if (role === 'super_admin') return s === 'queue' || s === 'parents' ? s : 'mine';
+  if (role === 'super_admin') return s === 'queue' || s === 'parents' || s === 'global' ? s : 'mine';
   return s === 'global' ? 'global' : 'mine';
 }
+
+/**
+ * Which rows a loader keeps. "mine": the user's own (a Super Admin also owns the platform rows with no owner, so
+ * unpublishing one never loses it). "global": every global row, whoever owns it (Super Admin, Global tab).
+ */
+export const inScope = (r: { owner_id: string | null; visibility: Visibility }, scope: 'mine' | 'global', me: string | null, role?: Role | null): boolean =>
+  scope === 'global' ? r.visibility === 'global' : r.owner_id === me || (role === 'super_admin' && r.owner_id === null);
 
 /** The signed-in user's role, or null when signed out or the profile cannot be read. */
 export async function getMyRole(client: Client = createSupabaseBrowserClient()): Promise<Role | null> {

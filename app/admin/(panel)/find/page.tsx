@@ -26,6 +26,9 @@ export default function FindPage() {
   const role = useMyRole();
   const { scope, setScope } = useContentScope(role);
   const pending = usePendingCounts(role).find;
+  /** Super Admin, Global tab: every global row, editable in place (no new rows, no delete; Unpublish hides one). */
+  const globalEdit = role === 'super_admin' && scope === 'global';
+  const dataScope = globalEdit ? 'global' : 'mine';
   const [saved, setSaved] = useState<ELevel[] | null>(null);
   const [draft, setDraft] = useState<ELevel[] | null>(null);
   const [msgs, setMsgs] = useState<Record<string, string>>({});
@@ -42,12 +45,12 @@ export default function FindPage() {
 
   const load = useCallback(async () => {
     try {
-      const fresh = await loadFindLevels();
+      const fresh = await loadFindLevels(dataScope);
       setSaved(fresh); setDraft(fresh);
       return true;
     } catch (e) { setError((e as Error).message); return false; }
-  }, []);
-  useEffect(() => { void load(); }, [load]);
+  }, [dataScope]);
+  useEffect(() => { setSaved(null); setDraft(null); void load(); }, [load]);
   // picked files live in memory until Save; free their previews when leaving
   useEffect(() => () => clearPending(), []);
 
@@ -63,6 +66,7 @@ export default function FindPage() {
     return (
       <>
         <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Find It</h1>
+        {role === 'super_admin' && <ContentTabs scope={scope} onChange={setScope} role={role} pending={pending} />}
         {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <AdminLoading />}
       </>
     );
@@ -73,7 +77,8 @@ export default function FindPage() {
 
   const touch = () => { closeToast(); setError(null); };
   const setVisibility = (id: string, v: Visibility) => {
-    const f = <T extends { id: string }>(xs: T[] | null) => (xs ? xs.map((x) => (x.id === id ? { ...x, visibility: v } : x)) : xs);
+    // Unpublished from the Global tab: the row leaves the list (it is private again).
+    const f = <T extends { id: string }>(xs: T[] | null) => (xs ? (globalEdit && v !== 'global' ? xs.filter((x) => x.id !== id) : xs.map((x) => (x.id === id ? { ...x, visibility: v } : x))) : xs);
     setSaved(f); setDraft(f);
   };
   const edit = (id: string, patch: Partial<ELevel>) => { touch(); setDraft(draft.map((l) => (l.id === id ? { ...l, ...patch } : l))); };
@@ -98,7 +103,7 @@ export default function FindPage() {
   async function doSave() {
     if (!draft || !saved || !canSave) return;
     setBusy(true); touch();
-    const r = await saveFindLevels(saved, draft);
+    const r = await saveFindLevels(saved, draft, dataScope);
     if (r.error) { showToast('error', r.error); setBusy(false); return; }
     if (await load()) { clearPending(); setMsgs({}); showToast(r.warning ? 'warning' : 'success', r.warning ?? 'Saved'); }
     setBusy(false);
@@ -118,8 +123,8 @@ export default function FindPage() {
           <p style={{ margin: '6px 0 0', color: '#7A6458', fontSize: 15 }}>One picture and 2 to 12 objects per level. Turn a level off to keep it as a draft; you can still preview it as the child.</p>
         </div>
         {/* Always rendered so the header keeps its height; hidden (and not focusable) on the read-only Global tab. */}
-        <div aria-hidden={scope !== 'mine'} style={{ flex: '0 0 auto', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, visibility: scope === 'mine' ? 'visible' : 'hidden' }}>
-          <CardsHeaderActions dirty={dirty} busy={busy} canSave={canSave} onAdd={add} onRevert={revert} onSave={doSave} />
+        <div aria-hidden={scope !== 'mine' && !globalEdit} style={{ flex: '0 0 auto', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, visibility: scope === 'mine' || globalEdit ? 'visible' : 'hidden' }}>
+          <CardsHeaderActions dirty={dirty} busy={busy} canSave={canSave} onAdd={globalEdit ? undefined : add} onRevert={revert} onSave={doSave} />
           <span role="status" style={{ fontSize: 13, color: '#7A6458', maxWidth: 420, textAlign: 'right' }}>{status}</span>
         </div>
       </div>
@@ -129,7 +134,7 @@ export default function FindPage() {
         <ReviewQueue tables={FIND_TABLES} />
       ) : scope === 'parents' ? (
         <GlobalContent table="find_levels" mode="parents" />
-      ) : scope === 'global' ? (
+      ) : scope === 'global' && !globalEdit ? (
         <GlobalContent table="find_levels" />
       ) : (
         <>
@@ -142,7 +147,7 @@ export default function FindPage() {
                 key={l.id} l={l} n={i + 1} message={msgs[l.id] ?? null}
                 onEdit={(patch) => edit(l.id, patch)}
                 onSvg={(code) => applySvg(l.id, code)}
-                onAskDelete={() => setConfirm(i)}
+                onAskDelete={globalEdit ? undefined : () => setConfirm(i)}
                 onVisibility={(v) => setVisibility(l.id, v)}
               />
             ))}
