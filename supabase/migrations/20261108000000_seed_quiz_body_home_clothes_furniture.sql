@@ -59,7 +59,7 @@ begin
     insert into public.answers (question_id, slot, image_path, is_correct) values (qid, 1, 'seed/hat.svg', true), (qid, 2, 'seed/jacket.svg', false), (qid, 3, 'seed/shirt.svg', false);
     insert into public.questions (set_id, position, prompt_text, prompt_image_path) values (s, 4, 'Where are the socks?', 'seed/socks.svg') returning id into qid;
     insert into public.answers (question_id, slot, image_path, is_correct) values (qid, 1, 'seed/gloves.svg', false), (qid, 2, 'seed/socks.svg', true), (qid, 3, 'seed/pants.svg', false);
-    insert into public.questions (set_id, position, prompt_text, prompt_image_path) values (s, 5, 'Where is the shoes?', 'seed/shoes.svg') returning id into qid;
+    insert into public.questions (set_id, position, prompt_text, prompt_image_path) values (s, 5, 'Where are the shoes?', 'seed/shoes.svg') returning id into qid;
     insert into public.answers (question_id, slot, image_path, is_correct) values (qid, 1, 'seed/shirt.svg', false), (qid, 2, 'seed/dress.svg', false), (qid, 3, 'seed/shoes.svg', true);
     insert into public.questions (set_id, position, prompt_text, prompt_image_path) values (s, 6, 'Where is the jacket?', 'seed/jacket.svg') returning id into qid;
     insert into public.answers (question_id, slot, image_path, is_correct) values (qid, 1, 'seed/jacket.svg', true), (qid, 2, 'seed/pants.svg', false), (qid, 3, 'seed/hat.svg', false);
