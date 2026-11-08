@@ -5,6 +5,7 @@ import styles from '../../admin.module.css';
 import { ChildrenPanel } from '@/components/admin/ChildrenPanel';
 import { ProfileForm } from '@/components/admin/ProfileForm';
 import { loadMyProfile, type MyProfile } from '@/lib/profile';
+import { AdminLoading } from '@/components/admin/AdminLoading';
 
 /**
  * Profile (spec PR6-PR13): the signed-in user's name, phone and picture. A parent also sees their children here.
@@ -17,7 +18,7 @@ export default function ProfilePage() {
     loadMyProfile().then(setProfile, () => setProfile(null));
   }, []);
 
-  if (profile === undefined) return <p className={styles.sub}>Loading your profile…</p>;
+  if (profile === undefined) return <AdminLoading label="Loading your profile…" />;
   if (profile === null) return <p className={styles.note}>Could not load your profile. Please sign in again.</p>;
 
   return (

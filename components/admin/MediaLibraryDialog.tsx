@@ -19,6 +19,7 @@ import { useSoundPreview } from './useSoundPreview';
 import { PlayButton } from './PlayButton';
 import { CropDialog } from './CropDialog';
 import { ModalClose } from '@/components/ModalClose';
+import { AdminLoading } from './AdminLoading';
 
 /** Picture types the library accepts (the same as the Cards and Spot pictures). */
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
@@ -105,17 +106,6 @@ const PictureViewer = ({ url, name, onClose }: { url: string; name: string; onCl
     {/* bucket pictures have any size; unoptimized keeps the file as uploaded */}
     <Image src={url} alt={name} width={1600} height={1200} unoptimized onClick={(e) => e.stopPropagation()}
       style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', background: '#fff', borderRadius: 12, boxShadow: '0 20px 60px rgba(0,0,0,0.35)' }} />
-  </div>
-);
-
-/** The wait while the library loads: the bundled fish bobbing over soft water ripples (honors reduced motion). */
-const Loading = () => (
-  <div role="status" className={s.loadingBox}>
-    <div className={s.loadingWater} aria-hidden="true">
-      <span className={s.loadingRipple} /><span className={s.loadingRipple} /><span className={s.loadingRipple} />
-      <Image className={s.loadingFish} src="/seed/fish.svg" alt="" width={60} height={60} unoptimized />
-    </div>
-    <span className={s.loadingText}>Loading...</span>
   </div>
 );
 
@@ -352,7 +342,7 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
   const canOk = !!selected && !pendingRenames.has(selected) && !removing.has(selected);
   let body: React.ReactNode;
   if (failed) body = <p role="alert" style={{ margin: 0, color: '#A8484F' }}>Could not load the library.</p>;
-  else if (paths === null) body = <Loading />;
+  else if (paths === null) body = <AdminLoading />;
   else if (paths.length === 0) body = <p style={{ margin: 0, color: '#6E5A4E' }}>Nothing in the library yet.</p>;
   else if (kind === 'image') body = (
     <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 10 }}>
