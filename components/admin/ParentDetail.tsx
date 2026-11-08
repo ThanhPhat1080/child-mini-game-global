@@ -23,6 +23,7 @@ import { banParent, listContent, listPeople, removeChild, setQuota, storageUsedB
 import type { ContentTable } from '@/lib/review';
 import styles from '@/app/admin/admin.module.css';
 import ui from '@/components/admin/admin-ui.module.css';
+import { AdminLoading } from './AdminLoading';
 
 const MB = 1024 * 1024;
 
@@ -126,7 +127,7 @@ export default function ParentDetail({ id }: { id: string }) {
     }
   }
 
-  if (person === undefined) return <p className={styles.note}>Loading…</p>;
+  if (person === undefined) return <AdminLoading />;
   if (person === null) {
     return (
       <>

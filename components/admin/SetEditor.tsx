@@ -23,6 +23,7 @@ import { getMyUserId, isLocked, useMyRole } from '@/lib/review';
 import { SvgPaste } from './SvgPaste';
 import { checkSvg } from '@/lib/quizImport';
 import { CheckOption, panel, inputStyle, ghostBtn, dangerBtn, fileName, Img, PicIcon, Eye, Shell } from './editor-parts';
+import { AdminLoading } from './AdminLoading';
 
 type Target = { kind: 'cover' } | { kind: 'qimg' } | { kind: 'voice' } | { kind: 'answer'; i: number };
 
@@ -77,7 +78,7 @@ export function SetEditor({ setId }: { setId: string }) {
   if (missing) {
     return <Shell><section style={panel}><h2 style={{ margin: 0 }}>Quiz set not found</h2><Link href="/admin/sets" className={s.link} style={{ fontWeight: 700 }}>Back to quiz sets</Link></section></Shell>;
   }
-  if (!d || !saved) return <Shell><p style={{ color: '#7A6458' }}>Loading…</p></Shell>;
+  if (!d || !saved) return <Shell><AdminLoading /></Shell>;
 
   const edit = (patch: Partial<ESet>) => setD({ ...d, ...patch });
   const editQ = (i: number, patch: Partial<EQuestion>) => setD({ ...d, qs: d.qs.map((q, k) => (k === i ? { ...q, ...patch } : q)) });

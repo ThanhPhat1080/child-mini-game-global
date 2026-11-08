@@ -17,6 +17,7 @@ import { CardsHeaderActions } from '@/components/admin/CardsHeaderActions';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { SortToggle, displayOrder } from '@/components/admin/LevelSort';
 import { FindLevelPanel } from '@/components/admin/FindLevelPanel';
+import { AdminLoading } from '@/components/admin/AdminLoading';
 
 const FIND_TABLES: ContentTable[] = ['find_levels'];
 
@@ -62,7 +63,7 @@ export default function FindPage() {
     return (
       <>
         <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Find It</h1>
-        {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <p style={{ color: '#7A6458' }}>Loading…</p>}
+        {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <AdminLoading />}
       </>
     );
   }

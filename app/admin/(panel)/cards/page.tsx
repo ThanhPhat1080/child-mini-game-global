@@ -25,6 +25,7 @@ import { GroupsPanel } from '@/components/admin/GroupsPanel';
 import { CardPanel, poolHealth } from '@/components/admin/CardPanel';
 import s from '@/components/admin/admin-ui.module.css';
 import type { ContentTable, Visibility } from '@/lib/review';
+import { AdminLoading } from '@/components/admin/AdminLoading';
 
 /** The database refuses a second group with the same name (unique index on lower(btrim(name))). */
 const groupSaveError = (e: string) => (/duplicate|23505/i.test(e) ? 'A group with that name already exists.' : e);
@@ -82,7 +83,7 @@ export default function CardsPage() {
     return (
       <>
         <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Memory cards</h1>
-        {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <p style={{ color: '#7A6458' }}>Loading…</p>}
+        {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <AdminLoading />}
       </>
     );
   }

@@ -11,6 +11,7 @@ import { panel } from './editor-parts';
 import { SpotMarkerEditor } from './SpotMarkerEditor';
 import { ModalClose } from '@/components/ModalClose';
 import type { Difference } from '@/lib/spot/types';
+import { AdminLoading } from './AdminLoading';
 
 type Item = {
   id: string; title: string; images: (string | null)[]; differences?: Difference[];
@@ -92,7 +93,7 @@ export function GlobalContent({ table, mode = 'global' }: { table: Exclude<Conte
   }, [table, mode]);
 
   if (error) return <p role="alert" style={{ color: '#A8484F', fontWeight: 700 }}>{error}</p>;
-  if (!items) return <p style={{ color: '#7A6458' }}>Loading…</p>;
+  if (!items) return <AdminLoading />;
   if (items.length === 0) return <p style={{ color: '#7A6458' }}>{mode === 'parents' ? 'No parent has shared anything yet.' : 'Nothing has been shared with everyone yet.'}</p>;
   const card = (it: Item) => (
     <>
