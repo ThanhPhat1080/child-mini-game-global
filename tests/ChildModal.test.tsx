@@ -11,11 +11,11 @@ vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null | undefined) => (p ?
 vi.mock('@/lib/sfx', () => ({ applause: vi.fn(), ohOh: vi.fn(), speakKid: vi.fn(), yay: vi.fn() }));
 vi.mock('@/lib/media/renames', () => ({ useMediaRenamed: () => undefined }));
 vi.mock('@/components/admin/LibraryButton', () => ({
-  LibraryButton: function MockLib({ kind, label, onChoose }: { kind: string; label: string; onChoose: (p: string) => void }) {
+  LibraryButton: function MockLib({ kind, label, onChoose, aspect }: { kind: string; label: string; onChoose: (p: string) => void; aspect?: number }) {
     const [open, setOpen] = useState(false);
     return (
       <>
-        <button type="button" onClick={() => onChoose(kind === 'image' ? 'img/new.png' : 'snd/new.mp3')}>Choose {label}</button>
+        <button type="button" data-aspect={aspect === undefined ? '' : String(aspect)} onClick={() => onChoose(kind === 'image' ? 'img/new.png' : 'snd/new.mp3')}>Choose {label}</button>
         <button type="button" onClick={() => setOpen(true)}>Open library {label}</button>
         {open && <div role="dialog" aria-label={`Library ${label}`}><button type="button">Lib first</button><button type="button">Lib last</button></div>}
       </>
@@ -272,6 +272,24 @@ describe('ChildModal (KU3-KU8)', () => {
     expect(document.activeElement).toBe(first);
     expect(fireEvent.keyDown(first, { key: 'Tab', shiftKey: true })).toBe(false);
     expect(document.activeElement).toBe(last);
+  });
+});
+
+// A32: the celebration pictures are cropped to the 3:5 frame, and the form has a transparency tip.
+describe('ChildModal celebration pictures (A32)', () => {
+  it('each celebration picture uses the 3:5 frame shape for its crop', () => {
+    render(<ChildModal mode="create" onClose={() => {}} onSaved={() => {}} />);
+    for (const k of ['A', 'B']) {
+      expect(screen.getByRole('button', { name: `Choose celebration picture ${k}` }).getAttribute('data-aspect')).toBe(String(340 / 600));
+    }
+    // The avatar keeps the square crop (A24): no aspect is passed.
+    expect(screen.getByRole('button', { name: 'Choose avatar' }).getAttribute('data-aspect')).toBe('');
+  });
+
+  it('the form tells the parent to use a transparent background', () => {
+    render(<ChildModal mode="create" onClose={() => {}} onSaved={() => {}} />);
+    expect(screen.getByText(/transparent background/)).toBeTruthy();
+    expect(screen.getByText(/cropped to a tall frame \(3:5\)/)).toBeTruthy();
   });
 });
 

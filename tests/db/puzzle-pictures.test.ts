@@ -39,7 +39,8 @@ describe('puzzle_pictures (A32-A35)', () => {
     const count = `select id from public.puzzle_pictures`;
     expect(await as(null).query(count)).toHaveLength(3);
     expect(await as(parent).query(count)).toHaveLength(3);
-    expect(await as(sa).query(count)).toHaveLength(4);
+    // 4 first seed rows + 31 more that are seeded switched off (20261108200000)
+    expect(await as(sa).query(count)).toHaveLength(35);
   });
 
   it('parent cannot write', async () => {
@@ -53,7 +54,7 @@ describe('puzzle_pictures (A32-A35)', () => {
     await expect(
       as(null).query(`insert into public.puzzle_pictures (word, image_path) values ('star', 'x.svg')`),
     ).rejects.toThrow();
-    expect(await as(sa).query(`select id from public.puzzle_pictures`)).toHaveLength(4);
+    expect(await as(sa).query(`select id from public.puzzle_pictures`)).toHaveLength(35);
   });
 
   it('super admin writes', async () => {

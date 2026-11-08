@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { listMessages, listPeople, markMessage, type PersonRow, type SupportMessage } from '@/lib/superAdmin';
+import { listMessages, listParentContacts, listPeople, markMessage, type ParentContact, type PersonRow, type SupportMessage } from '@/lib/superAdmin';
 import { matches, sortBy, type SortOrder } from '@/lib/people';
 import { ListToolbar } from '@/components/admin/ListToolbar';
 import { ParentRow } from '@/components/admin/ParentRow';
@@ -25,6 +25,9 @@ export default function MessagesPage() {
   const [tab, setTab] = useState<Tab>('pending');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortOrder>('newest');
+  // The contact details (SA2, SA3) are read once with the page. If they fail, the messages still show.
+  const [contacts, setContacts] = useState<Record<string, ParentContact>>({});
+  const [contactsFailed, setContactsFailed] = useState(false);
   const { toast, show, close } = useToast();
 
   const load = useCallback(async () => {
@@ -35,6 +38,12 @@ export default function MessagesPage() {
     } catch (e) { show('error', (e as Error).message); }
   }, [show]);
   useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    listParentContacts()
+      .then((rows) => setContacts(Object.fromEntries(rows.map((c) => [c.userId, c]))))
+      .catch(() => setContactsFailed(true));
+  }, []);
 
   // The Parents page links here with ?q=<parent name>: that parent's messages are the search.
   useEffect(() => {
@@ -110,6 +119,7 @@ export default function MessagesPage() {
               <div className={ui.msgSide}>
                 <ParentRow parent={summary} />
                 <p>{new Date(m.createdAt).toLocaleString('en-GB')} · {m.resolvedAt ? 'Resolved' : m.readAt ? 'Read' : 'New'}</p>
+                <ContactLine contact={contacts[m.fromUser]} failed={contactsFailed} />
               </div>
               <div className={ui.msgMain}>
               <p style={{ whiteSpace: 'pre-wrap', color: '#4A3830', fontSize: 15, margin: 0 }}>{m.body}</p>
@@ -126,5 +136,17 @@ export default function MessagesPage() {
       </ul>
       <Toast toast={toast} onClose={close} />
     </>
+  );
+}
+
+/** The parent's email and phone, as links to reply (SA2). Shows a note instead when the details cannot be read (SA3). */
+function ContactLine({ contact, failed }: { contact: ParentContact | undefined; failed: boolean }) {
+  if (failed) return <p style={{ margin: '4px 0 0', fontSize: 13 }}>Contact details are not available right now.</p>;
+  if (!contact) return null;
+  return (
+    <p style={{ margin: '4px 0 0', fontSize: 13, display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+      <a href={`mailto:${contact.email}`}>{contact.email}</a>
+      {contact.phone ? <a href={`tel:${contact.phone}`}>{contact.phone}</a> : <span>No phone number</span>}
+    </p>
   );
 }

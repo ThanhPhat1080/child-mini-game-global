@@ -46,12 +46,14 @@ describe('profiles (U1, U2, U6)', () => {
     );
     expect(cols.map((c) => c.column_name)).toEqual(
       [
+        'avatar_path',
         'ban_note',
         'ban_reason_code',
         'banned',
         'banned_at',
         'created_at',
         'display_name',
+        'phone',
         'policy_accepted_at',
         'policy_version_accepted',
         'quota_bytes',
@@ -231,9 +233,10 @@ describe('profiles (U1, U2, U6)', () => {
         await expect(
           as(u).query(`update public.profiles set banned = false, role = 'super_admin' where user_id = $1`, [u]),
         ).rejects.toThrow(/permission denied/);
+        // The parent may update display_name (PR4), but the own-row policy matches no row of another user.
         await expect(
-          as(u).query(`update public.profiles set display_name = 'x' where user_id = $1`, [other]),
-        ).rejects.toThrow(/permission denied/);
+          as(u).query(`update public.profiles set display_name = 'x' where user_id = $1 returning user_id`, [other]),
+        ).resolves.toHaveLength(0);
         await expect(as(u).query(`delete from public.profiles where user_id = $1`, [other])).rejects.toThrow(
           /permission denied/,
         );

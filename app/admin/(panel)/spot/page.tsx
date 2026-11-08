@@ -20,6 +20,7 @@ import { CardsHeaderActions } from '@/components/admin/CardsHeaderActions';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { SortToggle, displayOrder } from '@/components/admin/LevelSort';
 import { SpotLevelPanel } from '@/components/admin/SpotLevelPanel';
+import { AdminLoading } from '@/components/admin/AdminLoading';
 
 const SPOT_TABLES: ContentTable[] = ['spot_levels'];
 
@@ -80,7 +81,7 @@ export default function SpotPage() {
     return (
       <>
         <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Spot the Differences</h1>
-        {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <p style={{ color: '#7A6458' }}>Loading…</p>}
+        {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <AdminLoading />}
       </>
     );
   }

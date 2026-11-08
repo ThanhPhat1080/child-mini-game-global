@@ -14,6 +14,7 @@ import { RevertButton, SaveButton } from './SaveButtons';
 import { Toast, useToast } from './Toast';
 import { PicIcon, dangerBtn, fileName, ghostBtn, inputStyle, panel } from './editor-parts';
 import s from './admin-ui.module.css';
+import { AdminLoading } from '@/components/admin/AdminLoading';
 
 const WORD_MAX = 40;
 /** The game needs this many pictures with different words (A33). */
@@ -119,7 +120,7 @@ export function PuzzlePictures() {
     return (
       <>
         <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Puzzle Pairs pictures</h1>
-        {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <p style={{ color: '#7A6458' }}>Loading…</p>}
+        {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <AdminLoading />}
       </>
     );
   }

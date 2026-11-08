@@ -11,7 +11,7 @@ vi.mock('@/components/admin/ChildModal', () => ({
   ),
 }));
 
-import ChildrenPage from '@/app/admin/(panel)/children/page';
+import { ChildrenPanel } from '@/components/admin/ChildrenPanel';
 
 const kid = (n: number) => ({ id: `c${n}`, parent_id: 'p', child_name: `kid${n}`, display_name: `Kid ${n}`, avatar_path: null, gender: n % 2 ? 'male' : 'female', age_band: '2-5', pin: 'ab12' });
 
@@ -22,22 +22,22 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-describe('Children page (KU1, KU7)', () => {
+describe('Children panel in Profile (KU1, KU7, PR11)', () => {
   it('lists children and keeps Add enabled below 5', async () => {
-    render(<ChildrenPage />);
+    render(<ChildrenPanel />);
     expect(await screen.findByText('Kid 1')).toBeTruthy();
     expect(screen.getByText('Kid 2')).toBeTruthy();
     expect((screen.getByRole('button', { name: 'Add child' }) as HTMLButtonElement).disabled).toBe(false);
   });
   it('disables Add at 5 with the limit note', async () => {
     h.listMyChildren.mockResolvedValue([1, 2, 3, 4, 5].map(kid));
-    render(<ChildrenPage />);
+    render(<ChildrenPanel />);
     await screen.findByText('Kid 5');
     expect((screen.getByRole('button', { name: 'Add child' }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText(/reached the limit/)).toBeTruthy();
   });
   it('opens the modal for add and edit', async () => {
-    render(<ChildrenPage />);
+    render(<ChildrenPanel />);
     await screen.findByText('Kid 1');
     fireEvent.click(screen.getByRole('button', { name: 'Add child' }));
     expect(screen.getByRole('dialog').textContent).toContain('create');
@@ -46,7 +46,7 @@ describe('Children page (KU1, KU7)', () => {
     expect(screen.getByRole('dialog').textContent).toContain('edit:Kid 2');
   });
   it('remove confirms first, deletes only on confirm, then reloads without optimistic removal', async () => {
-    render(<ChildrenPage />);
+    render(<ChildrenPanel />);
     await screen.findByText('Kid 1');
     fireEvent.click(screen.getByRole('button', { name: 'Remove Kid 1' }));
     expect(h.deleteChild).not.toHaveBeenCalled();
@@ -59,7 +59,7 @@ describe('Children page (KU1, KU7)', () => {
     expect(h.listMyChildren).toHaveBeenCalledTimes(2);
   });
   it('cancel in the confirm does not delete', async () => {
-    render(<ChildrenPage />);
+    render(<ChildrenPanel />);
     await screen.findByText('Kid 1');
     fireEvent.click(screen.getByRole('button', { name: 'Remove Kid 1' }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));

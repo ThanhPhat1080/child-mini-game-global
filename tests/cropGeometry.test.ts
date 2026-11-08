@@ -73,3 +73,44 @@ describe('startCropFor', () => {
     expect(startCropFor(undefined, 800, 600)).toEqual(defaultCrop(800, 600));
   });
 });
+
+// A32: a crop can have another shape than a square (the celebration frame is 3:5, width : height).
+describe('crop shape (A32)', () => {
+  const FRAME = 340 / 600;
+
+  it('defaultCrop of a 3:5 frame is the largest centred frame of that shape', () => {
+    // A landscape picture: the height is the limit, the width follows the frame.
+    const wide = defaultCrop(1600, 900, FRAME);
+    const px = cropPixels(wide, 1600, 900);
+    expect(px.size / 900).toBeCloseTo(FRAME, 1); // width px / height px
+    expect(wide.h).toBe(1);
+    // A square picture: the width is the limit.
+    const square = defaultCrop(800, 800, FRAME);
+    // The height is the limit, and the width follows the frame.
+    expect(square.h).toBe(1);
+    expect(square.w).toBeCloseTo(FRAME, 5);
+  });
+
+  it('resizeCrop keeps a 3:5 frame in shape and inside the picture', () => {
+    const c = defaultCrop(1600, 900, FRAME);
+    const bigger = resizeCrop(c, 40, 1600, 900, FRAME);
+    const w = bigger.w * 1600;
+    const h = bigger.h * 900;
+    expect(w / h).toBeCloseTo(FRAME, 5);
+    expect(bigger.x + bigger.w).toBeLessThanOrEqual(1 + 1e-9);
+    expect(bigger.y + bigger.h).toBeLessThanOrEqual(1 + 1e-9);
+  });
+
+  it('a square resize is unchanged by the new default', () => {
+    const c = defaultCrop(1200, 800);
+    expect(resizeCrop(c, 30, 1200, 800)).toEqual(resizeCrop(c, 30, 1200, 800, 1));
+  });
+
+  it('startCropFor takes the start crop only when its shape matches', () => {
+    const square = defaultCrop(1200, 800);
+    expect(startCropFor(square, 1200, 800, FRAME)).not.toBe(square);
+    expect(startCropFor(square, 1200, 800)).toBe(square);
+    const frame = defaultCrop(1200, 800, FRAME);
+    expect(startCropFor(frame, 1200, 800, FRAME)).toBe(frame);
+  });
+});

@@ -13,12 +13,13 @@ import { Toast, useToast } from './Toast';
 import { ConfirmDialog } from './ConfirmDialog';
 import s from './admin-ui.module.css';
 import { selectArrowStyle } from './selectArrow';
-import { cropToSquare } from '@/lib/crop/render';
+import { cropToAspect } from '@/lib/crop/render';
 import type { Crop } from '@/lib/crop/geometry';
 import { useSoundPreview } from './useSoundPreview';
 import { PlayButton } from './PlayButton';
 import { CropDialog } from './CropDialog';
 import { ModalClose } from '@/components/ModalClose';
+import { AdminLoading } from './AdminLoading';
 
 /** Picture types the library accepts (the same as the Cards and Spot pictures). */
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
@@ -108,17 +109,6 @@ const PictureViewer = ({ url, name, onClose }: { url: string; name: string; onCl
   </div>
 );
 
-/** The wait while the library loads: the bundled fish bobbing over soft water ripples (honors reduced motion). */
-const Loading = () => (
-  <div role="status" className={s.loadingBox}>
-    <div className={s.loadingWater} aria-hidden="true">
-      <span className={s.loadingRipple} /><span className={s.loadingRipple} /><span className={s.loadingRipple} />
-      <Image className={s.loadingFish} src="/seed/fish.svg" alt="" width={60} height={60} unoptimized />
-    </div>
-    <span className={s.loadingText}>Loading...</span>
-  </div>
-);
-
 /** Header icons: a picture frame for images, a sol note (eighth note) for sounds. */
 const TitleIcon = ({ kind }: { kind: 'image' | 'audio' }) => (kind === 'image' ? (
   <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#5A4038" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></svg>
@@ -130,7 +120,7 @@ const TitleIcon = ({ kind }: { kind: 'image' | 'audio' }) => (kind === 'image' ?
  * "Choose from library" modal (A23, A24). Clicking an item only highlights it; OK applies it (a preview until the page saves).
  * Cancel, Escape or a click outside leave everything as it was. "Upload new" uploads the file at once and lists it.
  */
-export function MediaLibraryDialog(props: { kind: 'image' | 'audio'; onChoose: (path: string) => void; onClose: () => void; startCrop?: Crop; onCropped?: (crop: Crop) => void }) {
+export function MediaLibraryDialog(props: { kind: 'image' | 'audio'; onChoose: (path: string) => void; onClose: () => void; startCrop?: Crop; aspect?: number; onCropped?: (crop: Crop) => void }) {
   return <MediaLibrary mode="dialog" {...props} />;
 }
 
@@ -138,13 +128,15 @@ export function MediaLibraryDialog(props: { kind: 'image' | 'audio'; onChoose: (
  * The library itself. `mode="dialog"` is the picker above (choose + OK). `mode="page"` is the admin Media page:
  * the same list, rename, sort, delete, upload and full-size view, without choosing.
  */
-export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, onClose, startCrop, onCropped }: {
+export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, onClose, startCrop, aspect = 1, onCropped }: {
   mode?: 'dialog' | 'page';
   /** `all`: every owner's files (a Super Admin's Media page). Files of other owners are view only. */
   scope?: 'own' | 'all';
   kind: 'image' | 'audio'; onChoose?: (path: string) => void; onClose?: () => void;
   /** The crop to start from when a picture is cropped (Spot's picture B starts from picture A's crop). */
   startCrop?: Crop;
+  /** The shape of the cropped picture, width / height. 1 is a square (A24); the celebration frame is another (A32). */
+  aspect?: number;
   /** Called after a cropped picture is uploaded, with the crop that was used. */
   onCropped?: (crop: Crop) => void;
 }) {
@@ -293,7 +285,7 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
     }
   }
 
-  /** Save in the crop window: crops the picked file to the chosen square, uploads it and lists it. */
+  /** Save in the crop window: crops the picked file to the chosen frame, uploads it and lists it. */
   async function saveCrop(crop: Crop) {
     const picked = cropping;
     if (!picked) return;
@@ -301,9 +293,9 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
     setUploadError(null);
     setUploading(true);
     try {
-      const square = await cropToSquare(picked, crop);
-      if (square.size > MAX_IMAGE_BYTES) throw new Error('Image must be 2 MB or smaller.');
-      const path = await uploadToLibrary(square);
+      const cropped = await cropToAspect(picked, crop, aspect);
+      if (cropped.size > MAX_IMAGE_BYTES) throw new Error('Image must be 2 MB or smaller.');
+      const path = await uploadToLibrary(cropped);
       addUploaded(path);
       onCropped?.(crop);
     } catch (e) {
@@ -350,7 +342,7 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
   const canOk = !!selected && !pendingRenames.has(selected) && !removing.has(selected);
   let body: React.ReactNode;
   if (failed) body = <p role="alert" style={{ margin: 0, color: '#A8484F' }}>Could not load the library.</p>;
-  else if (paths === null) body = <Loading />;
+  else if (paths === null) body = <AdminLoading />;
   else if (paths.length === 0) body = <p style={{ margin: 0, color: '#6E5A4E' }}>Nothing in the library yet.</p>;
   else if (kind === 'image') body = (
     <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 10 }}>
@@ -442,7 +434,7 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
       {deleting && <ConfirmDialog title="Delete this file?" body={`${fileName(deleting)} will be removed for good. No page uses it.`} button="Delete" onCancel={() => setDeleting(null)} onConfirm={() => void confirmDelete(deleting)} />}
       {viewing && <PictureViewer url={mediaUrl(viewing) ?? ''} name={fileName(viewing)} onClose={() => setViewing(null)} />}
       <Toast toast={toast} onClose={closeToast} />
-      {cropping && <CropDialog file={cropping} start={startCrop} onCancel={() => setCropping(null)} onSave={saveCrop} />}
+      {cropping && <CropDialog file={cropping} start={startCrop} aspect={aspect} onCancel={() => setCropping(null)} onSave={saveCrop} />}
     </>
   );
 
