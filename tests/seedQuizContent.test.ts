@@ -3,7 +3,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { checkSvg } from '@/lib/quizImport';
 
-const MIGRATION = 'supabase/migrations/20261108000000_seed_quiz_body_home_clothes_furniture.sql';
+const MIGRATION = 'supabase/migrations/20261108100000_seed_quiz_body_home_clothes_furniture.sql';
 const sql = readFileSync(MIGRATION, 'utf8');
 const sets = sql.split(/\n  if not exists/).slice(1);
 const NEW_PICTURES = ['eye', 'ear', 'nose', 'mouth', 'hand', 'foot', 'hair', 'tooth', 'spoon', 'bowl', 'toothbrush', 'key', 'lamp', 'umbrella', 'towel', 'broom',
