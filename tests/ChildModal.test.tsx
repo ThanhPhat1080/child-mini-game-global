@@ -183,6 +183,23 @@ describe('ChildModal (KU3-KU8)', () => {
     expect(await screen.findByText('Feedback sounds')).toBeTruthy();
   });
 
+  it('one Save also saves the feedback sounds, and the block has no Save of its own', async () => {
+    h.updateChild.mockResolvedValue({ ok: true });
+    h.getChildSettings.mockResolvedValue({ child_id: 'c1', greeting_path: null, music_path: null, music_volume: 30, hooray_path: null, ohoh_path: null, complete_path: null });
+    h.updateChildSettings.mockResolvedValue(undefined);
+    h.removeMedia.mockResolvedValue(false);
+    const onClose = vi.fn(); const onSaved = vi.fn();
+    render(<ChildModal mode="edit" child={kid} onClose={onClose} onSaved={onSaved} />);
+    fireEvent.click(screen.getByRole('button', { name: /More sounds/ }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Choose Hooray sound' }));
+    expect(screen.getAllByRole('button', { name: 'Save' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Revert' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(onClose).toHaveBeenCalled());
+    expect(h.updateChildSettings).toHaveBeenCalledWith('c1', { hooray_path: 'snd/new.mp3' });
+    expect(onSaved).toHaveBeenCalled();
+  });
+
   it('Esc closes; Esc and backdrop do nothing while saving', async () => {
     const onClose = vi.fn();
     const { unmount } = render(<ChildModal mode="create" onClose={onClose} onSaved={() => {}} />);

@@ -10,7 +10,7 @@ import { useMediaRenamed } from '@/lib/media/renames';
 import { replacePath } from '@/lib/mediaPaths';
 import { LibraryButton } from '@/components/admin/LibraryButton';
 import { PlayButton } from '@/components/admin/PlayButton';
-import { ChildSounds } from '@/components/admin/ChildSounds';
+import { ChildSounds, type SoundsHandle } from '@/components/admin/ChildSounds';
 import { Pic } from '@/components/Pic';
 import s from './admin-ui.module.css';
 import { ModalClose } from '@/components/ModalClose';
@@ -56,6 +56,10 @@ export function ChildModal({ mode, child, parentId, compact, onClose, onSaved, o
   /** The child this modal just added: the modal stays open and becomes an edit of it, so the sounds can be added (N16). */
   const [created, setCreated] = useState<Child | null>(null);
   const moreBtn = useRef<HTMLButtonElement>(null);
+  // the feedback sounds block saves with this dialog's Save; it stays mounted (hidden) once opened, so its choices survive a collapse
+  const sounds = useRef<SoundsHandle | null>(null);
+  const registerSounds = useCallback((h: SoundsHandle | null) => { sounds.current = h; }, []);
+  const [soundsOpened, setSoundsOpened] = useState(false);
   const target = child ?? created ?? undefined;
   const editMode = mode === 'edit' || created !== null;
   const audio = useRef<HTMLAudioElement | null>(null);
@@ -195,9 +199,11 @@ export function ChildModal({ mode, child, parentId, compact, onClose, onSaved, o
       } catch { soundFailed = true; }
     }
     const failed = replaced.length > 0 ? await removeMedia(replaced) : false;
+    const fb = sounds.current && sounds.current.dirty() ? await sounds.current.save() : null;
     onSaved({ ...child, ...patch });
     if (soundFailed) onNotice?.('warning', 'Saved, but the welcome sound was not saved.');
-    else if (failed) onNotice?.('warning', 'Saved, but an old file could not be removed from storage.');
+    else if (fb && !fb.ok) onNotice?.('warning', `Saved, but the feedback sounds were not saved${fb.error ? `: ${fb.error}` : '.'}`);
+    else if (fb?.warn || failed) onNotice?.('warning', 'Saved, but an old file could not be removed from storage.');
     onClose();
   }
 
@@ -336,11 +342,11 @@ export function ChildModal({ mode, child, parentId, compact, onClose, onSaved, o
               type="button"
               className={`${s.moreToggle} ${created && !more ? s.morePulse : ''}`}
               aria-expanded={more}
-              onClick={() => setMore((v) => !v)}
+              onClick={() => { setMore((v) => !v); setSoundsOpened(true); }}
             >
               {more ? '▾' : '▸'} More sounds
             </button>
-            {more && <div className={s.modalSounds}><ChildSounds childId={target.id} /></div>}
+            {soundsOpened && <div className={s.modalSounds} hidden={!more}><ChildSounds childId={target.id} registerSave={registerSounds} /></div>}
           </div>
         )}
 
