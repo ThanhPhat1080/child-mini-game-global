@@ -36,9 +36,17 @@ export default function GuestSetup() {
   const [ageBand, setAgeBand] = useState<AgeBand>('2-5');
   const refs = useRef<GenderRefs>({ male: null, female: null });
   const headerRef = useRef<HTMLDivElement>(null);
+  // the other child pages draw on a 1920x1080 stage scaled to the window; the Back button keeps that size and place (56, 48)
+  const [stageScale, setStageScale] = useState(1);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(() => {
+    const fit = () => setStageScale(Math.min(window.innerWidth / 1920, window.innerHeight / 1080));
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
+  }, []);
 
   const valid = validateVisitor({ name, gender, ageBand }).ok;
 
@@ -102,7 +110,7 @@ export default function GuestSetup() {
       <Pic src="/images/princess.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroLeft}`} />
       <Pic src="/images/prince.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroRight}`} />
       {phase === 'gender' && (
-        <div className={styles.backSlot}>
+        <div className={styles.backSlot} style={{ top: 48 * stageScale, left: 56 * stageScale, transform: `scale(${stageScale})` }}>
           <BackButton href="/play/sign-in" label="Back" />
         </div>
       )}

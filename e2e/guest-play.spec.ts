@@ -108,8 +108,10 @@ test.describe('guest UI on a desktop window', () => {
   test('the Back on the guest step sits in the top-left corner of the screen', async ({ page }) => {
     await page.goto('/play/guest');
     const box = await page.getByRole('link', { name: 'Back' }).boundingBox();
-    expect(box!.x).toBeLessThan(60);
-    expect(box!.y).toBeLessThan(60);
+    // same place and size as the Stage pages: left 56, top 48, 104 wide on a 1920x1080 stage (scale 0.75 at 1440x900)
+    expect(Math.abs(box!.x - 42)).toBeLessThan(2);
+    expect(Math.abs(box!.y - 36)).toBeLessThan(2);
+    expect(Math.abs(box!.width - 78)).toBeLessThan(2);
   });
 
   test('the details form says Hi, Princess for a girl', async ({ page }) => {
