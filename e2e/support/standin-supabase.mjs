@@ -347,6 +347,17 @@ function rpc(req, res, name, args) {
   }
 }
 
+/** Guest Play (GU13): an anonymous read sees only global, live content, as the migration's anon policies do. */
+function anonVisible(table, r) {
+  const global = (r.visibility ?? 'global') === 'global';
+  if (table === 'quiz_sets') return global && r.status === 'published';
+  if (table === 'memory_cards' || table === 'spot_levels' || table === 'find_levels') return global && r.active !== false;
+  if (table === 'card_groups') return global;
+  if (table === 'questions') return state.quiz_sets.some((s) => s.id === r.set_id && anonVisible('quiz_sets', s));
+  if (table === 'answers') return state.questions.some((q) => q.id === r.question_id && anonVisible('questions', q));
+  return true; // other tables: unchanged (the stand-in never modelled anon for them)
+}
+
 function rest(req, res, table, url, bodyBuf) {
   const params = url.searchParams;
   const prefer = req.headers.prefer ?? '';
@@ -377,7 +388,8 @@ function rest(req, res, table, url, bodyBuf) {
   };
 
   if (req.method === 'GET' || req.method === 'HEAD') {
-    let out = applyOrder(rows.filter(match), params.get('order'));
+    const pool = bearerUser(req) ? rows : rows.filter((r) => anonVisible(table, r));
+    let out = applyOrder(pool.filter(match), params.get('order'));
     const off = Number(params.get('offset') ?? 0);
     if (off) out = out.slice(off);
     if (params.get('limit')) out = out.slice(0, Number(params.get('limit')));
