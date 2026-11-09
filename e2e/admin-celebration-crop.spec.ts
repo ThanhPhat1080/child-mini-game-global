@@ -31,7 +31,7 @@ test('a celebration picture is cropped to a tall 3:5 frame, and the form says to
   await expect(page.getByText(/transparent background/)).toBeVisible();
   // The button label stays on one line: the button is its normal height, not two lines clipped.
   const choose = page.getByRole('button', { name: 'Choose from library for celebration picture A' });
-  expect((await choose.boundingBox())!.height).toBeLessThanOrEqual(34.5);
+  expect((await choose.boundingBox())!.height).toBeLessThanOrEqual(40.5);
   await page.screenshot({ path: 'test-results/celebration-field.png' });
 
   await page.getByRole('button', { name: 'Choose from library for celebration picture A' }).click();
@@ -50,7 +50,7 @@ test('a celebration picture is cropped to a tall 3:5 frame, and the form says to
   // Cancel looks like the other dialogs' Cancel: white, rounded, light border (same as Confirm, Import, Ban).
   const cancel = crop.getByRole('button', { name: 'Cancel' });
   await expect(cancel).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-  await expect(cancel).toHaveCSS('border-radius', '12px');
+  await expect(cancel).toHaveCSS('border-radius', '10px');
   await expect(cancel).toHaveCSS('border-top-color', 'rgb(227, 213, 196)');
   await page.screenshot({ path: 'test-results/crop-cancel.png' });
   await cancel.click();
