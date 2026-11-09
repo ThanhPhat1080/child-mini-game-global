@@ -5,8 +5,10 @@
 .who { font: 800 36px 'Baloo 2', 'Nunito', sans-serif; color: #5a4038; margin: 40px 0 0; text-align: center; text-wrap: balance; }
 
 .genderRow { display: flex; gap: 18px; margin-top: 40px; justify-content: center; }
-.gcard { width: 170px; text-align: center; background: none; border: 0; padding: 0; cursor: pointer; color: inherit; font: inherit; transition: transform 0.25s ease, opacity 0.2s ease; animation: breathe 3.6s ease-in-out infinite; }
-.gcard.girl { animation-delay: 0.5s; }
+.gcard { width: 170px; text-align: center; background: none; border: 0; padding: 0; cursor: pointer; color: inherit; font: inherit; transition: transform 0.25s ease, opacity 0.2s ease; }
+/* the breathing is on the head, not the button: a moving button is never still for a click */
+.ring { animation: breathe 3.6s ease-in-out infinite; }
+.girl .ring { animation-delay: 0.5s; }
 .gcard:hover, .gcard:focus-visible { transform: translateY(-6px); }
 .gcard:focus-visible { outline: 4px solid #7a5c50; outline-offset: 6px; border-radius: 50%; }
 .ring { display: block; width: 150px; height: 150px; margin: 0 auto 10px; border-radius: 50%; overflow: hidden; border: 8px solid #8fb3d1; background: #fff; box-shadow: 0 8px 20px rgba(90, 64, 56, 0.12); }
@@ -45,7 +47,8 @@
 
 @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
 @media (prefers-reduced-motion: reduce) {
-  .gcard { animation: none; transition: opacity 0.3s ease; }
+  .gcard { transition: opacity 0.3s ease; }
+  .ring { animation: none; }
   .gcard:hover, .gcard:focus-visible { transform: none; }
   .leave, .picked, .details, .header { transition: opacity 0.3s ease !important; transform: none !important; }
   .details { transform: none; }

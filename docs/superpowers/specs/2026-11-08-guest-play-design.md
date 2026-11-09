@@ -63,6 +63,13 @@ Existing rules still hold: RLS decides access and the UI mirrors it; calm and sl
 - **GU4 Details** step 2 (grown-up screen): header avatar in the chosen color, a name field ("Child's name", 1-20 characters after trim, autofocus), the age switch ("Age": 2-5 | 5-10, the admin `segBtn` look at about 1.6x size, default 2-5) and a big OK button in the gender accent. OK is disabled until the name is valid; Enter in the field submits. OK saves the visitor (GU6) and goes to `/` (Welcome, "tap to enter" as today).
 - **GU5 Play** Welcome, `/games` and every game behave as for a child, with the visitor's gender theme, hero and name. The Leave button (top left) is shown as today. Celebration screens use the built-in prince or princess (`celebrationSlots` with no pictures).
 
+**Approved mockup changes (PO, 2026-11-09, mockup v7; these win over the text above):**
+- The Guest step (GU2) shows "Who are you?" with the same letter bounce as the `/play` picker.
+- Log in (GU1) opens today's parent form in place, unchanged.
+- The details step (GU4) has a close X top-right in the play-screen style (`ModalClose` size child: 88 px round, 20 px from the top and the right); it returns to Boy or Girl and keeps the name.
+- The details form is blue for Boy and pink for Girl (the OK button and the age segment too).
+- OK saves the visitor and goes to `/` (Welcome). The mockup's Play button is the existing "tap to enter" of Welcome.
+
 ### 5.2 Visitor session
 
 - **GU6** `lib/visitor.ts`: `Visitor = { name: string; gender: Gender; ageBand: AgeBand }`. `saveVisitor(v)` writes localStorage `cp_visitor` (JSON) and cookie `cp_visitor=1` (Path=/, SameSite=Lax, one year, plain like `cp_child`). `getVisitor()` returns the parsed, validated value or null (bad JSON or cookie without data = null). `isVisitor()` = cookie and valid data. `clearVisitor()` removes both. Pure validation `validateVisitor(input)` (name 1-20 after trim, gender male/female, age 2-5/5-10).

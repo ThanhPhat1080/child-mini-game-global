@@ -76,6 +76,11 @@ export function clearVisitor(): void {
   document.cookie = `${VISITOR_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
 }
 
+/** True when the marker cookie is set, whatever its data. A bare marker (no saved data) is a forged or stale cookie. */
+export function hasVisitorMarker(): boolean {
+  return readMarker();
+}
+
 function readMarker(): boolean {
   if (typeof document === 'undefined') return false;
   return document.cookie.split(';').some((part) => part.trim() === `${VISITOR_COOKIE}=1`);
