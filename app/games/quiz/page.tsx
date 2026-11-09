@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { dropOwnCopies, familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
+import { familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
 import { ChildScreen } from '@/components/ChildScreen';
 import { Hills } from '@/components/Hills';
 import { SET_CARD_WIDTH, SetCard, type SetCardData } from '@/components/SetCard';
@@ -58,7 +58,7 @@ export default function QuizSets() {
           me,
         ).order('position');
         if (error) throw new Error(error.message);
-        const rows = ownerFirst(dropOwnCopies((data as unknown as Row[]) ?? [], me), me).map((r) => ({ ...r, count: r.questions.filter(isComplete).length, mine: !!me && r.owner_id === me })).filter((r) => r.count > 0);
+        const rows = ownerFirst((data as unknown as Row[]) ?? [], me).map((r) => ({ ...r, count: r.questions.filter(isComplete).length, mine: !!me && r.owner_id === me })).filter((r) => r.count > 0);
         if (!live) return;
         setSets(rows);
         setIdx(recallIndex(INDEX_KEY, rows.length));

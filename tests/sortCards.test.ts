@@ -8,7 +8,7 @@ const h = vi.hoisted(() => ({
   from: vi.fn(),
 }))
 
-vi.mock('@/lib/review', () => ({ playerId: async () => null, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r, dropOwnCopies: (r: unknown) => r }));
+vi.mock('@/lib/review', () => ({ playerId: async () => null, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r }));
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({ from: h.from }),
 }))

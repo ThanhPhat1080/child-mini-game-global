@@ -9,7 +9,7 @@ const h = vi.hoisted(() => ({ me: null as string | null,
   from: vi.fn(),
 }));
 
-vi.mock('@/lib/review', () => ({ playerId: async () => h.me, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r, dropOwnCopies: (r: unknown) => r }));
+vi.mock('@/lib/review', () => ({ playerId: async () => h.me, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r }));
 vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ from: h.from }) }));
 
 import { fetchActiveFindLevels, fetchFindLevel } from '@/lib/find/levels';
@@ -64,6 +64,14 @@ describe('fetchActiveFindLevels', () => {
       error: null,
     };
     const levels = await fetchActiveFindLevels();
+    expect(levels.map((l) => l.id)).toEqual(['a', 'b']);
+  });
+
+  it('a family sees its own approved level AND the global copy (duplicates are accepted)', async () => {
+    h.me = 'p1';
+    h.result = { data: [{ ...good('a', 1), owner_id: 'p1', source_id: null }, { ...good('b', 2), owner_id: 'sa', source_id: 'a' }], error: null };
+    const levels = await fetchActiveFindLevels();
+    h.me = null;
     expect(levels.map((l) => l.id)).toEqual(['a', 'b']);
   });
 

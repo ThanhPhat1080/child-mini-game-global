@@ -89,16 +89,6 @@ export function useMyRole(): Role | null {
 }
 
 /**
- * V9: a row that a Super Admin copied from one of the family's own rows is dropped from the family's list,
- * so the family sees the original once. Other families still see the copy.
- */
-export function dropOwnCopies<T extends { id: string; owner_id?: string | null; source_id?: string | null }>(rows: T[], me: string | null): T[] {
-  if (!me) return rows;
-  const own = new Set(rows.filter((r) => r.owner_id === me).map((r) => r.id));
-  return rows.filter((r) => !(r.owner_id !== me && r.source_id && own.has(r.source_id)));
-}
-
-/**
  * V10: the ids (among `ids`, the parent's own rows) that have a readable global copy. Drives the "Global copy"
  * badge. A badge is a convenience: a failed read gives an empty set.
  */

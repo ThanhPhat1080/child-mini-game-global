@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({ rows: [] as unknown[], eq: vi.fn(), push: vi.fn() }));
 
-vi.mock('@/lib/review', () => ({ playerId: async () => 'p1', familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r, dropOwnCopies: (r: unknown) => r }));
+vi.mock('@/lib/review', () => ({ playerId: async () => 'p1', familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r }));
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
     from: () => ({
@@ -70,6 +70,13 @@ describe('Quiz set selection (T9, C3, C11)', () => {
     const cards = container.querySelectorAll('a[data-set-card]');
     expect(cards[0].querySelector('[data-family-badge]')).not.toBeNull();
     expect(cards[1].querySelector('[data-family-badge]')).toBeNull();
+  });
+
+  it('a family sees its own approved set and the global copy of it (duplicates are accepted)', async () => {
+    h.rows = [{ ...set('s1', 'Animals', null, [good(1)]), owner_id: 'p1', source_id: null }, { ...set('s2', 'Animals', null, [good(1)]), owner_id: 'sa', source_id: 's1' }];
+    const { container } = render(<QuizSets />);
+    await screen.findAllByText('Animals');
+    expect(container.querySelectorAll('a[data-set-card]')).toHaveLength(2);
   });
 
   it('TC1: each card shows cover, name, optional sub-title and a question-count pill', async () => {

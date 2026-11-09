@@ -34,7 +34,7 @@ vi.mock('@/lib/superAdmin', async (orig) => ({
 import { ContentTabs } from '@/components/admin/ContentTabs';
 import { ShareToggle } from '@/components/admin/ShareToggle';
 import { VisibilityBadge } from '@/components/admin/VisibilityBadge';
-import { dropOwnCopies, inScope, isLocked, lockedOwn, validScope } from '@/lib/review';
+import { inScope, isLocked, lockedOwn, validScope } from '@/lib/review';
 import { approveItem, pendingCounts, PENDING_CHANGED, publishOwn } from '@/lib/superAdmin';
 import SetsPage from '@/app/admin/(panel)/sets/page';
 
@@ -89,17 +89,6 @@ describe('scope and lock rules (V8, V9)', () => {
     expect(lockedOwn('private', false)).toBe(false);
     expect(lockedOwn('global', true)).toBe(false);
     expect(lockedOwn(undefined, false)).toBe(false);
-  });
-
-  it("dropOwnCopies drops the copy of the family's own row, keeps other families' copies", () => {
-    const rows = [
-      { id: 'o1', owner_id: 'me', source_id: null },
-      { id: 'copy-of-o1', owner_id: 'sa', source_id: 'o1' },
-      { id: 'copy-of-other', owner_id: 'sa', source_id: 'x9' },
-      { id: 'g1', owner_id: 'sa', source_id: null },
-    ];
-    expect(dropOwnCopies(rows, 'me').map((r) => r.id)).toEqual(['o1', 'copy-of-other', 'g1']);
-    expect(dropOwnCopies(rows, null)).toEqual(rows);
   });
 });
 

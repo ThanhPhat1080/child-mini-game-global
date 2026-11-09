@@ -9,7 +9,7 @@ const h = vi.hoisted(() => ({ me: null as string | null,
   from: vi.fn(),
 }));
 
-vi.mock('@/lib/review', () => ({ playerId: async () => h.me, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r, dropOwnCopies: (r: unknown) => r }));
+vi.mock('@/lib/review', () => ({ playerId: async () => h.me, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r }));
 vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ from: h.from }) }));
 
 import { fetchActiveLevels, fetchLevel } from '@/lib/spot/levels';
@@ -29,6 +29,14 @@ beforeEach(() => {
 });
 
 describe('fetchActiveLevels', () => {
+  it('a family sees its own approved level AND the global copy (duplicates are accepted)', async () => {
+    h.me = 'p1';
+    h.result = { data: [{ id: 'a', owner_id: 'p1', source_id: null, active: true }, { id: 'b', owner_id: 'sa', source_id: 'a', active: true }], error: null };
+    const out = await fetchActiveLevels();
+    h.me = null;
+    expect(out.map((l) => [l.id, l.mine])).toEqual([['a', true], ['b', false]]);
+  });
+
   it('marks the signed-in family\'s own levels (mine) and no others, without leaking owner_id', async () => {
     h.me = 'p1';
     h.result = { data: [{ id: 'a', owner_id: 'p1', active: true }, { id: 'b', owner_id: null, active: true }], error: null };
