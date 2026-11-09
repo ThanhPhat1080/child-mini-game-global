@@ -12,6 +12,7 @@ import { Pic } from '@/components/Pic';
 import { ContentTabs } from '@/components/admin/ContentTabs';
 import { VisibilityBadge } from '@/components/admin/VisibilityBadge';
 import { copiedIds, getMyRole, getMyUserId, useContentScope, useMyRole, type ContentTable, type Visibility } from '@/lib/review';
+import { ParentProfileLink } from '@/components/admin/ParentProfileModal';
 import { ListToolbar } from '@/components/admin/ListToolbar';
 import { approveItem, parentNames, usePendingCounts } from '@/lib/superAdmin';
 import { matches, sortBy, type SortOrder } from '@/lib/people';
@@ -146,7 +147,7 @@ export default function SetsPage() {
             {mine.map((r) => (
               <tr key={r.id} className={s.row} style={{ borderTop: '1px solid #F1E7DA' }}>
                 <td style={{ padding: '12px 20px' }}>
-                  <Link href={`/admin/sets/${r.id}`} style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', color: 'inherit' }}>
+                  <Link href={`/admin/sets/${r.id}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', color: 'inherit' }}>
                     <Thumb path={r.cover_path} color={r.heading_color} />
                     <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <span style={{ fontFamily: "'Baloo 2', sans-serif", fontSize: 20, fontWeight: 600, lineHeight: 1.1, color: r.heading_color }}>{r.title}</span>
@@ -154,7 +155,7 @@ export default function SetsPage() {
                     </span>
                   </Link>
                 </td>
-                {showOwner && <td style={{ padding: '12px 12px', fontWeight: 700 }}><Link href={`/admin/parents/${r.owner}`} className={s.link}>{owners.get(r.owner ?? '') || 'Parent'}</Link></td>}
+                {showOwner && <td style={{ padding: '12px 12px', fontWeight: 700 }}><ParentProfileLink id={r.owner ?? ''} name={owners.get(r.owner ?? '') || 'Parent'} /></td>}
                 <td style={{ padding: '12px 12px' }}>{r.count}{r.total > r.count ? <span style={{ color: '#7A5410', fontSize: 13 }}> · {r.total - r.count} incomplete</span> : null}</td>
                 <td style={{ padding: '12px 12px' }}>
                   <span style={{ display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
@@ -164,7 +165,7 @@ export default function SetsPage() {
                 </td>
                 <td style={{ padding: '12px 12px', color: '#7A6458' }}>{r.updated}</td>
                 <td style={{ padding: '12px 20px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                  <Link href={`/admin/sets/${r.id}`} className={s.link} style={{ fontWeight: 700, marginRight: 8, padding: '8px 10px' }}>{editable(r) ? 'Edit' : 'View'}</Link>
+                  <Link href={`/admin/sets/${r.id}`} target="_blank" rel="noopener noreferrer" className={s.link} style={{ fontWeight: 700, marginRight: 8, padding: '8px 10px' }}>{editable(r) ? 'Edit' : 'View'}</Link>
                   {scope === 'queue' && <button type="button" className={styles.primary} style={{ marginLeft: 8 }} aria-label={`Approve ${r.title}`} disabled={approving !== null} onClick={() => void approve(r)}>{approving === r.id ? 'Approving…' : 'Approve'}</button>}
                   {scope === 'mine' && r.visibility === 'private' && <button type="button" className={s.danger} aria-label={`Delete ${r.title}`} onClick={() => setConfirm(r)} style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 15, color: '#A8484F', background: 'transparent', border: 'none', borderRadius: 8, padding: '8px 10px', cursor: 'pointer' }}>Delete</button>}
                 </td>
