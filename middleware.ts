@@ -8,11 +8,12 @@ import { VISITOR_COOKIE } from '@/lib/visitor';
 const ADMIN_SIGN_IN = '/admin/sign-in';
 const PLAY_SIGN_IN = '/play/sign-in';
 const PICKER = '/play';
+const GUEST_SETUP = '/play/guest';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Pages anyone may open, signed in or not (no redirect loops). */
 // /play and /play/sign-in are not here: they redirect a visitor or a signed-in parent (GU9, GU10).
-const OPEN = new Set([ADMIN_SIGN_IN, '/admin/forbidden', '/admin/suspended', '/sign-up', '/play/guest']);
+const OPEN = new Set([ADMIN_SIGN_IN, '/admin/forbidden', '/admin/suspended', '/sign-up']);
 
 const ADMIN_TARGET = { signin: ADMIN_SIGN_IN, forbidden: '/admin/forbidden', banned: '/admin/suspended' } as const;
 
@@ -21,7 +22,7 @@ const ADMIN_TARGET = { signin: ADMIN_SIGN_IN, forbidden: '/admin/forbidden', ban
  * effect immediately. `/` and `/games/*` need a signed-in profile and an active child (cookie that selects
  * one of the parent's own `children` rows through RLS) or the guest cookie (no child: global content only);
  * `/admin/*` follows `adminAccess`.
- * `/play/sign-in` sends a signed-in parent to `/play`; `/play` sends a visitor to `/` (GU9, GU10). `/play/guest` is open.
+ * `/play/sign-in` and `/play/guest` send a signed-in parent to `/play`; `/play` sends a visitor to `/` (GU9, GU10).
  */
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -51,6 +52,8 @@ export async function middleware(request: NextRequest) {
   // The sign-in chooser: a signed-in parent never sees it (Q14, GU9). A visitor on the picker goes to Welcome (GU10).
   if (path === PLAY_SIGN_IN) return profile ? redirectTo(request, response, PICKER) : response;
   if (path === PICKER) return !profile && visitor ? redirectTo(request, response, '/') : response;
+  // A signed-in parent never sets up a visitor on this device (Q14): /play/guest goes to the picker.
+  if (path === GUEST_SETUP) return profile ? redirectTo(request, response, PICKER) : response;
 
   const isAdminArea = path === '/admin' || path.startsWith('/admin/');
 
@@ -89,5 +92,5 @@ async function hasActiveChild(request: NextRequest, supabase: SupabaseClient, pa
 }
 
 export const config = {
-  matcher: ['/', '/play', '/play/sign-in', '/games/:path*', '/admin/:path*'],
+  matcher: ['/', '/play', '/play/sign-in', '/play/guest', '/games/:path*', '/admin/:path*'],
 };

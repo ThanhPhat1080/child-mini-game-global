@@ -161,7 +161,7 @@ describe('middleware route protection (U11, U12, U13)', () => {
   });
 
   it('matches the welcome page, the picker, the sign-in chooser, /games and /admin', () => {
-    expect(config.matcher).toEqual(['/', '/play', '/play/sign-in', '/games/:path*', '/admin/:path*']);
+    expect(config.matcher).toEqual(['/', '/play', '/play/sign-in', '/play/guest', '/games/:path*', '/admin/:path*']);
   });
 });
 
@@ -203,7 +203,11 @@ describe('guest play routes (GU9-GU11)', () => {
     expect(await visit('/play/sign-in', 'noProfile', VISITOR)).toBe(NEXT);
   });
 
-  it('/play/guest is open for everyone', async () => {
-    for (const who of whos) expect(await visit('/play/guest', who, null)).toBe(NEXT);
+  it('/play/guest is open for a signed-out visitor, and a signed-in parent goes to /play (Q14)', async () => {
+    expect(await visit('/play/guest', 'signedOut', null)).toBe(NEXT);
+    expect(await visit('/play/guest', 'noProfile', VISITOR)).toBe(NEXT);
+    expect(await visit('/play/guest', 'parent', null)).toBe(PICKER);
+    expect(await visit('/play/guest', 'parent', VISITOR)).toBe(PICKER);
+    expect(await visit('/play/guest', 'superAdmin', null)).toBe(PICKER);
   });
 });
