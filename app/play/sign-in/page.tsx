@@ -72,7 +72,7 @@ export default function PlaySignIn() {
             <span aria-hidden="true">&larr;</span> Back
           </button>
           <form className={styles.card} onSubmit={onSubmit} noValidate>
-            <div>
+            <div className={play.loginHead}>
               <h1>Let's play together</h1>
               <p className={styles.sub}>Sign in and play along with your child.</p>
             </div>
