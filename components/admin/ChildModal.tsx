@@ -353,7 +353,7 @@ export function ChildModal({ mode, child, parentId, compact, onClose, onSaved, o
         {formError && <div role="alert" className={s.fieldError}>{formError}</div>}
 
         <div className={s.modalActions}>
-          <button type="button" className={`${s.btn} ${s.ghost}`} disabled={busy} onClick={requestClose} style={{ height: 44, padding: '0 20px', borderRadius: 12, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer' }}>Cancel</button>
+          <button type="button" className={`${s.btn} ${s.ghost}`} disabled={busy} onClick={requestClose} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
           <button type="button" className={s.modalPrimary} style={{ background: theme.text }} disabled={!canSave} aria-busy={busy} onClick={save}>{busy ? 'Saving…' : 'Save'}</button>
         </div>
       </div>

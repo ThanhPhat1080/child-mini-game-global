@@ -227,11 +227,11 @@ export function SetEditor({ setId }: { setId: string }) {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', justifyContent: 'flex-end' }}>
               <span style={{ padding: '6px 14px', borderRadius: 999, fontSize: 13, fontWeight: 700, background: chip.bg, color: chip.fg }}>{chip.text}</span>
               {canPreview ? (
-                <Link href={`/games/quiz/${d.id}?preview=1`} target="_blank" rel="noopener noreferrer" className={s.ghost} style={{ height: 44, padding: '0 18px', borderRadius: 12, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8, boxSizing: 'border-box' }}>
+                <Link href={`/games/quiz/${d.id}?preview=1`} target="_blank" rel="noopener noreferrer" className={s.ghost} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, boxSizing: 'border-box' }}>
                   <Eye />Preview as child
                 </Link>
               ) : (
-                <button type="button" disabled title={previewHint} className={s.btn} style={{ height: 44, padding: '0 18px', borderRadius: 12, border: '1.5px solid #EADCC8', background: '#F6EFE6', color: '#A8968A', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', gap: 8, boxSizing: 'border-box', fontFamily: 'Nunito, sans-serif' }}><Eye />Preview as child</button>
+                <button type="button" disabled title={previewHint} className={s.btn} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: '1.5px solid #EADCC8', background: '#F6EFE6', color: '#A8968A', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, boxSizing: 'border-box', fontFamily: 'Nunito, sans-serif' }}><Eye />Preview as child</button>
               )}
               <RevertButton saving={busy} dirty={dirty} onClick={revert} />
               <SaveButton saving={busy} enabled={dirty || d.isNew} onClick={doSave} />
@@ -262,7 +262,7 @@ export function SetEditor({ setId }: { setId: string }) {
           </span>
           <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>Quiz set deleted</h2>
           <p style={{ margin: 0, color: '#6E5A4E', fontSize: 15 }}>It no longer appears on the front page.</p>
-          <Link href="/admin/sets" style={{ marginTop: 8, height: 44, padding: '0 22px', borderRadius: 12, background: '#5A4038', color: '#fff', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center' }}>Back to quiz sets</Link>
+          <Link href="/admin/sets" style={{ marginTop: 8, height: 40, padding: '0 18px', borderRadius: 10, background: '#5A4038', color: '#fff', fontWeight: 700, fontSize: 14, display: 'flex', alignItems: 'center' }}>Back to quiz sets</Link>
         </section>
       )}
 
@@ -327,8 +327,8 @@ export function SetEditor({ setId }: { setId: string }) {
               <CheckOption checked={d.published} onChange={() => edit({ published: !d.published })} title="Published" hint="Draft sets are hidden from the child, but you can still use “Preview as child” after saving." />
 
               <div style={{ paddingTop: 18, borderTop: '1px solid #F1E7DA', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                <button type="button" className={s.btn} onClick={() => setImportOpen(true)} style={{ height: 42, padding: '0 16px', borderRadius: 10, border: 'none', background: '#3F73B5', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' }}>+ Quick import questions</button>
-                {!d.isNew && d.visibility !== 'global' && <button type="button" className={s.danger} onClick={() => setConfirm({ type: 'set' })} style={{ ...dangerBtn, height: 42, padding: '0 16px' }}>Delete this quiz set</button>}
+                <button type="button" className={s.btn} onClick={() => setImportOpen(true)} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#3F73B5', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' }}>+ Quick import questions</button>
+                {!d.isNew && d.visibility !== 'global' && <button type="button" className={s.danger} onClick={() => setConfirm({ type: 'set' })} style={dangerBtn}>Delete this quiz set</button>}
               </div>
             </div>
 

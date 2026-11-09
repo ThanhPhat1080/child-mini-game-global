@@ -79,7 +79,7 @@ export function ProfileForm({ profile, onSaved }: { profile: MyProfile; onSaved:
       {error && <p role="alert" className={styles.sub} style={{ color: '#A8484F' }}>{error}</p>}
 
       <div>
-        <button type="submit" disabled={!canSave} style={{ height: 44, padding: '0 22px', borderRadius: 12, border: 'none', background: '#5A4038', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: canSave ? 'pointer' : 'default', opacity: canSave ? 1 : 0.5 }}>
+        <button type="submit" disabled={!canSave} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#5A4038', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: canSave ? 'pointer' : 'default', opacity: canSave ? 1 : 0.5 }}>
           {busy ? 'Saving…' : 'Save'}
         </button>
       </div>

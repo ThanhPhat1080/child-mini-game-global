@@ -37,7 +37,7 @@ export default function MediaPage() {
           const on = t.kind === kind;
           return (
             <button key={t.kind} type="button" role="tab" aria-selected={on} onClick={() => setKind(t.kind)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 44, padding: '0 18px', borderRadius: 12, border: on ? '2px solid #5A4038' : '1.5px solid #E3D5C4', background: on ? '#fff' : 'transparent', color: '#4A3830', fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 15, cursor: 'pointer' }}>
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 8, height: 40, padding: '0 18px', borderRadius: 10, border: on ? '2px solid #5A4038' : '1.5px solid #E3D5C4', background: on ? '#fff' : 'transparent', color: '#4A3830', fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
               {t.icon}{t.label}
             </button>
           );

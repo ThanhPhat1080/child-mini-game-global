@@ -28,7 +28,7 @@ export function GlobalToggle({ table, id, visibility, onChanged }: {
   }
 
   // Same look as the admin Save button (SaveButtons): `.btn` alone has no colour or size.
-  const base = { height: 44, padding: '0 22px', borderRadius: 12, fontSize: 15, fontWeight: 700, fontFamily: 'Nunito, sans-serif', display: 'inline-flex', alignItems: 'center', gap: 8, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.6 : 1 } as const;
+  const base = { height: 40, padding: '0 18px', borderRadius: 10, fontSize: 14, fontWeight: 700, fontFamily: 'Nunito, sans-serif', display: 'inline-flex', alignItems: 'center', gap: 8, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.6 : 1 } as const;
   const primary = { ...base, border: 'none', background: '#5A4038', color: '#fff' } as const;
   const ghost = { ...base, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830' } as const;
 

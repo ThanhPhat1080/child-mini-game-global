@@ -113,7 +113,7 @@ export default function ParentsPage() {
         <button type="button" className={styles.ghost} disabled={shown.length === 0} onClick={toggleAll}>
           {allOpen ? 'Collapse all' : 'Expand all'}
         </button>
-        <button type="button" className={styles.primary} style={{ height: 40, padding: '0 16px', fontSize: 14 }} onClick={() => setCreating(true)}>
+        <button type="button" className={styles.primary} onClick={() => setCreating(true)}>
           Create parent
         </button>
       </ListToolbar>

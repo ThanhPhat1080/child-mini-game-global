@@ -37,9 +37,9 @@ const createdOrder = (paths: string[], origins: Map<string, string>): string[] =
 const fileName = (path: string): string => path.split('/').pop() ?? path;
 
 /** Admin buttons: the dark primary of "Save changes", the blue of "Quick import", and the ghost used across the editors. */
-const primaryBtn = { height: 44, padding: '0 20px', borderRadius: 12, border: 'none', background: '#5A4038', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer' } as const;
-const uploadBtn = { height: 42, padding: '0 16px', borderRadius: 10, border: 'none', background: '#3F73B5', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' } as const;
-const cancelBtn = { ...ghostBtn, height: 44, padding: '0 20px', fontSize: 15 } as const;
+const primaryBtn = { height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#5A4038', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' } as const;
+const uploadBtn = { height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#3F73B5', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' } as const;
+const cancelBtn = ghostBtn;
 /** The dialog's height: the list scrolls inside it; the header and footer stay put. */
 const DIALOG_HEIGHT = 'min(600px, calc(100vh - 32px))';
 
@@ -432,7 +432,7 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: '#6E5A4E' }}>
         Sort by
         <select aria-label="Sort by" value={sortBy} onChange={(e) => setSortBy(e.target.value as 'created' | 'name')}
-          style={{ height: 38, borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14, padding: '0 8px', ...selectArrowStyle }}>
+          style={{ height: 40, borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14, padding: '0 8px', ...selectArrowStyle }}>
           <option value="created">Created (newest)</option>
           <option value="name">Name (A to Z)</option>
         </select>

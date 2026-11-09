@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { requestEdit, shareItem, type ContentTable, type Visibility } from '@/lib/review';
 import s from '@/components/admin/admin-ui.module.css';
 import { GlobalToggle } from './GlobalToggle';
+import { ghostBtn, primaryBtn } from './editor-parts';
 
 /**
  * Sharing controls of one row (V2-V4): a private row gets "Share with all children"; a pending row shows
@@ -60,15 +61,15 @@ function ParentShare({ table, id, visibility, onChanged }: {
       )}
       {visibility === 'pending' && <p role="status" style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#7A5410' }}>Under review. You can edit it again if it is sent back.</p>}
       {visibility === 'global' && !asking && !sent && (
-        <button type="button" className={`${s.btn} ${s.ghost}`} onClick={() => setAsking(true)}>Request edit</button>
+        <button type="button" className={`${s.btn} ${s.ghost}`} style={ghostBtn} onClick={() => setAsking(true)}>Request edit</button>
       )}
       {visibility === 'global' && asking && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignSelf: 'stretch' }}>
           <label htmlFor={`edit-note-${id}`} style={{ fontSize: 13, fontWeight: 700 }}>What would you like to change?</label>
           <textarea id={`edit-note-${id}`} rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" className={s.btn} disabled={busy} onClick={() => void ask()}>Send request</button>
-            <button type="button" className={`${s.btn} ${s.ghost}`} disabled={busy} onClick={() => setAsking(false)}>Cancel</button>
+            <button type="button" className={s.btn} style={{ ...primaryBtn, opacity: busy ? 0.6 : 1 }} disabled={busy} onClick={() => void ask()}>Send request</button>
+            <button type="button" className={`${s.btn} ${s.ghost}`} style={ghostBtn} disabled={busy} onClick={() => setAsking(false)}>Cancel</button>
           </div>
         </div>
       )}

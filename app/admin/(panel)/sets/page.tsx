@@ -93,7 +93,7 @@ export default function SetsPage() {
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Quiz sets</h1>
           <p style={{ margin: '6px 0 0', color: '#7A6458', fontSize: 15 }}>Create sets, and delete the ones you no longer need.</p>
         </div>
-        {scope === 'mine' && <Link href="/admin/sets/new" style={{ height: 46, padding: '0 22px', borderRadius: 12, background: '#5A4038', color: '#fff', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+        {scope === 'mine' && <Link href="/admin/sets/new" style={{ height: 40, padding: '0 18px', borderRadius: 10, background: '#5A4038', color: '#fff', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
           New quiz set
         </Link>}

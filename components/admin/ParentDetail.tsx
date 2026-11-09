@@ -176,7 +176,7 @@ export default function ParentDetail({ id }: { id: string }) {
             value={quotaText ?? String(mb(person.quotaBytes))}
             onChange={(e) => setQuotaText(e.target.value)}
           />
-          <button type="button" className={styles.primary} style={{ height: 40, padding: '0 16px', fontSize: 14 }} disabled={savingQuota || !quotaValid} onClick={saveQuota}>Save</button>
+          <button type="button" className={styles.primary} disabled={savingQuota || !quotaValid} onClick={saveQuota}>Save</button>
         </div>
       </section>
 

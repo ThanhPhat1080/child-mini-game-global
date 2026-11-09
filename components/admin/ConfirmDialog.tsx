@@ -17,8 +17,8 @@ export function ConfirmDialog({ title, body, button, busy, onCancel, onConfirm }
         </div>
         <p id="dbody" style={{ margin: 0, fontSize: 15, lineHeight: 1.5, color: '#6E5A4E' }}>{body}</p>
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 8, flexWrap: 'wrap' }}>
-          <button type="button" autoFocus className={s.ghost} onClick={onCancel} style={{ height: 44, padding: '0 20px', borderRadius: 12, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer' }}>Cancel</button>
-          <button type="button" disabled={busy} onClick={onConfirm} style={{ height: 44, padding: '0 20px', borderRadius: 12, border: 'none', background: '#A8484F', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>{button}</button>
+          <button type="button" autoFocus className={s.ghost} onClick={onCancel} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
+          <button type="button" disabled={busy} onClick={onConfirm} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#A8484F', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer', opacity: busy ? 0.6 : 1 }}>{button}</button>
         </div>
       </div>
     </div>

@@ -19,7 +19,7 @@ import { lockedOwn, type Visibility } from '@/lib/review';
 /** Accepted level pictures (A21), the same types as the Spot and Cards pictures. */
 export const FIND_IMG_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
 
-const small = { ...ghostBtn, height: 34, padding: '0 12px', fontSize: 13 } as const;
+const small = ghostBtn;
 const hint = { fontSize: 12, color: '#7A6458' } as const;
 
 /** The level's picture. A collapsed level keeps a small preview; the buttons and the SVG box show only when it is open. */
@@ -86,7 +86,7 @@ export function FindLevelPanel({ l, n, message, onEdit, onSvg, onAskDelete, onVi
           {!l.isNew && (
             <Link href={`/games/find/${l.id}?preview=1`} target="_blank" rel="noopener" className={`${s.btn} ${s.ghost}`} style={{ ...small, display: 'inline-flex', alignItems: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>Preview as child</Link>
           )}
-          {onAskDelete && <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete level ${n}`} onClick={onAskDelete} style={{ ...dangerBtn, height: 34 }}>Delete</button>}
+          {onAskDelete && <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete level ${n}`} onClick={onAskDelete} style={dangerBtn}>Delete</button>}
         </div>
         </EditLock>
       </div>

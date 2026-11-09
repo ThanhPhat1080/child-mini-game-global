@@ -9,7 +9,7 @@ import { ghostBtn, inputStyle, panel } from './editor-parts';
 const errText = { margin: 0, fontSize: 13, fontWeight: 700, color: '#A8484F' } as const;
 const chip = { display: 'inline-flex', alignItems: 'center', gap: 2, height: 36, maxWidth: '100%', boxSizing: 'border-box', padding: '0 4px 0 14px', borderRadius: 18, background: '#FBF4E9', border: '1.5px solid #EADCC8', fontSize: 14, fontWeight: 700 } as const;
 const iconBtn = { width: 30, height: 30, padding: 0, border: 'none', borderRadius: 15, background: 'transparent', color: '#7A6458', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' } as const;
-const small = { ...ghostBtn, height: 32, padding: '0 10px', fontSize: 13 } as const;
+const small = ghostBtn;
 
 function Pencil() {
   return <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M13.5 6.5l4 4" /></svg>;
@@ -110,7 +110,7 @@ export function GroupsPanel({ groups, onAdd, onRename, onDelete, usage }: {
             onChange={(e) => { setName(e.target.value); setErr(null); }} onKeyDown={key}
             style={{ ...inputStyle, height: 40, flex: '1 1 140px', maxWidth: 320, minWidth: 0, boxSizing: 'border-box' }}
           />
-          <button type="button" className={`${s.btn} ${s.ghost}`} style={{ ...ghostBtn, height: 40 }} onClick={add}>Add group</button>
+          <button type="button" className={`${s.btn} ${s.ghost}`} style={ghostBtn} onClick={add}>Add group</button>
         </div>
         {err && <p id={errId} role="alert" style={errText}>{err}</p>}
       </div>
