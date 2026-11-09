@@ -1,7 +1,32 @@
 import styles from './SkyScene.module.css';
+import { SkyBees, type BeeRoute, type Point } from './SkyBees';
 
 const BLADES = [60, 130, 210, 340, 470, 760, 880, 1040, 1260, 1380, 1560, 1700, 1820];
 const FLOWERS: [number, number, string][] = [[150, 985, '#EBB7BC'], [420, 1010, '#F6E2A6'], [690, 990, '#FFFFFF'], [1010, 1015, '#EBB7BC'], [1300, 992, '#F6E2A6'], [1640, 1005, '#FFFFFF'], [1780, 985, '#EBB7BC']];
+/** Where a bee sits on flower i: on top of its head (the head is 58px above the stem foot). */
+export const flowerSeat = (i: number): Point => [FLOWERS[i][0], FLOWERS[i][1] - 66];
+/**
+ * Three bees weave over the meadow and land on the middle flowers (the ones the princess and prince do not cover).
+ * Every route lasts BEE_CYCLE seconds (legs + rests + wait) and they start 2.5 s apart, so the schedule repeats exactly
+ * and two bees never sit on the same flower: A on 2 (5-7.5 s) and 3 (11.1-13.6 s), B on 4 (7.1-10.1 s), C on 4 (10.5-12.5 s) and 2 (17-19.5 s).
+ */
+export const BEE_CYCLE = 24;
+export const BEES: BeeRoute[] = [
+  { id: 'beeA', from: [-60, 760], scale: 1.3, wait: 4.4, legs: [
+    { to: flowerSeat(2), secs: 5, waves: 4, amp: 28, rest: 2.5 },
+    { to: flowerSeat(3), secs: 3.6, waves: 3, amp: 34, rest: 2.5 },
+    { to: [1990, 640], secs: 6, waves: 5, amp: 30, rest: 0 },
+  ] },
+  { id: 'beeB', from: [1990, 780], scale: 1.1, wait: 8.9, legs: [
+    { to: flowerSeat(4), secs: 4.6, waves: 4, amp: 26, rest: 3 },
+    { to: [-60, 700], secs: 7.5, waves: 6, amp: 30, rest: 0 },
+  ] },
+  { id: 'beeC', from: [-60, 840], scale: 1.2, wait: 5.5, legs: [
+    { to: flowerSeat(4), secs: 5.5, waves: 5, amp: 24, rest: 2 },
+    { to: flowerSeat(2), secs: 4.5, waves: 4, amp: 30, rest: 2.5 },
+    { to: [-60, 720], secs: 4, waves: 4, amp: 28, rest: 0 },
+  ] },
+];
 
 /** Lively clouds: [start x, y, scale, seconds to cross the sky, opacity]. Each one travels left to right and wraps around. */
 const CLOUDS: [number, number, number, number, number][] = [
@@ -11,20 +36,41 @@ const CLOUDS: [number, number, number, number, number][] = [
   [1620, 340, 0.6, 190, 0.66],
   [520, 60, 0.7, 140, 0.72],
 ];
-/** Lively birds: three in a V crossing left to right, two smaller and farther away crossing right to left. */
-const FLOCKS = [
-  { y: 200, scale: 1.3, fly: 'flockA', dur: 42, delay: 1.4, color: '#7A5C50', birds: [[0, 0], [-70, -34], [-70, 34]] },
-  { y: 330, scale: 0.8, fly: 'flockB', dur: 58, delay: -26, color: '#9A8076', birds: [[0, 0], [60, 28]] },
-] as const;
+/** The flying birds (animated images that flap on their own; 320x272), both drawn facing right. */
+export const BIRD_SRC = '/images/bird-fly.webp';
+export const PINK_BIRD_SRC = '/images/bird-pink-fly.webp';
+const BIRD_RATIO = 272 / 320;
+/** Lively birds: a yellow bird and a smaller one farther away cross left to right with the clouds; a pink one crosses back (mirrored). */
+const BIRDS: { src: string; y: number; w: number; dur: number; delay: number; back?: boolean }[] = [
+  { src: BIRD_SRC, y: 210, w: 150, dur: 40, delay: 1.4 },
+  { src: BIRD_SRC, y: 300, w: 96, dur: 56, delay: -24 },
+  { src: PINK_BIRD_SRC, y: 250, w: 130, dur: 48, delay: -14, back: true },
+];
+
+/** Both sky layers share one frame, so a bee on the front layer sits exactly on a flower of the back layer. */
+const FRAME = { viewBox: '0 0 1920 1080', preserveAspectRatio: 'xMidYMid slice', style: { position: 'absolute', inset: 0, width: '100%', height: '100%' } } as const;
+
+/**
+ * The front layer of the lively sky: the bees, drawn above the princess and prince (the page puts it after them).
+ * It lets clicks through to everything under it.
+ */
+export function SkyFront() {
+  return (
+    <svg aria-hidden="true" width="100%" height="100%" {...FRAME} style={{ ...FRAME.style, pointerEvents: 'none' }}>
+      <SkyBees routes={BEES} />
+    </svg>
+  );
+}
 
 /**
  * The sky, sun, clouds and hills behind the play area (FS1). `festive` adds balloons and stars (FS1, Task 8).
- * `lively` (grown-up sign-in page) adds drifting clouds, birds crossing the sky and swaying grass and flowers.
+ * `lively` (grown-up sign-in page) adds drifting clouds, birds crossing the sky (drawn after the clouds, so in front of them)
+ * and swaying grass and flowers; its bees are on the front layer (SkyFront).
  * Decorative only; every motion stops under prefers-reduced-motion.
  */
 export function SkyScene({ festive = false, lively = false }: { festive?: boolean; lively?: boolean }) {
   return (
-    <svg aria-hidden="true" width="100%" height="100%" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+    <svg aria-hidden="true" width="100%" height="100%" {...FRAME}>
       <circle cx="1620" cy="190" r="96" fill="#F6E2A6" />
       <circle cx="1620" cy="190" r="140" fill="#F6E2A6" opacity="0.35" />
       {!lively && (
@@ -64,17 +110,11 @@ export function SkyScene({ festive = false, lively = false }: { festive?: boolea
               </g>
             );
           })}
-          {FLOCKS.map((f, i) => (
-            <g key={i} transform={`translate(0 ${f.y})`}>
-              <g className={styles[f.fly]} style={{ animationDuration: `${f.dur}s`, animationDelay: `${f.delay}s` }}>
+          {BIRDS.map(({ src, y, w, dur, delay, back }, i) => (
+            <g key={i} transform={`translate(0 ${y})`}>
+              <g className={back ? styles.flyBack : styles.fly} style={{ animationDuration: `${dur}s`, animationDelay: `${delay}s` }}>
                 <g className={styles.birdWave} style={{ animationDelay: `${-i * 1.7}s` }}>
-                  {f.birds.map(([dx, dy], j) => (
-                    <g key={j} transform={`translate(${dx * f.scale} ${dy * f.scale}) scale(${f.scale})`}>
-                      <g className={styles.flap} style={{ animationDelay: `${-j * 0.23 - i * 0.4}s` }}>
-                        <path transform="scale(1.6)" d="M-18 0 Q-9 -14 0 0 Q9 -14 18 0" fill="none" stroke={f.color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                      </g>
-                    </g>
-                  ))}
+                  <image href={src} x={-w / 2} y={(-w * BIRD_RATIO) / 2} width={w} height={w * BIRD_RATIO} transform={back ? 'scale(-1 1)' : undefined} />
                 </g>
               </g>
             </g>

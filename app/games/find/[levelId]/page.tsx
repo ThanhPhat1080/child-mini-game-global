@@ -2,10 +2,8 @@
 
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Stage } from '@/components/Stage';
+import { ChildScreen, CornerBack } from '@/components/ChildScreen';
 import { Hills } from '@/components/Hills';
-import { BackButton } from '@/components/BackButton';
-import { MusicButton } from '@/components/MusicButton';
 import { FindBoard, type FindRipple } from '@/components/find/FindBoard';
 import { FindWordList } from '@/components/find/FindWordList';
 import { FindScrollColumn } from '@/components/find/FindScrollColumn';
@@ -174,16 +172,14 @@ export default function FindPlay() {
   const pictureUrl = level ? mediaUrl(level.image_path) : null;
 
   return (
-    <Stage>
+    <ChildScreen music>
       <div data-find-play data-won={won ? 'true' : 'false'} className={reduced ? 'hm-reduced' : undefined} style={{ position: 'absolute', inset: 0 }}>
         {won && praise ? (
           <FindDone childName={praise.name} completeUrl={praise.url} onAgain={again} levelsHref={LEVELS} />
         ) : (
           <>
             <Hills />
-            <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', alignItems: 'center' }}>
-              <BackButton href={LEVELS} game="find" />
-            </div>
+            <CornerBack href={LEVELS} game="find" />
           </>
         )}
         {phase === 'missing' && (
@@ -205,8 +201,7 @@ export default function FindPlay() {
             </div>
           </>
         )}
-        <MusicButton />
       </div>
-    </Stage>
+    </ChildScreen>
   );
 }

@@ -1,10 +1,8 @@
 'use client';
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { Stage } from '@/components/Stage';
+import { ChildScreen } from '@/components/ChildScreen';
 import { Hills } from '@/components/Hills';
-import { BackButton } from '@/components/BackButton';
-import { MusicButton } from '@/components/MusicButton';
 import { Pic } from '@/components/Pic';
 import { CaroHelp } from '@/components/CaroHelp';
 import { CaroHooray, CaroOhOh, HOORAY_MS, OHOH_MS, RESULT_DELAY_MS } from '@/components/caro/CaroResult';
@@ -243,13 +241,9 @@ export default function CaroPlay() {
   }, []);
 
   return (
-    <Stage>
+    <ChildScreen back={{ href: '/games', label: 'Back to games', game: 'caro' }} music>
       <style>{MOTION}</style>
       <Hills />
-
-      <div style={{ position: 'absolute', top: 40, left: 56, zIndex: 2 }}>
-        <BackButton href="/games" label="Back to games" game="caro" />
-      </div>
 
       <div style={{ position: 'absolute', top: 40, right: 40, zIndex: 2 }}>
         <button
@@ -355,7 +349,6 @@ export default function CaroPlay() {
       {phase === 'ohoh' && <CaroOhOh />}
 
       {help && <CaroHelp playHref={null} onClose={closeHelp} />}
-      <MusicButton />
-    </Stage>
+    </ChildScreen>
   );
 }

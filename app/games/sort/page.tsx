@@ -2,10 +2,8 @@
 
 import { LoadError } from '@/components/LoadError';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Stage } from '@/components/Stage';
+import { ChildScreen, CornerBack } from '@/components/ChildScreen';
 import { Hills } from '@/components/Hills';
-import { BackButton } from '@/components/BackButton';
-import { MusicButton } from '@/components/MusicButton';
 import { SortHelp } from '@/components/SortHelp';
 import { SortDone } from '@/components/sort/SortDone';
 import { SortBasket } from '@/components/sort/SortBasket';
@@ -314,7 +312,7 @@ export default function SortPlay() {
   const finished = done && praise !== null;
 
   return (
-    <Stage>
+    <ChildScreen music>
       <div
         ref={stageRef}
         data-sort-play
@@ -328,8 +326,8 @@ export default function SortPlay() {
         ) : (
           <>
           <Hills />
-          <div style={{ position: 'absolute', top: 48, zIndex: 4, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <BackButton href="/games" label="Back to games" game="sort" />
+          <CornerBack href="/games" label="Back to games" game="sort" />
+          <div style={{ position: 'absolute', top: 48, zIndex: 4, left: 56, right: 56, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
             {!done && (
               <button
                 type="button"
@@ -393,9 +391,8 @@ export default function SortPlay() {
           )}
           </>
         )}
-        <MusicButton />
         {help && <SortHelp playHref={null} onClose={closeHelp} />}
       </div>
-    </Stage>
+    </ChildScreen>
   );
 }

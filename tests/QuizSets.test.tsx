@@ -263,8 +263,10 @@ describe('Quiz set selection (T9, C3, C11)', () => {
   it('TC17: the Back and "? Quiz" buttons sit above the full-screen carousel layer so they stay clickable', async () => {
     render(<QuizSets />);
     await screen.findByRole('link', { name: 'Animals, 2 questions' });
-    const header = screen.getByRole('link', { name: 'Back to games' }).parentElement as HTMLElement;
-    expect(header.contains(screen.getByRole('button', { name: /What is Quiz/ }))).toBe(true);
+    // Back sits in the shared corner (z-index set by ChildScreen), the help button in the header row: both above the carousel
+    const corner = screen.getByRole('link', { name: 'Back to games' }).parentElement as HTMLElement;
+    expect(Number(corner.style.zIndex)).toBeGreaterThan(0);
+    const header = screen.getByRole('button', { name: /What is Quiz/ }).parentElement as HTMLElement;
     expect(Number(header.style.zIndex)).toBeGreaterThan(0);
   });
 });

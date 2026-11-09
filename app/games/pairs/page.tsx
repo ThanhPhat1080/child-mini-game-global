@@ -2,10 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Stage } from '@/components/Stage';
+import { ChildScreen, CornerBack } from '@/components/ChildScreen';
 import { Hills } from '@/components/Hills';
-import { BackButton } from '@/components/BackButton';
-import { MusicButton } from '@/components/MusicButton';
 import { LoadError } from '@/components/LoadError';
 import { PairsHelp } from '@/components/PairsHelp';
 import { PairsBoard, type Joining } from '@/components/pairs/PairsBoard';
@@ -296,15 +294,15 @@ export default function PairsPlay() {
   const celebrate = state.phase === 'done' ? praise : null;
 
   return (
-    <Stage>
+    <ChildScreen music>
       <div ref={stageRef} data-pairs-play data-phase={state.phase} className={reduced ? 'hm-reduced' : undefined} style={{ position: 'absolute', inset: 0 }}>
         {celebrate ? (
           <PairsDone pictures={state.done} childName={celebrate.name} completeUrl={celebrate.url} onAgain={again} onHome={toGames} />
         ) : (
           <>
             <Hills />
-            <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <BackButton href="/games" label="Back to games" game="pairs" />
+            <CornerBack href="/games" label="Back to games" game="pairs" />
+            <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
               {state.phase !== 'done' && (
                 <button
                   ref={helpBtn}
@@ -345,9 +343,8 @@ export default function PairsPlay() {
             )}
           </>
         )}
-        <MusicButton />
         {help && <PairsHelp playHref={null} onClose={closeHelp} />}
       </div>
-    </Stage>
+    </ChildScreen>
   );
 }

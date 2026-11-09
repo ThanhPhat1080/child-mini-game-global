@@ -9,12 +9,13 @@ import styles from '@/app/play/guest/guest.module.css';
 export type GenderRefs = { male: HTMLButtonElement | null; female: HTMLButtonElement | null };
 
 /** The Boy and Girl cards (GU2): round head pictures in the gender accent. Left and Right move between them. */
-export function GenderCards({ onPick, leaving, picked, pickedStyle, refs }: {
+export function GenderCards({ onPick, leaving, picked, pickedStyle, refs, locked }: {
   onPick(g: Gender): void;
   leaving: Gender | null;
   picked: Gender | null;
   pickedStyle: { transform: string } | null;
   refs: MutableRefObject<GenderRefs>;
+  locked: boolean;
 }) {
   const order: Gender[] = ['male', 'female'];
 
@@ -25,7 +26,7 @@ export function GenderCards({ onPick, leaving, picked, pickedStyle, refs }: {
   }
 
   return (
-    <div className={styles.genderRow}>
+    <div className={styles.genderRow} aria-hidden={locked || undefined}>
       {order.map((g) => {
         const theme = GENDER_THEME[g];
         const cls = [styles.gcard, g === 'female' ? styles.girl : '', leaving === g ? styles.leave : '', picked === g ? styles.picked : ''].join(' ');
@@ -35,6 +36,7 @@ export function GenderCards({ onPick, leaving, picked, pickedStyle, refs }: {
             ref={(el) => { refs.current[g] = el; }}
             type="button"
             aria-label={theme.label}
+            tabIndex={locked ? -1 : undefined}
             className={cls}
             style={picked === g && pickedStyle ? (pickedStyle as React.CSSProperties) : undefined}
             onClick={() => onPick(g)}
