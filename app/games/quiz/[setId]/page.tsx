@@ -6,9 +6,8 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { getMyChildSettings } from '@/lib/settings';
 import { mediaUrl } from '@/lib/media';
 import { SLOT_COLORS } from '@/lib/tokens';
+import { ChildScreen } from '@/components/ChildScreen';
 import { Stage } from '@/components/Stage';
-import { BackButton } from '@/components/BackButton';
-import { MusicButton } from '@/components/MusicButton';
 import { ohOh, yay, speakKid } from '@/lib/sfx';
 import { Confetti } from '@/components/Confetti';
 import { handleChoiceKey } from '@/lib/keynav';
@@ -207,9 +206,8 @@ export default function QuestionPage() {
   const qImg = mediaUrl(cur.prompt_image_path);
 
   return (
-    <Stage>
-      <div style={{ position: 'absolute', top: 48, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <BackButton href="/games/quiz" label="Back to quiz sets" game="quiz" />
+    <ChildScreen back={{ href: '/games/quiz', label: 'Back to quiz sets', game: 'quiz' }} music>
+      <div style={{ position: 'absolute', top: 48, left: 56, right: 56, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
           <div style={{ display: 'flex', gap: 8 }} role="group" aria-label={`Question ${q + 1} of ${qs.length}`}>
             {qs.map((_, i) => (
@@ -221,7 +219,6 @@ export default function QuestionPage() {
           <span style={{ fontSize: 48, fontWeight: 600, color: '#8A6A5E', minWidth: 110 }}>{q + 1} / {qs.length}</span>
         </div>
       </div>
-      <MusicButton />
 
       <div style={{ position: 'absolute', top: 172, left: 0, right: 0, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 72 }}>
         {qImg && <div style={{ width: 300, height: 300, boxSizing: 'border-box', padding: 20, overflow: 'hidden', borderRadius: 44, background: '#fff', boxShadow: '0 12px 0 #EADCC8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -276,6 +273,6 @@ export default function QuestionPage() {
           </div>
         </div>
       )}
-    </Stage>
+    </ChildScreen>
   );
 }

@@ -6,11 +6,10 @@ import { listMyChildren, type Child } from '@/lib/children';
 import { getMyUserId } from '@/lib/review';
 import { setActiveChild, setGuestPlay } from '@/lib/childSession';
 import { handleChoiceKey, isPressKey } from '@/lib/keynav';
-import { Stage } from '@/components/Stage';
+import { ChildScreen } from '@/components/ChildScreen';
 import { BounceText } from '@/components/BounceText';
 import AdultCheck from '@/components/auth/AdultCheck';
 import StopHandIcon from '@/components/auth/StopHandIcon';
-import LogoutButton from '@/components/auth/LogoutButton';
 import ChildPickCard from '@/components/play/ChildPickCard';
 import GuestPickCard from '@/components/play/GuestPickCard';
 import ParentConfigCard from '@/components/play/ParentConfigCard';
@@ -78,7 +77,7 @@ export default function Play() {
   }
 
   return (
-    <Stage>
+    <ChildScreen logout>
       <SkyScene festive />
       {failed ? (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -112,9 +111,8 @@ export default function Play() {
           </>
         )
       )}
-      <LogoutButton />
       {picked && <PinEntry child={picked} onCorrect={() => onCorrect(picked)} onCancel={() => setPicked(null)} />}
       <AdultCheck open={check} title="Grown-ups only" hint="Solve the sum to open Parent configuration." icon={<StopHandIcon />} centered twoDigit submitLabel="OK" onPass={() => { setCheck(false); router.push('/admin'); }} onCancel={() => setCheck(false)} />
-    </Stage>
+    </ChildScreen>
   );
 }

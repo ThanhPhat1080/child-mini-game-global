@@ -4,11 +4,10 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { getMyChildSettings } from '@/lib/settings';
-import { Stage } from '@/components/Stage';
+import { ChildScreen } from '@/components/ChildScreen';
 import { CelebrationScene } from '@/components/CelebrationScene';
 import { applause, playFile, speakKid } from '@/lib/sfx';
 import { mediaUrl } from '@/lib/media';
-import { MusicButton } from '@/components/MusicButton';
 import { handleChoiceKey } from '@/lib/keynav';
 
 const btn = { width: 160, height: 160, borderRadius: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' } as const;
@@ -43,7 +42,7 @@ export default function Done() {
   }, []);
 
   return (
-    <Stage>
+    <ChildScreen music>
       <CelebrationScene greeting={`You did it${name ? `, ${name}` : ''}!`}>
         <Link href={`/games/quiz/${setId}`} data-done-link className="hm-tap" aria-label="Play this set again" style={{ ...btn, background: '#fff', boxShadow: '0 12px 0 #EADCC8' }}>
           <svg aria-hidden="true" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#B8737B" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></svg>
@@ -55,7 +54,6 @@ export default function Done() {
           <svg aria-hidden="true" width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="#7A5C50" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11l9-8 9 8" /><path d="M5 10v10h14V10" /><path d="M10 20v-6h4v6" /></svg>
         </Link>
       </CelebrationScene>
-      <MusicButton />
-    </Stage>
+    </ChildScreen>
   );
 }

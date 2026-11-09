@@ -1,10 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Stage } from '@/components/Stage';
+import { ChildScreen } from '@/components/ChildScreen';
 import { Hills } from '@/components/Hills';
-import { BackButton } from '@/components/BackButton';
-import { MusicButton } from '@/components/MusicButton';
 import { FindHelp } from '@/components/FindHelp';
 import { FindLevelTile } from '@/components/find/FindLevelTile';
 import { LoadError } from '@/components/LoadError';
@@ -51,10 +49,9 @@ export default function FindLevels() {
   }, [help]);
 
   return (
-    <Stage>
+    <ChildScreen back={{ href: '/games', label: 'Back to games' }} music>
       <Hills />
-      <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <BackButton href="/games" label="Back to games" />
+      <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
         <button
           ref={helpBtn}
           type="button"
@@ -84,8 +81,7 @@ export default function FindLevels() {
           </div>
         </div>
       )}
-      <MusicButton />
       {help && <FindHelp playHref={null} onClose={() => { setHelp(false); setTimeout(() => helpBtn.current?.focus(), 0); }} />}
-    </Stage>
+    </ChildScreen>
   );
 }

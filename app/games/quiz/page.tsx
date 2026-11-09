@@ -4,11 +4,9 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { dropOwnCopies, familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
-import { Stage } from '@/components/Stage';
+import { ChildScreen } from '@/components/ChildScreen';
 import { Hills } from '@/components/Hills';
-import { BackButton } from '@/components/BackButton';
 import { SET_CARD_WIDTH, SetCard, type SetCardData } from '@/components/SetCard';
-import { MusicButton } from '@/components/MusicButton';
 import { LoadError } from '@/components/LoadError';
 import { QuizHelp } from '@/components/QuizHelp';
 import { handleChoiceKey } from '@/lib/keynav';
@@ -106,10 +104,9 @@ export default function QuizSets() {
   const arrow = (side: 'left' | 'right'): React.CSSProperties => ({ position: 'absolute', [side]: 56, top: 440, width: 120, height: 120, borderRadius: 60, border: 'none', background: '#fff', boxShadow: '0 8px 0 #EADCC8', display: 'flex', alignItems: 'center', justifyContent: 'center' });
 
   return (
-    <Stage>
+    <ChildScreen back={{ href: '/games', label: 'Back to games' }} music>
       <Hills />
-      <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <BackButton href="/games" label="Back to games" />
+      <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
         <button
           ref={helpBtn}
           type="button"
@@ -187,8 +184,7 @@ export default function QuizSets() {
           </div>
         </>
       )}
-      <MusicButton />
       {help && <QuizHelp playHref={null} onClose={() => { setHelp(false); setTimeout(() => helpBtn.current?.focus(), 0); }} />}
-    </Stage>
+    </ChildScreen>
   );
 }

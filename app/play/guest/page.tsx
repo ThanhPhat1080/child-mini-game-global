@@ -2,28 +2,32 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { WindowCorners } from '@/components/ChildScreen';
 import { BounceText } from '@/components/BounceText';
-import { Pic } from '@/components/Pic';
-import { SkyScene } from '@/components/play/SkyScene';
+import { PlayBackdrop } from '@/components/play/PlayBackdrop';
 import { GenderCards, type GenderRefs } from '@/components/play/GenderCards';
 import { GuestDetails } from '@/components/play/GuestDetails';
 import type { AgeBand, Gender } from '@/lib/childTheme';
-import { saveVisitor, validateVisitor, VISITOR_HEAD } from '@/lib/visitor';
+import { saveVisitor, validateVisitor } from '@/lib/visitor';
 import play from '../sign-in/playSignIn.module.css';
 import styles from './guest.module.css';
 
-const FLIP_MS = 600;
-const FORM_DELAY_MS = 200;
+/** The picked avatar glides to its fixed spot in GLIDE_MS; only then does the form rise (FORM_MS). X runs it backwards. */
+const GLIDE_MS = 650;
+const CLOSE_MS = 700;
 const reduceMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
+/** gender: Boy / Girl; moving: the avatar glides up; details: the form; closing: the form sinks and the avatar returns. */
+type Phase = 'gender' | 'moving' | 'details' | 'closing';
+
 /**
- * Guest Play setup (spec GU2-GU4): Boy or Girl, then the name and age. OK saves the visitor and goes to Welcome.
+ * Guest Play setup (spec GU2-GU4): Boy or Girl, then the name and age. Play now! saves the visitor and goes to Welcome.
  * Nothing is written to the database (GU12). The X returns to the gender choice and keeps the typed name.
  */
 export default function GuestSetup() {
   const router = useRouter();
   const [gender, setGender] = useState<Gender | null>(null);
-  const [step, setStep] = useState<'gender' | 'details'>('gender');
+  const [phase, setPhase] = useState<Phase>('gender');
   const [leaving, setLeaving] = useState<Gender | null>(null);
   const [pickedStyle, setPickedStyle] = useState<{ transform: string } | null>(null);
   const [formOn, setFormOn] = useState(false);
@@ -31,41 +35,55 @@ export default function GuestSetup() {
   const [ageBand, setAgeBand] = useState<AgeBand>('2-5');
   const refs = useRef<GenderRefs>({ male: null, female: null });
   const headerRef = useRef<HTMLDivElement>(null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   const valid = validateVisitor({ name, gender, ageBand }).ok;
 
   function pick(g: Gender) {
-    const other: Gender = g === 'male' ? 'female' : 'male';
+    if (phase !== 'gender') return;
     setGender(g);
+    setLeaving(g === 'male' ? 'female' : 'male');
     if (reduceMotion()) {
       // reduced motion: a cross-fade only, no glide
-      setLeaving(other);
-      setStep('details');
+      setPhase('details');
       setFormOn(true);
       return;
     }
-    // FLIP: the picked card glides to the header avatar slot, the other card fades away, the form follows 200 ms later
-    const from = refs.current[g]?.getBoundingClientRect();
+    // the avatar ring flies to the fixed header spot; the layout above it does not move (the title only fades)
+    const card = refs.current[g];
+    const ring = card?.firstElementChild?.getBoundingClientRect();
+    const box = card?.getBoundingClientRect();
     const to = headerRef.current?.getBoundingClientRect();
-    if (from && to && from.width > 0 && to.width > 0) {
-      setPickedStyle({ transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${to.width / from.width})` });
+    if (card && ring && box && to && ring.width > 0 && to.width > 0) {
+      const s = to.width / ring.width;
+      const ox = box.left + box.width / 2;
+      const oy = box.top + box.height / 2;
+      const dx = to.left + to.width / 2 - ox - s * (ring.left + ring.width / 2 - ox);
+      const dy = to.top + to.height / 2 - oy - s * (ring.top + ring.height / 2 - oy);
+      setPickedStyle({ transform: `translate(${dx}px, ${dy}px) scale(${s})` });
     }
-    setLeaving(other);
-    setStep('details');
-    timer.current = setTimeout(() => setFormOn(true), FORM_DELAY_MS);
+    setPhase('moving');
+    // the form rises only after the avatar has arrived
+    timers.current.push(setTimeout(() => { setPhase('details'); setFormOn(true); }, GLIDE_MS));
   }
 
   function backToGender() {
-    // the reverse of the pick; the typed name stays
+    // the form sinks away, the avatar glides home and grows back, the other avatar fades in; the typed name stays
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
     setFormOn(false);
-    setStep('gender');
-    timer.current = setTimeout(() => {
-      setLeaving(null);
-      setPickedStyle(null);
-    }, FLIP_MS);
+    if (reduceMotion()) { reset(); return; }
+    setPhase('closing');
+    setLeaving(null);
+    setPickedStyle(null);
+    timers.current.push(setTimeout(reset, CLOSE_MS));
+  }
+
+  function reset() {
+    setPhase('gender');
+    setGender(null);
   }
 
   function submit() {
@@ -75,29 +93,24 @@ export default function GuestSetup() {
     router.push('/');
   }
 
+  const locked = phase !== 'gender';
+
   return (
-    <div className={`${play.wrap} hm-child`}>
-      <div className={play.sky}><SkyScene lively /></div>
-      <Pic src="/images/princess.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroLeft}`} />
-      <Pic src="/images/prince.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroRight}`} />
+    <div className={`${play.wrap} ${styles.page} hm-child`}>
+      <PlayBackdrop />
+      {phase === 'gender' && <WindowCorners back={{ href: '/play/sign-in', label: 'Back' }} />}
       <div className={styles.col}>
-        {step === 'gender' && (
-          <>
-            <button type="button" className={styles.back} aria-label="Back" onClick={() => router.push('/play/sign-in')}>&larr;</button>
-            <h1 className={styles.who}><BounceText text="Who are you?" delay={0.3} /></h1>
-            <GenderCards
-              onPick={pick}
-              leaving={leaving}
-              picked={gender}
-              pickedStyle={pickedStyle}
-              refs={refs}
-            />
-          </>
-        )}
-        <div ref={headerRef} className={`${styles.header} ${step === 'details' ? styles.headerOn : ''} ${gender === 'female' ? styles.headerGirl : ''}`}>
-          {gender && <Pic src={VISITOR_HEAD[gender]} alt="" width={320} height={320} className={styles.avatar} />}
-        </div>
-        {step === 'details' && gender && (
+        <h1 className={`${styles.who} ${locked ? styles.whoOff : ''}`}><BounceText text="Who are you?" delay={0.3} /></h1>
+        <GenderCards
+          onPick={pick}
+          leaving={leaving}
+          picked={gender}
+          pickedStyle={pickedStyle}
+          refs={refs}
+          locked={locked}
+        />
+        <div ref={headerRef} className={styles.header} aria-hidden="true" />
+        {gender && phase !== 'gender' && (
           <div className={`${styles.details} ${formOn ? styles.detailsOn : ''}`}>
             <GuestDetails
               gender={gender}

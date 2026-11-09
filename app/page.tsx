@@ -9,10 +9,8 @@ import { mediaUrl } from '@/lib/media';
 import { playOnce, startMusic } from '@/lib/audio';
 import { BOY_WELCOME_VARS, GENDER_THEME } from '@/lib/childTheme';
 import { useActiveChild } from '@/lib/useActiveChild';
-import { Stage } from '@/components/Stage';
+import { ChildScreen } from '@/components/ChildScreen';
 import { BounceText } from '@/components/BounceText';
-import { MusicButton } from '@/components/MusicButton';
-import LeaveGameButton from '@/components/auth/LeaveGameButton';
 import styles from './welcome.module.css';
 import { Pic } from '@/components/Pic';
 
@@ -42,7 +40,7 @@ export default function Welcome() {
   }
 
   return (
-    <Stage>
+    <ChildScreen music leave>
       <div className={styles.scene} data-welcome-scene style={vars}>
         <svg aria-hidden="true" width="1920" height="1080" viewBox="0 0 1920 1080" style={{ position: 'absolute', inset: 0 }}>
           <circle cx="1620" cy="190" r="96" fill="#F6E2A6" />
@@ -79,8 +77,6 @@ export default function Welcome() {
           </div>
         )}
 
-        <MusicButton />
-        <LeaveGameButton />
 
         {!known ? null : !entered ? (
           <div className={`${styles.center} ${styles.enterWrap}`}>
@@ -121,6 +117,6 @@ export default function Welcome() {
           </div>
         )}
       </div>
-    </Stage>
+    </ChildScreen>
   );
 }

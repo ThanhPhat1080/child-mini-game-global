@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Pic } from '@/components/Pic';
 import { BounceText } from '@/components/BounceText';
-import { SkyScene } from '@/components/play/SkyScene';
+import { PlayBackdrop } from '@/components/play/PlayBackdrop';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { clearVisitor } from '@/lib/visitor';
 import { EntryChooser } from '@/components/play/EntryChooser';
@@ -52,9 +52,7 @@ export default function PlaySignIn() {
 
   return (
     <div className={`${play.wrap} hm-child`}>
-      <div className={play.sky}><SkyScene lively /></div>
-      <Pic src="/images/princess.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroLeft}`} />
-      <Pic src="/images/prince.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroRight}`} />
+      <PlayBackdrop />
       <div className={play.col}>
         <div className={play.brandRow}>
           <Pic src="/seed/fish.svg" alt="" width={84} height={84} className={play.logo} />
@@ -68,9 +66,11 @@ export default function PlaySignIn() {
           </div>
         ) : (
         <div className={play.rest}>
-          <button type="button" className={play.back} aria-label="Back" onClick={() => setMode('choose')}>&larr;</button>
+          <button type="button" className={play.backText} onClick={() => setMode('choose')}>
+            <span aria-hidden="true">&larr;</span> Back
+          </button>
           <form className={styles.card} onSubmit={onSubmit} noValidate>
-            <div>
+            <div className={play.loginHead}>
               <h1>Let's play together</h1>
               <p className={styles.sub}>Sign in and play along with your child.</p>
             </div>

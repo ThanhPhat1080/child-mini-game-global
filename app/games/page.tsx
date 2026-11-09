@@ -5,14 +5,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getMyChildSettings } from '@/lib/settings';
 import { mediaUrl } from '@/lib/media';
-import { Stage } from '@/components/Stage';
+import { ChildScreen } from '@/components/ChildScreen';
 import { Hills } from '@/components/Hills';
-import { BackButton } from '@/components/BackButton';
-import { MusicButton } from '@/components/MusicButton';
 import { AvatarSay } from '@/components/AvatarSay';
 import { isPressKey } from '@/lib/keynav';
 import { GAMES } from '@/lib/games/registry';
-import LeaveGameButton from '@/components/auth/LeaveGameButton';
 import { GameArt, GameIcon } from '@/components/games/GameArt';
 import { rememberIndex, recallIndex } from '@/lib/carouselMemory';
 
@@ -65,7 +62,7 @@ export default function Games() {
   });
 
   return (
-    <Stage>
+    <ChildScreen back={{ href: '/', label: 'Back home', home: true }} music leave>
       <Hills />
       <div
         ref={viewRef}
@@ -128,12 +125,9 @@ export default function Games() {
         ))}
       </div>
 
-      <div style={{ position: 'absolute', top: 40, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <span style={{ marginTop: 8 }}><BackButton href="/" label="Back home" home /></span>
+      <div style={{ position: 'absolute', top: 40, left: 56, right: 56, display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start' }}>
         <AvatarSay avatar={avatar} initials={initials} name={name} gender={gender} />
       </div>
-      <MusicButton />
-      <LeaveGameButton />
-    </Stage>
+    </ChildScreen>
   );
 }
