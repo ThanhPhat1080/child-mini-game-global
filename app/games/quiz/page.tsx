@@ -32,7 +32,6 @@ export default function QuizSets() {
   const [sets, setSets] = useState<SetCardData[] | null>(null);
   const [failed, setFailed] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
-  const [done, setDone] = useState<Record<string, boolean>>({});
   const [help, setHelp] = useState(false);
   const [idx, setIdx] = useState(0);
   const focused = useRef<unknown>(null);
@@ -63,9 +62,6 @@ export default function QuizSets() {
         if (!live) return;
         setSets(rows);
         setIdx(recallIndex(INDEX_KEY, rows.length));
-        const d: Record<string, boolean> = {};
-        try { rows.forEach((r) => { if (localStorage.getItem(`childPlayer:done:${r.id}`)) d[r.id] = true; }); } catch { /* storage blocked */ }
-        setDone(d);
       })
       .catch((e) => { if (live) { setFailed(e ?? true); setSets([]); } });
     return () => { live = false; };
@@ -149,7 +145,7 @@ export default function QuizSets() {
                   data-set-card
                   draggable={false}
                   className="hm-card"
-                  aria-label={`${s.title}, ${s.count} questions${done[s.id] ? ', completed' : ''}`}
+                  aria-label={`${s.title}, ${s.count} questions`}
                   style={{ display: 'block', borderRadius: 56 }}
                   onFocus={() => { setIdx(i); setDx(0); }}
                   onClick={(e) => {
@@ -159,7 +155,7 @@ export default function QuizSets() {
                     pressIdx.current = null;
                   }}
                 >
-                  <SetCard set={s} index={i} done={done[s.id]} />
+                  <SetCard set={s} index={i} />
                 </Link>
               </div>
             ))}

@@ -63,7 +63,7 @@ describe('Quiz set selection (T9, C3, C11)', () => {
     expect(sessionStorage.getItem('childPlayer:quiz:index')).toBe('1');
   });
 
-  it('only the signed-in family\'s own sets carry the family badge; the done star is separate', async () => {
+  it('only the signed-in family\'s own sets carry the family badge', async () => {
     h.rows = [{ ...set('s1', 'Animals', null, [good(1)]), owner_id: 'p1' }, { ...set('s2', 'Colors', null, [good(1)]), owner_id: null }];
     const { container } = render(<QuizSets />);
     await screen.findByText('Animals');
@@ -92,13 +92,12 @@ describe('Quiz set selection (T9, C3, C11)', () => {
     expect(screen.queryByRole('link', { name: /Only broken/ })).toBeNull();
   });
 
-  it('TC3: a finished set shows the star and "completed"; an unfinished one does not', async () => {
+  it('TC3: no card shows a "finished" star or "completed", even when the set was finished before', async () => {
     localStorage.setItem('childPlayer:done:s1', '1');
     render(<QuizSets />);
-    const animals = await screen.findByRole('link', { name: 'Animals, 2 questions, completed' });
-    expect(animals.querySelector('svg[fill="#EED79A"]')).toBeTruthy();
-    const colors = screen.getByRole('link', { name: 'Colors, 1 questions' });
-    expect(colors.querySelector('svg[fill="#EED79A"]')).toBeNull();
+    const animals = await screen.findByRole('link', { name: 'Animals, 2 questions' });
+    expect(animals.querySelector('svg[fill="#EED79A"]')).toBeNull();
+    expect(screen.queryByRole('link', { name: /completed/ })).toBeNull();
   });
 
   it('TC4: a card is a keyboard-focusable link that opens its set (click, or Tab + Enter)', async () => {

@@ -16,11 +16,11 @@ Out of scope for Phase 1: everything in Phase 2. Phase 2 is only "more games" (s
 |----|-------------|
 | C1 | Welcome: large "tap to enter" button. Background music starts on arrival on any child screen (the browser may hold it until the first tap, so it starts at the latest on this press), with the music on/off button bottom-right on every child screen (not in the admin). On press: greeting audio plays, then "Start game" appears (ADR-016). Princess illustration at the left. Shows the child's name from settings. |
 | C2 | Game list: carousel with only "Quiz". Moves with Left/Right keys, click-and-hold drag, arrow buttons, dots. A drag never triggers the card click (ADR-018). Enter/click opens the game. Registry-based so more games can be added later (ADR-014). |
-| C3 | Quiz set selection: cards of published sets: cover, name in heading color, optional sub-title, question-count pill, star if finished (ADR-020). Select with click, or by keyboard: Left/Right arrows move between sets, Enter or Space opens one. |
+| C3 | Quiz set selection: cards of published sets: cover, name in heading color, optional sub-title, question-count pill, and a star badge (top-left) on the family's own sets only (ADR-020). Select with click, or by keyboard: Left/Right arrows move between sets, Enter or Space opens one. |
 | C4 | Question: shows prompt image/text and plays prompt audio if present. 2-3 answers, each a number + fixed color (1 rose, 2 sky, 3 butter, ADR-019) plus an image, a text, or both; an answer with neither is invalid (the question is incomplete and hidden from the child). A text-only answer shows its text large on the card. Choose by click, keys 1/2/3 (ADR-007), or Left/Right arrows to move between the answers and Enter or Space to pick the focused one. No timer. |
 | C5 | Wrong answer: soft "Oh-oh", the wrong card dims gently, child tries again. No penalty, no lives. |
 | C6 | Correct answer: "Hooray!" with slow pastel confetti, then a 3 s "Continue in 3s" countdown moves to the next question (ADR-021). |
-| C7 | Set completed screen with praise and a way back to set selection. The set is marked finished (star). |
+| C7 | Set completed screen with praise and a way back to set selection. |
 | C8 | Navigation back (Esc/Back key and a picture button) from set selection to game list and from a question to set selection. |
 | C9 | No screen requires reading. Any text is decorative or admin-written. Vietnamese diacritics render correctly (ADR-017). |
 | C10 | Motion is slow; `prefers-reduced-motion` disables or reduces confetti and transitions (ADR-006, ADR-021). |
@@ -28,7 +28,7 @@ Out of scope for Phase 1: everything in Phase 2. Phase 2 is only "more games" (s
 | C12 | Question screen has three bands (header, question row with image + replay-voice + text, answers) with no overlap (ADR-025). Set-completed screen shows the girl image and a light confetti burst with applause and a spoken "You did it" (ADR-026). |
 | C13 | Game list: the "? Quiz" badge on set selection opens a "How to play" popup (the game list card only shows a decorative "?" icon, since the PO decision: the child only chooses a game there and watches the tutorial inside the game) (4-step carousel); the large avatar shows a "Hi I'm <name>. Let's play together!" bubble (blue for a boy, pink for a girl) when tapped. Added after the first draft (plan T8, T9). |
 | C14 | Question reading: the question is read aloud, then each answer (unless the question's "Read the answers aloud" is off); the picked answer is always read before the Hooray / Oh-oh popup; Hooray / Oh-oh / You did it can use custom sounds from Settings. Added after the first draft (plan T3, T10, T11). |
-| C15 | Progress: a question is finished only when its right answer is picked; finished questions are kept per set in localStorage and cleared when the set is completed (the star stays). Added after the first draft (plan T10, T11). |
+| C15 | Progress: a question is finished only when its right answer is picked; finished questions are kept per set in localStorage and cleared when the set is completed. Added after the first draft (plan T10, T11). |
 
 ## 3b. Phase 2: game registry, Memory Match, Listen & Pick and Sort It (child)
 Details for G1 and M1-M10: `docs/superpowers/specs/2026-10-29-memory-match-design.md`; for L1-L10: `docs/superpowers/specs/2026-10-30-listen-pick-design.md`; for R1-R10 (Sort It): `docs/superpowers/specs/2026-10-30-sort-it-design.md`; Spot the Differences is in section 3c.
