@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { BEE_CYCLE, BEES, BIRD_SRC, PINK_BIRD_SRC, SkyFront, SkyScene, flowerSeat } from '@/components/play/SkyScene';
+import { BEE_CYCLE, BEES, BIRDS, BIRD_SRC, BLUE_BIRD_SRC, PINK_BIRD_SRC, SkyFront, SkyScene, flowerSeat } from '@/components/play/SkyScene';
 import { PlayBackdrop } from '@/components/play/PlayBackdrop';
 import { wavePath } from '@/components/play/SkyBees';
 
@@ -10,7 +10,7 @@ afterEach(cleanup);
 const endOf = (d: string) => d.trim().split(/[\s,CM]+/).filter(Boolean).slice(-2).map(Number);
 
 describe('SkyScene birds and bees', () => {
-  it('the lively sky has two yellow birds (one smaller) and a mirrored pink bird, plus the clouds', () => {
+  it('the lively sky has two yellow birds (one smaller), a pale blue bird and three mirrored pink birds, plus the clouds', () => {
     const { container } = render(<SkyScene lively />);
     const images = [...container.querySelectorAll('image')];
     const yellow = images.filter((el) => el.getAttribute('href') === BIRD_SRC);
@@ -18,12 +18,25 @@ describe('SkyScene birds and bees', () => {
     const [a, b] = yellow.map((el) => Number(el.getAttribute('width')));
     expect(b).toBeLessThan(a);
     const pink = images.filter((el) => el.getAttribute('href') === PINK_BIRD_SRC);
-    expect(pink).toHaveLength(1);
-    expect(pink[0].getAttribute('transform')).toBe('scale(-1 1)'); // faces left: it flies the other way
+    expect(pink).toHaveLength(3);
+    pink.forEach((el) => expect(el.getAttribute('transform')).toBe('scale(-1 1)')); // faces left: they fly the other way
+    const blue = images.filter((el) => el.getAttribute('href') === BLUE_BIRD_SRC);
+    expect(blue).toHaveLength(1);
+    expect(blue[0].getAttribute('transform')).toBeNull();
     expect(container.querySelectorAll('ellipse[rx="140"]').length).toBe(5); // the five drifting clouds stay
     // every bird is drawn after every cloud, so it flies in front of them
     const lastCloud = [...container.querySelectorAll('ellipse[rx="140"]')].pop()!;
     images.forEach((img) => expect(lastCloud.compareDocumentPosition(img) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy());
+  });
+
+  it('two small pink birds follow the big pink bird: same pace and start, a little behind it', () => {
+    const [lead, ...kids] = BIRDS.filter((b) => b.src === PINK_BIRD_SRC);
+    expect(kids).toHaveLength(2);
+    for (const kid of kids) {
+      expect(kid.w).toBeLessThan(lead.w);
+      expect([kid.dur, kid.delay, kid.back]).toEqual([lead.dur, lead.delay, true]);
+      expect(kid.dx! - (lead.dx ?? 0)).toBeGreaterThan(0); // flying left, so behind means farther right
+    }
   });
 
   it('three bees fly legs that land on flowers, then leave the screen', () => {

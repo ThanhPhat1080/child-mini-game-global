@@ -36,15 +36,25 @@ const CLOUDS: [number, number, number, number, number][] = [
   [1620, 340, 0.6, 190, 0.66],
   [520, 60, 0.7, 140, 0.72],
 ];
-/** The flying birds (animated images that flap on their own; 320x272), both drawn facing right. */
+/** The flying birds (animated images that flap on their own; 320x272), all drawn facing right. */
 export const BIRD_SRC = '/images/bird-fly.webp';
 export const PINK_BIRD_SRC = '/images/bird-pink-fly.webp';
+export const BLUE_BIRD_SRC = '/images/bird-blue-fly.webp';
 const BIRD_RATIO = 272 / 320;
-/** Lively birds: a yellow bird and a smaller one farther away cross left to right with the clouds; a pink one crosses back (mirrored). */
-const BIRDS: { src: string; y: number; w: number; dur: number; delay: number; back?: boolean }[] = [
+export type Bird = { src: string; y: number; w: number; dur: number; delay: number; back?: boolean; dx?: number };
+/** The big pink bird crosses back (mirrored); two small pink birds keep its pace and delay, a little behind it (dx). */
+const PINK_LEAD = { src: PINK_BIRD_SRC, dur: 48, delay: -14, back: true } as const;
+/**
+ * Lively birds: a yellow bird and a smaller one farther away cross left to right with the clouds, and a pale blue one higher up;
+ * the pink family crosses back. `dx` shifts a bird along its line (behind a leader flying left means to the right).
+ */
+export const BIRDS: Bird[] = [
   { src: BIRD_SRC, y: 210, w: 150, dur: 40, delay: 1.4 },
   { src: BIRD_SRC, y: 300, w: 96, dur: 56, delay: -24 },
-  { src: PINK_BIRD_SRC, y: 250, w: 130, dur: 48, delay: -14, back: true },
+  { src: BLUE_BIRD_SRC, y: 140, w: 116, dur: 50, delay: -38 },
+  { ...PINK_LEAD, y: 250, w: 130 },
+  { ...PINK_LEAD, y: 222, w: 74, dx: 135 },
+  { ...PINK_LEAD, y: 286, w: 66, dx: 215 },
 ];
 
 /** Both sky layers share one frame, so a bee on the front layer sits exactly on a flower of the back layer. */
@@ -110,8 +120,8 @@ export function SkyScene({ festive = false, lively = false }: { festive?: boolea
               </g>
             );
           })}
-          {BIRDS.map(({ src, y, w, dur, delay, back }, i) => (
-            <g key={i} transform={`translate(0 ${y})`}>
+          {BIRDS.map(({ src, y, w, dur, delay, back, dx = 0 }, i) => (
+            <g key={i} transform={`translate(${dx} ${y})`}>
               <g className={back ? styles.flyBack : styles.fly} style={{ animationDuration: `${dur}s`, animationDelay: `${delay}s` }}>
                 <g className={styles.birdWave} style={{ animationDelay: `${-i * 1.7}s` }}>
                   <image href={src} x={-w / 2} y={(-w * BIRD_RATIO) / 2} width={w} height={w * BIRD_RATIO} transform={back ? 'scale(-1 1)' : undefined} />
