@@ -244,6 +244,7 @@ export default function ParentDetail({ id }: { id: string }) {
       {editing && (
         <ChildModal
           mode={editing.mode}
+          compact
           parentId={id}
           child={editing.mode === 'edit' ? editing.child : undefined}
           onClose={() => setEditing(null)}

@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { listAllChildren, listPeople, pendingSenders, storageUsedBy, type AdminChild, type PersonRow } from '@/lib/superAdmin';
+import { listAllChildren, listPeople, pendingSenders, removeChild, storageUsedBy, type AdminChild, type PersonRow } from '@/lib/superAdmin';
 import { matches, sortBy, type SortOrder } from '@/lib/people';
 import { ChildCard } from '@/components/admin/ChildCard';
+import { ChildModal } from '@/components/admin/ChildModal';
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { CreateParentDialog } from '@/components/admin/CreateParentDialog';
 import { ListToolbar } from '@/components/admin/ListToolbar';
 import { ParentRow } from '@/components/admin/ParentRow';
@@ -15,7 +17,7 @@ import s from '@/components/admin/admin-ui.module.css';
 
 /**
  * Parents (N10-N13): search by a parent or child name, sort, a red dot and a filter for parents with pending
- * messages, expand to read-only children, and create a parent. Ban and quota live on the parent's detail page.
+ * messages, expand to see the children (quick Edit and Remove, as on the Children page), and create a parent. Ban and quota live on the parent's detail page.
  */
 export default function ParentsPage() {
   const router = useRouter();
@@ -28,6 +30,9 @@ export default function ParentsPage() {
   const [onlyMessages, setOnlyMessages] = useState(false);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<AdminChild | null>(null);
+  const [target, setTarget] = useState<AdminChild | null>(null);
+  const [removeBusy, setRemoveBusy] = useState(false);
   const { toast, show, close } = useToast();
 
   const load = useCallback(async () => {
@@ -40,6 +45,22 @@ export default function ParentsPage() {
     } catch (e) { show('error', (e as Error).message); }
   }, [show]);
   useEffect(() => { void load(); }, [load]);
+
+  async function confirmRemove() {
+    if (!target) return;
+    setRemoveBusy(true);
+    try {
+      await removeChild(target.id);
+      setTarget(null);
+      show('success', 'Child removed.');
+      await load();
+    } catch (e) {
+      setTarget(null);
+      show('error', (e as Error).message);
+    } finally {
+      setRemoveBusy(false);
+    }
+  }
 
   const kidsOf = useCallback((id: string) => kids.filter((k) => k.parent_id === id), [kids]);
 
@@ -115,13 +136,34 @@ export default function ParentsPage() {
               >
                 {ks.length === 0
                   ? <p className={styles.note}>No children yet.</p>
-                  : ks.map((k) => <ChildCard key={k.id} child={k} />)}
+                  : ks.map((k) => <ChildCard key={k.id} child={k} onEdit={() => setEditing(k)} onRemove={() => setTarget(k)} />)}
               </ParentRow>
             </li>
           );
         })}
       </ul>
 
+      {editing && (
+        <ChildModal
+          mode="edit"
+          compact
+          child={editing}
+          parentId={editing.parent_id}
+          onClose={() => setEditing(null)}
+          onSaved={() => { show('success', 'Saved'); void load(); }}
+          onNotice={show}
+        />
+      )}
+      {target && (
+        <ConfirmDialog
+          title="Remove this child?"
+          body={`${target.display_name || target.child_name} and their settings will be deleted. This cannot be undone.`}
+          button="Remove"
+          busy={removeBusy}
+          onCancel={() => setTarget(null)}
+          onConfirm={() => void confirmRemove()}
+        />
+      )}
       {creating && (
         <CreateParentDialog
           onCancel={() => setCreating(false)}
