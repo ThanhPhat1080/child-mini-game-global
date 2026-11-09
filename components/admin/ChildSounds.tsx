@@ -23,10 +23,9 @@ const baseName = (p: string | null) => (p ? p.split('/').pop() ?? p : null);
 /** Play-state key of one sound setting. Keyed by setting, not by file: two settings may share one file. */
 const fileKey = (k: AudioKind) => `file:${k}`;
 
-/** One child's music, volume and feedback sounds (N2). Every choice is a preview until "Save"; "Revert" drops it (A25, A26). */
+/** One child's feedback sounds (N2). Every choice is a preview until "Save"; "Revert" drops it (A25, A26). */
 export function ChildSounds({ childId }: { childId: string }) {
   const [row, setRow] = useState<Row | null>(null);
-  const [volume, setVolume] = useState(30);
   const [soundDraft, setSoundDraft] = useState<SoundDraft>({});
   const { toast, show: showToast, close: closeToast } = useToast();
   // a file renamed in the library: the row and the choices not saved yet follow it
@@ -45,7 +44,6 @@ export function ChildSounds({ childId }: { childId: string }) {
       (r) => {
         if (!r) return showToast('error', 'Could not load settings');
         setRow(r);
-        setVolume(r.music_volume);
       },
       (e: Error) => showToast('error', e.message || 'Could not load settings'),
     );
@@ -64,7 +62,7 @@ export function ChildSounds({ childId }: { childId: string }) {
   }
 
   async function doSave() {
-    const patch: Partial<Row> = { music_volume: volume };
+    const patch: Partial<Row> = {};
     const replaced: string[] = []; // files no setting uses any more, removed after a successful save
     for (const k of Object.keys(soundDraft) as AudioKind[]) {
       const path = soundDraft[k] ?? null;
@@ -87,14 +85,13 @@ export function ChildSounds({ childId }: { childId: string }) {
   /** Drops unsaved edits and goes back to the last saved values. */
   function revert() {
     if (!row) return;
-    setVolume(row.music_volume);
     setSoundDraft({});
     stopPreview();
     showToast('success', 'Changes reverted.');
   }
 
   const soundChanged = (Object.keys(soundDraft) as AudioKind[]).some((k) => (soundDraft[k] ?? null) !== ((row?.[COLUMN[k]] as string | null | undefined) ?? null));
-  const dirty = !!row && (volume !== row.music_volume || soundChanged);
+  const dirty = !!row && soundChanged;
 
   /** A sound chosen from the library: a preview until Save. */
   function chooseSound(kind: AudioKind, path: string) {
@@ -173,8 +170,8 @@ export function ChildSounds({ childId }: { childId: string }) {
     <div>
       <div className={styles.head}>
         <div>
-          <h2>Music and feedback sounds</h2>
-          <p className={styles.sub}>Music and feedback sounds on the child screens.</p>
+          <h2>Feedback sounds</h2>
+          <p className={styles.sub}>Sounds on the child screens.</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <RevertButton saving={saving} dirty={dirty} onClick={revert} />
@@ -183,17 +180,7 @@ export function ChildSounds({ childId }: { childId: string }) {
       </div>
 
       <section className={styles.section}>
-        <div className={styles.volume}>
-          <label htmlFor={`vol-${childId}`} className={styles.label}>Music volume</label>
-          <input id={`vol-${childId}`} type="range" min={0} max={100} value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
-          <span className={styles.note}>{volume}% · kept low on purpose</span>
-        </div>
-        <p className={styles.note}>The background music is built in and loops on the child screens.</p>
-      </section>
-
-      <section className={styles.section}>
         <div>
-          <h2>Feedback sounds</h2>
           <p>Optional. Choose your own track for each moment; without one, the built-in sound plays.</p>
         </div>
         {([
