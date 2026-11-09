@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({ rpc: vi.fn(), getSession: vi.fn() }));
@@ -43,6 +43,8 @@ describe('review UI (N3, N4, V1-V4)', () => {
     const changed = vi.fn();
     const { rerender } = render(<ShareToggle table="memory_cards" id="c1" visibility="private" onChanged={changed} />);
     fireEvent.click(screen.getByRole('switch', { name: 'Share with all children' }));
+    expect(h.rpc).not.toHaveBeenCalled(); // asks first
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Send for review' }));
     await waitFor(() => expect(changed).toHaveBeenCalledWith('pending'));
     expect(h.rpc).toHaveBeenCalledWith('share_item', { p_table: 'memory_cards', p_id: 'c1' });
     rerender(<ShareToggle table="memory_cards" id="c1" visibility="pending" />);
@@ -55,6 +57,7 @@ describe('review UI (N3, N4, V1-V4)', () => {
     const changed = vi.fn();
     render(<ShareToggle table="quiz_sets" id="s1" visibility="private" onChanged={changed} />);
     fireEvent.click(screen.getByRole('switch'));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Send for review' }));
     expect((await screen.findByRole('alert')).textContent).toBe('forbidden');
     expect(changed).not.toHaveBeenCalled();
   });
@@ -68,6 +71,8 @@ describe('review UI (N3, N4, V1-V4)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Request edit' }));
     fireEvent.change(screen.getByLabelText(/What would you like to change/), { target: { value: 'typo in title' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
+    expect(h.rpc).not.toHaveBeenCalled(); // asks first
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Send request' }));
     await waitFor(() => expect(h.rpc).toHaveBeenCalledWith('request_edit', { p_table: 'quiz_sets', p_id: 's1', p_note: 'typo in title' }));
     expect((await screen.findByRole('status')).textContent).toMatch(/Edit request sent/);
   });

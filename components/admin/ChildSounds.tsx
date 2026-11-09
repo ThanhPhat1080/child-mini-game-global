@@ -13,9 +13,9 @@ import { LibraryButton } from '@/components/admin/LibraryButton';
 import { PlayButton } from '@/components/admin/PlayButton';
 
 type Row = ChildSettingsRow;
-type AudioKind = 'music' | 'hooray' | 'ohoh' | 'complete';
+type AudioKind = 'hooray' | 'ohoh' | 'complete';
 
-const COLUMN: Record<AudioKind, keyof Row> = { music: 'music_path', hooray: 'hooray_path', ohoh: 'ohoh_path', complete: 'complete_path' };
+const COLUMN: Record<AudioKind, keyof Row> = { hooray: 'hooray_path', ohoh: 'ohoh_path', complete: 'complete_path' };
 /** A sound choice not saved yet: a bucket path from the library, or null (back to the built-in sound). */
 type SoundDraft = Partial<Record<AudioKind, string | null>>;
 
@@ -23,10 +23,14 @@ const baseName = (p: string | null) => (p ? p.split('/').pop() ?? p : null);
 /** Play-state key of one sound setting. Keyed by setting, not by file: two settings may share one file. */
 const fileKey = (k: AudioKind) => `file:${k}`;
 
-/** One child's music, volume and feedback sounds (N2). Every choice is a preview until "Save"; "Revert" drops it (A25, A26). */
-export function ChildSounds({ childId }: { childId: string }) {
+export type SoundsHandle = { dirty: () => boolean; save: () => Promise<{ ok: boolean; warn?: string; error?: string }> };
+
+/**
+ * One child's feedback sounds (N2). Every choice is a preview until "Save"; "Revert" drops it (A25, A26).
+ * With `registerSave` (inside the child dialog) it has no buttons of its own: the dialog's Save saves it too.
+ */
+export function ChildSounds({ childId, registerSave }: { childId: string; registerSave?: (h: SoundsHandle | null) => void }) {
   const [row, setRow] = useState<Row | null>(null);
-  const [volume, setVolume] = useState(30);
   const [soundDraft, setSoundDraft] = useState<SoundDraft>({});
   const { toast, show: showToast, close: closeToast } = useToast();
   // a file renamed in the library: the row and the choices not saved yet follow it
@@ -45,7 +49,6 @@ export function ChildSounds({ childId }: { childId: string }) {
       (r) => {
         if (!r) return showToast('error', 'Could not load settings');
         setRow(r);
-        setVolume(r.music_volume);
       },
       (e: Error) => showToast('error', e.message || 'Could not load settings'),
     );
@@ -60,11 +63,17 @@ export function ChildSounds({ childId }: { childId: string }) {
 
   async function save() {
     setSaving(true);
-    try { await doSave(); } finally { setSaving(false); }
+    try {
+      const r = await persist();
+      if (!r.ok) showToast('error', r.error ?? 'Could not save');
+      else if (r.warn) showToast('warning', r.warn);
+      else showToast('success', 'Saved');
+    } finally { setSaving(false); }
   }
 
-  async function doSave() {
-    const patch: Partial<Row> = { music_volume: volume };
+  /** Writes the chosen sounds, then frees the files they replace. Reports instead of toasting, so the dialog can. */
+  async function persist(): Promise<{ ok: boolean; warn?: string; error?: string }> {
+    const patch: Partial<Row> = {};
     const replaced: string[] = []; // files no setting uses any more, removed after a successful save
     for (const k of Object.keys(soundDraft) as AudioKind[]) {
       const path = soundDraft[k] ?? null;
@@ -72,29 +81,37 @@ export function ChildSounds({ childId }: { childId: string }) {
       const old = row?.[COLUMN[k]] as string | null | undefined;
       if (old && old !== path) replaced.push(old);
     }
+    if (Object.keys(patch).length === 0) return { ok: true };
     try {
       await updateChildSettings(childId, patch);
     } catch (e) {
-      return showToast('error', (e as Error).message);
+      return { ok: false, error: (e as Error).message };
     }
     setRow(row ? { ...row, ...patch } : row);
     setSoundDraft({});
     stopPreview();
     const failed = await removeMedia(replaced);
-    if (failed) showToast('warning', 'Saved, but an old file could not be removed from storage.'); else showToast('success', 'Saved');
+    return { ok: true, warn: failed ? 'Saved, but an old file could not be removed from storage.' : undefined };
   }
 
   /** Drops unsaved edits and goes back to the last saved values. */
   function revert() {
     if (!row) return;
-    setVolume(row.music_volume);
     setSoundDraft({});
     stopPreview();
     showToast('success', 'Changes reverted.');
   }
 
   const soundChanged = (Object.keys(soundDraft) as AudioKind[]).some((k) => (soundDraft[k] ?? null) !== ((row?.[COLUMN[k]] as string | null | undefined) ?? null));
-  const dirty = !!row && (volume !== row.music_volume || soundChanged);
+  const dirty = !!row && soundChanged;
+
+  const latest = useRef({ persist, dirty });
+  latest.current = { persist, dirty };
+  useEffect(() => {
+    if (!registerSave) return;
+    registerSave({ dirty: () => latest.current.dirty, save: () => latest.current.persist() });
+    return () => registerSave(null);
+  }, [registerSave]);
 
   /** A sound chosen from the library: a preview until Save. */
   function chooseSound(kind: AudioKind, path: string) {
@@ -136,7 +153,7 @@ export function ChildSounds({ childId }: { childId: string }) {
     builtInTimer.current = setTimeout(() => setPlaying((p) => (p === key ? null : p)), h.ms);
   }
 
-  /** Play / pause the shown file of one setting. Music previews follow the volume slider live. */
+  /** Play / pause the shown file of one setting. */
   function toggle(kind: AudioKind) {
     const key = fileKey(kind);
     const path = shown(kind);
@@ -151,16 +168,11 @@ export function ChildSounds({ childId }: { childId: string }) {
     preview.current?.pause();
     stopBuiltIn();
     const audio = new Audio(url);
-    audio.volume = kind === 'music' ? volume / 100 : 1;
     audio.onended = () => setPlaying((p) => (p === key ? null : p));
     preview.current = audio;
     setPlaying(key);
     audio.play().catch(() => { preview.current = null; setPlaying(null); });
   }
-
-  useEffect(() => {
-    if (preview.current && playing === fileKey('music')) preview.current.volume = volume / 100;
-  }, [volume, playing]);
 
   useEffect(() => () => { preview.current?.pause(); builtIn.current?.stop(); }, []);
 
@@ -178,42 +190,19 @@ export function ChildSounds({ childId }: { childId: string }) {
     <div>
       <div className={styles.head}>
         <div>
-          <h2>Music and feedback sounds</h2>
-          <p className={styles.sub}>Music and feedback sounds on the child screens.</p>
+          <h2>Feedback sounds</h2>
+          <p className={styles.sub}>Sounds on the child screens.</p>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <RevertButton saving={saving} dirty={dirty} onClick={revert} />
-          <SaveButton saving={saving} enabled={dirty} onClick={save} />
-        </div>
+        {!registerSave && (
+          <div style={{ display: 'flex', gap: 10 }}>
+            <RevertButton saving={saving} dirty={dirty} onClick={revert} />
+            <SaveButton saving={saving} enabled={dirty} onClick={save} />
+          </div>
+        )}
       </div>
 
       <section className={styles.section}>
-        <div className={styles.head} style={{ alignItems: 'flex-end' }}>
-          <div>
-            <h2>Background music</h2>
-            <p>Instrumental, royalty-free. The selected track loops quietly.</p>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{soundActions('music', 'background music', false)}</div>
-        </div>
-        <div className={`${styles.row} ${shown('music') ? styles.rowSel : ''}`}>
-          {shown('music') && (
-            <PlayButton playing={playing === fileKey('music')} label={playing === fileKey('music') ? 'Pause track' : 'Play track'} onClick={() => toggle('music')} />
-          )}
-          <div className={styles.rowText}>
-            <div className={styles.rowTitle}>{baseName(shown('music')) ?? 'No track yet'}</div>
-            <div className={styles.rowMeta}>Loops on the child screens</div>
-          </div>
-        </div>
-        <div className={styles.volume}>
-          <label htmlFor={`vol-${childId}`} className={styles.label}>Music volume</label>
-          <input id={`vol-${childId}`} type="range" min={0} max={100} value={volume} onChange={(e) => setVolume(Number(e.target.value))} />
-          <span className={styles.note}>{volume}% · kept low on purpose</span>
-        </div>
-      </section>
-
-      <section className={styles.section}>
         <div>
-          <h2>Feedback sounds</h2>
           <p>Optional. Choose your own track for each moment; without one, the built-in sound plays.</p>
         </div>
         {([

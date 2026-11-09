@@ -21,7 +21,7 @@ const WORD_MAX = 40;
 const READY_AT = 4;
 const font = 'Nunito, sans-serif';
 const hint = { fontSize: 12, color: '#7A6458' } as const;
-const small = { ...ghostBtn, height: 34, padding: '0 12px', fontSize: 13 } as const;
+const small = ghostBtn;
 
 /** Chip colours: green when the game can run, rose when it cannot (A33). */
 const chipStyle = (ready: boolean) => ({
@@ -75,7 +75,7 @@ function PictureRow({ p, n, duplicate, autoFocus, onEdit, onRemove }: {
         <OnSwitch on={p.active} label={`Use picture ${n}`} onClick={() => onEdit({ active: !p.active })} />
       </td>
       <td style={{ padding: '12px 0 12px 10px', verticalAlign: 'top', textAlign: 'right' }}>
-        <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Remove picture ${n}`} onClick={onRemove} style={{ ...dangerBtn, height: 36 }}>Remove</button>
+        <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Remove picture ${n}`} onClick={onRemove} style={dangerBtn}>Remove</button>
       </td>
     </tr>
   );
@@ -192,7 +192,7 @@ export function PuzzlePictures() {
         <div style={{ flex: '0 0 auto', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', alignItems: 'center', gap: 10 }}>
             <button type="button" onClick={() => setLibOpen(true)} disabled={busy} className={s.btn}
-              style={{ height: 44, padding: '0 20px', borderRadius: 12, border: 'none', background: '#3F73B5', color: '#fff', fontSize: 15, fontWeight: 700, fontFamily: font, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.6 : 1 }}>
+              style={{ height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#3F73B5', color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: font, cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.6 : 1 }}>
               Add from Image Library
             </button>
             <RevertButton saving={busy} dirty={dirty} onClick={revert} />

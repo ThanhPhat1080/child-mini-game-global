@@ -8,6 +8,7 @@ vi.mock('next/link', () => ({
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: h.push, refresh: h.refresh }) }));
 
+vi.mock('@/components/MusicButton', () => ({ MusicButton: () => null }));
 import PlaySignIn from '@/app/play/sign-in/page';
 
 beforeEach(() => {

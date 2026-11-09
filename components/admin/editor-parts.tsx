@@ -7,8 +7,9 @@ export const AUDIO_TYPES = ['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/ogg']
 
 export const panel = { background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCC8', display: 'flex', flexDirection: 'column' } as const;
 export const inputStyle = { height: 46, border: '1.5px solid #E3D5C4', borderRadius: 12, padding: '0 14px', fontSize: 16, fontFamily: 'Nunito, sans-serif', background: '#FFFDF9', color: '#4A3830' } as const;
-export const ghostBtn = { height: 38, padding: '0 14px', borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' } as const;
-export const dangerBtn = { padding: '0 14px', borderRadius: 10, border: '1.5px solid #E3BFC2', background: '#fff', color: '#A8484F', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' } as const;
+export const ghostBtn = { height: 40, padding: '0 18px', borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' } as const;
+export const primaryBtn = { height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#5A4038', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' } as const;
+export const dangerBtn = { height: 40, padding: '0 18px', borderRadius: 10, border: '1.5px solid #E3BFC2', background: '#fff', color: '#A8484F', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' } as const;
 export const fileName = (p: string | null) => (p ? (isPending(p) ? pendingName(p) : p.split('/').pop() ?? p) : '');
 
 export function Img({ path, w, h }: { path: string; w: number | string; h: number | string }) {

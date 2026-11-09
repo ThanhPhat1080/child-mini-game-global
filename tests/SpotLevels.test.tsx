@@ -22,6 +22,14 @@ beforeEach(() => { h.fetchActiveLevels.mockReset(); h.push.mockReset(); });
 afterEach(cleanup);
 
 describe('Spot level select (S1)', () => {
+  it('only the family\'s own levels carry the family badge', async () => {
+    h.fetchActiveLevels.mockResolvedValue(levels(2).map((l, i) => ({ ...l, mine: i === 0 })));
+    render(<SpotLevels />);
+    await screen.findByRole('link', { name: 'Play level 1' });
+    expect(link(1).querySelector('[data-family-badge]')).not.toBeNull();
+    expect(link(2).querySelector('[data-family-badge]')).toBeNull();
+  });
+
   it('renders one link per level with picture A (empty alt) and the level number label', async () => {
     h.fetchActiveLevels.mockResolvedValue(levels(5));
     render(<SpotLevels />);

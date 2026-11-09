@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({ rows: [] as unknown[], eq: vi.fn(), push: vi.fn() }));
 
-vi.mock('@/lib/review', () => ({ playerId: async () => null, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r, dropOwnCopies: (r: unknown) => r }));
+vi.mock('@/lib/review', () => ({ playerId: async () => 'p1', familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r }));
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
     from: () => ({
@@ -63,6 +63,22 @@ describe('Quiz set selection (T9, C3, C11)', () => {
     expect(sessionStorage.getItem('childPlayer:quiz:index')).toBe('1');
   });
 
+  it('only the signed-in family\'s own sets carry the family badge', async () => {
+    h.rows = [{ ...set('s1', 'Animals', null, [good(1)]), owner_id: 'p1' }, { ...set('s2', 'Colors', null, [good(1)]), owner_id: null }];
+    const { container } = render(<QuizSets />);
+    await screen.findByText('Animals');
+    const cards = container.querySelectorAll('a[data-set-card]');
+    expect(cards[0].querySelector('[data-family-badge]')).not.toBeNull();
+    expect(cards[1].querySelector('[data-family-badge]')).toBeNull();
+  });
+
+  it('a family sees its own approved set and the global copy of it (duplicates are accepted)', async () => {
+    h.rows = [{ ...set('s1', 'Animals', null, [good(1)]), owner_id: 'p1', source_id: null }, { ...set('s2', 'Animals', null, [good(1)]), owner_id: 'sa', source_id: 's1' }];
+    const { container } = render(<QuizSets />);
+    await screen.findAllByText('Animals');
+    expect(container.querySelectorAll('a[data-set-card]')).toHaveLength(2);
+  });
+
   it('TC1: each card shows cover, name, optional sub-title and a question-count pill', async () => {
     render(<QuizSets />);
     const animals = await screen.findByRole('link', { name: 'Animals, 2 questions' });
@@ -83,13 +99,12 @@ describe('Quiz set selection (T9, C3, C11)', () => {
     expect(screen.queryByRole('link', { name: /Only broken/ })).toBeNull();
   });
 
-  it('TC3: a finished set shows the star and "completed"; an unfinished one does not', async () => {
+  it('TC3: no card shows a "finished" star or "completed", even when the set was finished before', async () => {
     localStorage.setItem('childPlayer:done:s1', '1');
     render(<QuizSets />);
-    const animals = await screen.findByRole('link', { name: 'Animals, 2 questions, completed' });
-    expect(animals.querySelector('svg[fill="#EED79A"]')).toBeTruthy();
-    const colors = screen.getByRole('link', { name: 'Colors, 1 questions' });
-    expect(colors.querySelector('svg[fill="#EED79A"]')).toBeNull();
+    const animals = await screen.findByRole('link', { name: 'Animals, 2 questions' });
+    expect(animals.querySelector('svg[fill="#EED79A"]')).toBeNull();
+    expect(screen.queryByRole('link', { name: /completed/ })).toBeNull();
   });
 
   it('TC4: a card is a keyboard-focusable link that opens its set (click, or Tab + Enter)', async () => {

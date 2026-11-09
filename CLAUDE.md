@@ -17,7 +17,7 @@ Schema changes only via new `supabase/migrations/*.sql`, never by hand in the da
 - Desktop Chromium only, no TV work (ADR-028). Child keyboard: 1/2/3 answer, Left/Right move, Enter/Space pick, Esc back (`lib/keynav.ts`); keep a visible focus ring.
 - A visitor (guest, no account) plays global content only: `lib/visitor.ts`, the middleware opens `/` and `/games` for the cookie, RLS decides data; leaving asks the sum and erases it (spec GU1-GU14).
 - Child screens use `components/ChildScreen.tsx` (`ChildScreen`, `CornerBack`, `WindowCorners`) for Back, music, Leave game and sign-out, so the corners keep one place and size; never position those by hand.
-- Games plug into the registry (ADR-014). One audio manager; nothing plays before "tap to enter". One deployment serves many families; configure it with env vars only.
+- Games plug into the registry (ADR-014). One audio manager. The built-in background track starts on arrival at any child screen (browsers hold it until the first tap or key, so "tap to enter" still starts it on Welcome); the music button (bottom-right, `components/MusicButton.tsx`) turns it off everywhere except `/admin`. One deployment serves many families; configure it with env vars only.
 
 ## Optimistic UI
 For an admin action that is fast and rarely fails (rename, reorder, toggle): update the UI first, send the request after, and on failure put the old state back and show an error toast. Disable anything that depends on the unconfirmed value (e.g. OK in the library) until it settles. Never use it for deletes, uploads or anything that cannot be undone.

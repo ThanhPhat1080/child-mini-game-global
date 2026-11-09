@@ -41,7 +41,7 @@ export function poolHealth(active: number): string {
   return `${head}${avail}${no.length ? `; ${no.join(', ')}` : ''}.`;
 }
 
-const small = { ...ghostBtn, height: 34, padding: '0 12px', fontSize: 13 } as const;
+const small = ghostBtn;
 const hint = { fontSize: 12, color: '#7A6458' } as const;
 
 export const WEAK_GROUP_TEXT = 'Sort It needs at least 4 cards with different words in a group.';

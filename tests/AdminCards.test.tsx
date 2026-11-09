@@ -363,7 +363,7 @@ describe('Admin cards page (A11, A13)', () => {
       const css = getComputedStyle(importBtn());
       expect(css.color).toBe('rgb(63, 115, 181)'); // the blue of the set editor's import button
       expect(css.backgroundColor === 'transparent' || css.backgroundColor === 'rgba(0, 0, 0, 0)' || css.backgroundColor === '').toBe(true);
-      expect(css.height).toBe('44px');
+      expect(css.height).toBe('40px');
     });
 
     it('opens the dialog with no unsaved changes (Save and Revert disabled)', async () => {

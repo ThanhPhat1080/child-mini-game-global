@@ -13,4 +13,6 @@ export type FindLevel = {
   objects: FindObject[]
   active: boolean
   sort_order: number
+  /** Set on the play lists: the signed-in family made this level (a hint that tells it from a global one). */
+  mine?: boolean
 }

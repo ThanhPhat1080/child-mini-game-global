@@ -22,6 +22,7 @@ vi.mock('@/lib/childSession', () => ({ setActiveChild: h.setActive, setGuestPlay
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p}` : null) }));
 vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ auth: { getSession: h.session, signOut: h.signOut } }) }));
 
+vi.mock('@/components/MusicButton', () => ({ MusicButton: () => null }));
 import Play from '@/app/play/page';
 
 const kid = (n: number, over: Partial<Child> = {}): Child => ({
@@ -77,14 +78,14 @@ describe('Play picker (K7-K12, KU9-KU12)', () => {
     expect(cardNames()).toEqual(['Guest', 'Parent configuration']);
   });
 
-  it('Guest plays without a PIN and goes to the welcome screen', async () => {
+  it('Guest needs no PIN and goes to the same guest setup a visitor gets', async () => {
     h.list.mockResolvedValue([]);
     await ready();
     fireEvent.click(screen.getByRole('button', { name: 'Guest' }));
     expect(h.setGuest).toHaveBeenCalled();
     expect(h.setActive).not.toHaveBeenCalled();
     expect(screen.queryAllByRole('textbox')).toHaveLength(0);
-    expect(h.push).toHaveBeenCalledWith('/');
+    expect(h.push).toHaveBeenCalledWith('/play/guest');
   });
 
   it('no Guest card once a child exists', async () => {

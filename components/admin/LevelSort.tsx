@@ -20,7 +20,7 @@ export function SortToggle({ desc, onToggle }: { desc: boolean; onToggle: () => 
   const label = desc ? 'Created: newest first' : 'Created: oldest first';
   return (
     <button type="button" className={`${s.btn} ${s.ghost}`} aria-label={`Sort levels. Now ${label.toLowerCase()}. Click to reverse.`} onClick={onToggle}
-      style={{ ...ghostBtn, height: 34, padding: '0 12px', fontSize: 13, alignSelf: 'flex-end', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+      style={{ ...ghostBtn, alignSelf: 'flex-end', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
       <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         {desc ? <><path d="M7 4v16" /><path d="M3 16l4 4 4-4" /><path d="M14 6h7M14 12h5M14 18h3" /></> : <><path d="M7 20V4" /><path d="M3 8l4-4 4 4" /><path d="M14 6h3M14 12h5M14 18h7" /></>}
       </svg>

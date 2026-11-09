@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({
+const h = vi.hoisted(() => ({ me: null as string | null,
   result: { data: null as unknown, error: null as { message: string } | null },
   order: vi.fn(),
   eq: vi.fn(),
@@ -9,7 +9,7 @@ const h = vi.hoisted(() => ({
   from: vi.fn(),
 }));
 
-vi.mock('@/lib/review', () => ({ playerId: async () => null, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r, dropOwnCopies: (r: unknown) => r }));
+vi.mock('@/lib/review', () => ({ playerId: async () => h.me, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r }));
 vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ from: h.from }) }));
 
 import { fetchActiveFindLevels, fetchFindLevel } from '@/lib/find/levels';
@@ -65,6 +65,22 @@ describe('fetchActiveFindLevels', () => {
     };
     const levels = await fetchActiveFindLevels();
     expect(levels.map((l) => l.id)).toEqual(['a', 'b']);
+  });
+
+  it('a family sees its own approved level AND the global copy (duplicates are accepted)', async () => {
+    h.me = 'p1';
+    h.result = { data: [{ ...good('a', 1), owner_id: 'p1', source_id: null }, { ...good('b', 2), owner_id: 'sa', source_id: 'a' }], error: null };
+    const levels = await fetchActiveFindLevels();
+    h.me = null;
+    expect(levels.map((l) => l.id)).toEqual(['a', 'b']);
+  });
+
+  it('marks the signed-in family\'s own levels (mine) and no others', async () => {
+    h.me = 'p1';
+    h.result = { data: [{ ...good('a', 1), owner_id: 'p1' }, { ...good('b', 2), owner_id: null }], error: null };
+    const levels = await fetchActiveFindLevels();
+    h.me = null;
+    expect(levels.map((l) => [l.id, l.mine])).toEqual([['a', true], ['b', false]]);
   });
 
   it('returns an empty list for null data', async () => {

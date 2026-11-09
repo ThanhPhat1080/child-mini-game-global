@@ -1,5 +1,5 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { dropOwnCopies, familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
+import { familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
 import type { FindLevel } from '@/lib/find/types';
 import { isPlayable } from '@/lib/find/validate';
 
@@ -19,7 +19,7 @@ export async function fetchActiveFindLevels(): Promise<FindLevel[]> {
     .order('sort_order')
     .order('created_at');
   if (error) throw new Error(error.message);
-  return ownerFirst(dropOwnCopies(((data ?? []) as FindLevel[]).filter(isPlayable), me), me);
+  return ownerFirst(((data ?? []) as (FindLevel & { owner_id?: string | null })[]).filter(isPlayable), me).map(({ owner_id, ...l }) => ({ ...l, mine: !!me && owner_id === me }));
 }
 
 /**

@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({
-  listPeople: vi.fn(), listAllChildren: vi.fn(), storageUsedBy: vi.fn(), pendingSenders: vi.fn(), createAccount: vi.fn(), push: vi.fn(),
+  listPeople: vi.fn(), listAllChildren: vi.fn(), storageUsedBy: vi.fn(), pendingSenders: vi.fn(), createAccount: vi.fn(), push: vi.fn(), removeChild: vi.fn(),
 }));
 vi.mock('@/lib/superAdmin', async (orig) => ({ ...(await orig<typeof import('@/lib/superAdmin')>()), ...h }));
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p}` : null) }));
@@ -91,16 +91,37 @@ describe('Parents page messages (N12)', () => {
 });
 
 describe('Parents page expand (N11)', () => {
-  it('Expand all shows each parent children as read-only cards, Collapse all hides them', async () => {
+  it('Expand all shows each parent children as cards, Collapse all hides them', async () => {
     render(<ParentsPage />);
     await screen.findByText('Lan Nguyen');
     expect(screen.queryByText('Mia')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Expand all' }));
     expect(screen.getByText('Mia')).toBeTruthy();
     expect(screen.getByText('Nam')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'Edit Mia' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Edit Mia' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Remove Mia' })).toBeTruthy();
     fireEvent.click(screen.getByRole('button', { name: 'Collapse all' }));
     expect(screen.queryByText('Mia')).toBeNull();
+  });
+
+  it('quick Remove asks first, then deletes the child and reloads', async () => {
+    h.removeChild.mockResolvedValue(undefined);
+    render(<ParentsPage />);
+    await screen.findByText('Lan Nguyen');
+    fireEvent.click(screen.getByRole('button', { name: 'Expand all' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Mia' }));
+    expect(h.removeChild).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Remove' }));
+    await waitFor(() => expect(h.removeChild).toHaveBeenCalledWith('c1'));
+    await waitFor(() => expect(h.listAllChildren).toHaveBeenCalledTimes(2));
+  });
+
+  it('quick Edit opens the compact child dialog', async () => {
+    render(<ParentsPage />);
+    await screen.findByText('Lan Nguyen');
+    fireEvent.click(screen.getByRole('button', { name: 'Expand all' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Mia' }));
+    expect(await screen.findByRole('dialog')).toBeTruthy();
   });
 
   it('a single chevron expands one parent and sets aria-expanded', async () => {

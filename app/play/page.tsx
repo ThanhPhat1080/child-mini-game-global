@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { listMyChildren, type Child } from '@/lib/children';
 import { getMyUserId } from '@/lib/review';
 import { setActiveChild, setGuestPlay } from '@/lib/childSession';
+import { clearVisitor } from '@/lib/visitor';
 import { handleChoiceKey, isPressKey } from '@/lib/keynav';
 import { ChildScreen } from '@/components/ChildScreen';
 import { BounceText } from '@/components/BounceText';
@@ -66,18 +67,20 @@ export default function Play() {
   }, [kids, picked, check]);
 
   function onCorrect(child: Child) {
+    clearVisitor(); // a guest setup left behind must not stand in for the child
     setActiveChild(child.id);
     router.push('/');
   }
 
-  // No child yet: Guest plays without a PIN (there is no child to protect), global content only.
+  // No child yet: Guest plays without a PIN (there is no child to protect), global content only. It uses the same
+  // setup as a visitor (Boy or Girl, name, age); the guest cookie keeps the signed-in parent's door open.
   function onGuest() {
     setGuestPlay();
-    router.push('/');
+    router.push('/play/guest');
   }
 
   return (
-    <ChildScreen logout>
+    <ChildScreen logout music>
       <SkyScene festive />
       {failed ? (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

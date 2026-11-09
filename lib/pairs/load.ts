@@ -1,5 +1,5 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { dropOwnCopies, familyOrGlobal, playerId } from '@/lib/review';
+import { familyOrGlobal, playerId } from '@/lib/review';
 import { fetchActiveCards } from '@/lib/memory/cards';
 import { isPlayableQuestion, sortAnswers, type QuizQuestion } from '@/lib/quiz/playable';
 import type { QuestionSources } from './questions';
@@ -31,7 +31,7 @@ async function fetchQuiz(): Promise<QuestionSources['quiz']> {
     me,
   ).order('position');
   if (error) throw new Error(error.message);
-  const sets = dropOwnCopies((data ?? []) as SetRow[], me);
+  const sets = (data ?? []) as SetRow[];
   if (!sets.length) return [];
   const res = await supabase.from('questions').select(QUESTION_SELECT).in('set_id', sets.map((s) => s.id)).order('position');
   if (res.error) throw new Error(res.error.message);

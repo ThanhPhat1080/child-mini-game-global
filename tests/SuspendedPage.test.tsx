@@ -1,9 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({ getMyProfile: vi.fn(), insert: vi.fn() }));
+const h = vi.hoisted(() => ({ getMyProfile: vi.fn(), insert: vi.fn(), signOut: vi.fn() }));
 vi.mock('@/lib/supabase/client', () => ({
-  createSupabaseBrowserClient: () => ({ from: () => ({ insert: h.insert }), auth: { signOut: vi.fn() } }),
+  createSupabaseBrowserClient: () => ({ from: () => ({ insert: h.insert }), auth: { signOut: h.signOut } }),
 }));
 vi.mock('@/lib/auth/roles', () => ({ getMyProfile: h.getMyProfile }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
@@ -25,6 +25,15 @@ describe('suspended page (U15, U17)', () => {
     expect(screen.getByText(/Adult photo on card 4/)).toBeTruthy();
     expect(screen.getByText(/3 November 2026/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeTruthy();
+  });
+
+  it('Sign out asks first, then signs out', async () => {
+    h.signOut.mockResolvedValue(undefined);
+    render(<SuspendedPage />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
+    expect(h.signOut).not.toHaveBeenCalled();
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Sign out' }));
+    await waitFor(() => expect(h.signOut).toHaveBeenCalled());
   });
 
   it('sends a message to the Super Admin and clears the box', async () => {

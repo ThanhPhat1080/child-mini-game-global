@@ -25,38 +25,27 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('ChildSounds (N2, A25, A26)', () => {
-  it('Save is off until something changes, then saves sounds and volume only', async () => {
+  it('Save is off until something changes, then saves the chosen sound only', async () => {
     render(<ChildSounds childId="c1" />);
-    await screen.findByText('old.mp3');
+    await screen.findByRole('button', { name: 'Choose Hooray sound' });
     expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Choose Hooray sound' }));
-    fireEvent.change(screen.getByLabelText('Music volume'), { target: { value: '50' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(h.updateChildSettings).toHaveBeenCalledWith('c1', { music_volume: 50, hooray_path: 'snd/new.mp3' }));
+    await waitFor(() => expect(h.updateChildSettings).toHaveBeenCalledWith('c1', { hooray_path: 'snd/new.mp3' }));
     expect(await screen.findByText('Saved')).toBeTruthy();
   });
 
-  it('frees a replaced music file after saving', async () => {
+  it('has no music chooser and no music volume (the track is built in)', async () => {
     render(<ChildSounds childId="c1" />);
-    await screen.findByText('old.mp3');
-    fireEvent.click(screen.getByRole('button', { name: 'Choose background music' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(h.removeMedia).toHaveBeenCalledWith(['snd/old.mp3']));
-  });
-
-  it('Revert drops the draft', async () => {
-    render(<ChildSounds childId="c1" />);
-    await screen.findByText('old.mp3');
-    fireEvent.click(screen.getByRole('button', { name: 'Choose background music' }));
-    expect(screen.getByText('new.mp3')).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Revert' }));
-    expect(screen.getByText('old.mp3')).toBeTruthy();
+    await screen.findByRole('button', { name: 'Choose Hooray sound' });
+    expect(screen.queryByRole('button', { name: 'Choose background music' })).toBeNull();
+    expect(screen.queryByLabelText('Music volume')).toBeNull();
   });
 
   it('shows an error toast when the save fails', async () => {
     h.updateChildSettings.mockRejectedValue(new Error('denied'));
     render(<ChildSounds childId="c1" />);
-    await screen.findByText('old.mp3');
+    await screen.findByRole('button', { name: 'Choose Hooray sound' });
     fireEvent.click(screen.getByRole('button', { name: 'Choose Oh-oh sound' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(await screen.findByText('denied')).toBeTruthy();

@@ -1,25 +1,46 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({
+  signOut: vi.fn(),
+  push: vi.fn(),
   getMyProfile: vi.fn(),
   pendingMessageCount: vi.fn(),
   counts: { sets: 0, cards: 0, spot: 0, find: 0 },
 }));
-vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ auth: { signOut: vi.fn() } }) }));
+vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ auth: { signOut: h.signOut } }) }));
 vi.mock('@/lib/auth/roles', () => ({ getMyProfile: h.getMyProfile }));
 vi.mock('@/lib/superAdmin', () => ({ pendingMessageCount: h.pendingMessageCount, usePendingCounts: () => h.counts }));
-vi.mock('next/navigation', () => ({ usePathname: () => '/admin/sets', useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
+vi.mock('next/navigation', () => ({ usePathname: () => '/admin/sets', useRouter: () => ({ push: h.push, refresh: vi.fn() }) }));
 vi.mock('next/link', () => ({ default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a> }));
 
 import { AdminNav } from '@/components/AdminNav';
 
 beforeEach(() => {
+  h.signOut.mockReset().mockResolvedValue(undefined);
+  h.push.mockReset();
   h.getMyProfile.mockReset();
   h.pendingMessageCount.mockReset().mockResolvedValue(0);
   h.counts = { sets: 0, cards: 0, spot: 0, find: 0 };
 });
 afterEach(cleanup);
+
+describe('AdminNav sign out', () => {
+  it('asks first: Cancel keeps the session, the confirm button signs out and goes to the sign-in page', async () => {
+    h.getMyProfile.mockResolvedValue({ role: 'parent' });
+    render(<AdminNav />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign out' }));
+    expect(h.signOut).not.toHaveBeenCalled();
+    const dialog = screen.getByRole('alertdialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+    expect(h.signOut).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Sign out' }));
+    await waitFor(() => expect(h.signOut).toHaveBeenCalled());
+    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/admin/sign-in'));
+  });
+});
 
 describe('AdminNav (N2)', () => {
   it('shows only links allowed for the role: a parent gets Profile and Inbox, no Children, no Settings', async () => {

@@ -1,5 +1,5 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client'
-import { dropOwnCopies, familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
+import { familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
 import type { MemoryCard } from '@/lib/memory/types'
 
 /** Active cards with their group_id (Sort It only; other games keep fetchActiveCards). Throws Error(message) on failure. */
@@ -10,5 +10,5 @@ export async function fetchSortCards(): Promise<MemoryCard[]> {
     me,
   ).order('created_at')
   if (error) throw new Error(error.message)
-  return ownerFirst(dropOwnCopies((data ?? []) as MemoryCard[], me), me)
+  return ownerFirst((data ?? []) as MemoryCard[], me)
 }

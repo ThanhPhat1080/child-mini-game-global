@@ -60,12 +60,12 @@ export function CardImportDialog({ groups = [], onCancel, onImport }: { groups?:
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center' }}>
-          <a href="/memory-cards-template.json" download="memory-cards-template.json" className={s.ghost} style={{ ...ghostBtn, height: 42, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '0 16px', boxSizing: 'border-box', textDecoration: 'none' }}>
+          <a href="/memory-cards-template.json" download="memory-cards-template.json" className={s.ghost} style={{ ...ghostBtn, display: 'inline-flex', alignItems: 'center', gap: 8, boxSizing: 'border-box', textDecoration: 'none' }}>
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v11" /><path d="M7 11l5 5 5-5" /><path d="M5 20h14" /></svg>
             Download memory-cards-template.json
           </a>
           <input ref={fileRef} type="file" accept=".json,application/json" hidden onChange={onFile} />
-          <button type="button" className={s.btn} onClick={() => fileRef.current?.click()} style={{ height: 42, padding: '0 16px', borderRadius: 10, border: 'none', background: '#3F73B5', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' }}>Choose JSON file…</button>
+          <button type="button" className={s.btn} onClick={() => fileRef.current?.click()} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#3F73B5', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' }}>Choose JSON file…</button>
           {fileName && <span style={{ fontSize: 13, color: '#7A6458', wordBreak: 'break-all' }}>{fileName}</span>}
         </div>
 
@@ -85,8 +85,8 @@ export function CardImportDialog({ groups = [], onCancel, onImport }: { groups?:
         )}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, flexWrap: 'wrap' }}>
-          <button type="button" autoFocus className={s.ghost} onClick={onCancel} style={{ height: 44, padding: '0 20px', borderRadius: 12, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer' }}>Cancel</button>
-          <button type="button" disabled={n === 0} onClick={() => onImport(ready)} className={s.btn} style={{ height: 44, padding: '0 20px', borderRadius: 12, border: 'none', background: '#3F73B5', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: n === 0 ? 'default' : 'pointer', opacity: n === 0 ? 0.5 : 1 }}>
+          <button type="button" autoFocus className={s.ghost} onClick={onCancel} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
+          <button type="button" disabled={n === 0} onClick={() => onImport(ready)} className={s.btn} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#3F73B5', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: n === 0 ? 'default' : 'pointer', opacity: n === 0 ? 0.5 : 1 }}>
             {n > 0 ? `Import ${n} ${n === 1 ? 'card' : 'cards'}` : 'Import'}
           </button>
         </div>

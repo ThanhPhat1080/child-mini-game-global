@@ -37,9 +37,9 @@ const createdOrder = (paths: string[], origins: Map<string, string>): string[] =
 const fileName = (path: string): string => path.split('/').pop() ?? path;
 
 /** Admin buttons: the dark primary of "Save changes", the blue of "Quick import", and the ghost used across the editors. */
-const primaryBtn = { height: 44, padding: '0 20px', borderRadius: 12, border: 'none', background: '#5A4038', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer' } as const;
-const uploadBtn = { height: 42, padding: '0 16px', borderRadius: 10, border: 'none', background: '#3F73B5', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' } as const;
-const cancelBtn = { ...ghostBtn, height: 44, padding: '0 20px', fontSize: 15 } as const;
+const primaryBtn = { height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#5A4038', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' } as const;
+const uploadBtn = { height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#3F73B5', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' } as const;
+const cancelBtn = ghostBtn;
 /** The dialog's height: the list scrolls inside it; the header and footer stay put. */
 const DIALOG_HEIGHT = 'min(600px, calc(100vh - 32px))';
 
@@ -92,12 +92,20 @@ const DeleteButton = ({ label, busy, onClick, style, hidden }: { label: string; 
   </button>
 );
 
+/** Small pencil button beside the trash: starts renaming the file. */
+const RenameButton = ({ label, busy, onClick, hidden }: { label: string; busy: boolean; onClick: () => void; hidden?: boolean }) => hidden ? null : (
+  <button type="button" aria-label={label} title="Rename" disabled={busy} onClick={onClick}
+    style={{ width: 30, height: 30, borderRadius: 15, border: 'none', background: 'transparent', color: '#6E5A4E', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.5 : 1, padding: 0, flex: 'none' }}>
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
+  </button>
+);
+
 /** "Validating..." / "Deleting..." beside the delete button of a file that is being removed. */
 const RemovingText = ({ phase, style }: { phase: 'validating' | 'deleting'; style?: React.CSSProperties }) => (
   <span role="status" style={{ fontSize: 12, fontWeight: 700, color: '#6E5A4E', fontFamily: 'Nunito, sans-serif', ...style }}>{phase === 'validating' ? 'Validating...' : 'Deleting...'}</span>
 );
 
-/** A picture at full size over the library (click it). Click outside, the close button or Escape closes it. */
+/** A picture at full size over the library (the magnifier on a picture). Click outside, the close button or Escape closes it. */
 const PictureViewer = ({ url, name, onClose }: { url: string; name: string; onClose: () => void }) => (
   <div role="dialog" aria-modal="true" aria-label={name} onClick={onClose}
     style={{ position: 'fixed', inset: 0, background: 'rgba(74,56,48,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, boxSizing: 'border-box', zIndex: 55 }}>
@@ -160,6 +168,7 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
   const [removing, setRemoving] = useState<ReadonlyMap<string, 'validating' | 'deleting'>>(new Map());
   /** The picture shown full size (click). */
   const [viewing, setViewing] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
   const { toast, show: showToast, close: closeToast } = useToast();
   /** Where each renamed file was in the list: its path before any rename. Created order uses it, so a renamed file keeps its place. */
   const origins = useRef(new Map<string, string>());
@@ -352,16 +361,23 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
         const on = selected === p;
         const phase = removing.get(p);
         return (
-          <li key={p} aria-busy={!!phase} style={{ opacity: phase ? 0.5 : 1, position: 'relative', height: 148, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, background: '#fff', border: on ? '3px solid #5A4038' : '1.5px solid #E3D5C4', boxSizing: 'border-box' }}>
+          <li key={p} aria-busy={!!phase} onMouseEnter={() => setHovered(p)} onMouseLeave={() => setHovered((h) => (h === p ? null : h))} style={{ opacity: phase ? 0.5 : 1, position: 'relative', height: 148, display: 'flex', flexDirection: 'column', overflow: 'hidden', borderRadius: 12, background: '#fff', border: on ? '3px solid #5A4038' : '1.5px solid #E3D5C4', boxSizing: 'border-box' }}>
             <button type="button" aria-label={`${dialog ? 'Choose' : 'View'} ${name}`} aria-pressed={dialog ? on : undefined} data-selected={on ? 'true' : 'false'} disabled={!!phase}
-              onClick={phase ? undefined : () => { if (dialog) setSelected(p); setViewing(p); }}
-              style={{ flex: '1 1 auto', minHeight: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4, boxSizing: 'border-box', background: 'none', border: 'none', cursor: phase ? 'default' : 'zoom-in' }}>
+              onClick={phase ? undefined : () => { if (dialog) setSelected(p); else setViewing(p); }}
+              style={{ flex: '1 1 auto', minHeight: 0, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 4, boxSizing: 'border-box', background: 'none', border: 'none', cursor: phase ? 'default' : 'pointer' }}>
               {url && (
                 <span style={{ position: 'relative', flex: 1, alignSelf: 'stretch', minHeight: 0 }}>
                   <Image src={url} alt="" fill sizes="120px" unoptimized style={{ objectFit: 'contain' }} />
                 </span>
               )}
             </button>
+            {!phase && (
+              <button type="button" aria-label={`Enlarge ${name}`} title="Enlarge" onClick={() => setViewing(p)}
+                onFocus={() => setHovered(p)} onBlur={() => setHovered((h) => (h === p ? null : h))}
+                style={{ position: 'absolute', top: 4, left: 4, width: 25, height: 25, borderRadius: 13, border: 'none', background: 'rgba(255,255,255,0.9)', color: '#4A3830', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, cursor: 'zoom-in', boxShadow: '0 1px 4px rgba(74,56,48,0.25)', opacity: hovered === p ? 1 : 0, transition: 'opacity 0.15s' }}>
+                <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M20 20l-4.8-4.8M10.5 8v5M8 10.5h5" /></svg>
+              </button>
+            )}
             {phase && <RemovingText phase={phase} style={{ position: 'absolute', top: 8, right: 40, background: 'rgba(255,255,255,0.9)', borderRadius: 8, padding: '1px 6px' }} />}
             <DeleteButton hidden={!canEdit(p)} label={`Delete ${name}`} busy={!!phase} onClick={() => void askDelete(p)} style={{ position: 'absolute', top: 4, right: 4, boxShadow: '0 1px 4px rgba(74,56,48,0.25)' }} />
             <RenameableName path={p} editing={renaming === p} onStart={() => canEdit(p) && !pendingRenames.has(p) && !phase && setRenaming(p)} onSave={(n) => void rename(p, n)} onCancel={() => setRenaming(null)}
@@ -379,7 +395,9 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
         const playing = preview.isPlaying(p);
         const phase = removing.get(p);
         return (
-          <li key={p} data-selected={on ? 'true' : 'false'} aria-busy={!!phase} style={{ opacity: phase ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 14, background: on ? '#F6EADC' : '#FBF4E9', border: on ? '2px solid #5A4038' : '1.5px solid transparent', boxSizing: 'border-box' }}>
+          <li key={p} data-selected={on ? 'true' : 'false'} aria-busy={!!phase}
+            onClick={(e) => { if (dialog && !phase && renaming !== p && !(e.target as HTMLElement).closest('button, input')) setSelected(p); }}
+            style={{ cursor: dialog && !phase && renaming !== p ? 'pointer' : 'default', opacity: phase ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 14, background: on ? '#F6EADC' : '#FBF4E9', border: on ? '2px solid #5A4038' : '1.5px solid transparent', boxSizing: 'border-box' }}>
             <PlayButton playing={playing} label={`${playing ? 'Pause' : 'Play'} ${name}`} disabled={!!phase} onClick={() => preview.toggle(p, mediaUrl(p))} />
             {renaming === p ? (
               <RenameableName path={p} editing onStart={() => undefined} onSave={(n) => void rename(p, n)} onCancel={() => setRenaming(null)} style={audioNameStyle} />
@@ -396,6 +414,7 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
               )
             )}
             {phase && <RemovingText phase={phase} />}
+            <RenameButton hidden={!canEdit(p) || renaming === p} label={`Rename ${name}`} busy={!!phase || pendingRenames.has(p)} onClick={() => setRenaming(p)} />
             <DeleteButton hidden={!canEdit(p)} label={`Delete ${name}`} busy={!!phase} onClick={() => void askDelete(p)} style={{ background: 'transparent' }} />
           </li>
         );
@@ -413,7 +432,7 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
       <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginLeft: 'auto', fontSize: 13, fontWeight: 700, color: '#6E5A4E' }}>
         Sort by
         <select aria-label="Sort by" value={sortBy} onChange={(e) => setSortBy(e.target.value as 'created' | 'name')}
-          style={{ height: 38, borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14, padding: '0 8px', ...selectArrowStyle }}>
+          style={{ height: 40, borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 14, padding: '0 8px', ...selectArrowStyle }}>
           <option value="created">Created (newest)</option>
           <option value="name">Name (A to Z)</option>
         </select>

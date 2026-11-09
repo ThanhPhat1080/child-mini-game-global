@@ -7,20 +7,21 @@ import { mediaUrl } from '@/lib/media';
 import { deleteSet, isQuestionComplete, tintFor } from '@/lib/sets';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import s from '@/components/admin/admin-ui.module.css';
+import styles from '@/app/admin/admin.module.css';
 import { Pic } from '@/components/Pic';
 import { ContentTabs } from '@/components/admin/ContentTabs';
 import { VisibilityBadge } from '@/components/admin/VisibilityBadge';
 import { copiedIds, getMyRole, getMyUserId, useContentScope, useMyRole, type ContentTable, type Visibility } from '@/lib/review';
-import { ReviewQueue } from '@/components/admin/ReviewQueue';
-import { parentNames, usePendingCounts } from '@/lib/superAdmin';
-
-const SET_TABLES: ContentTable[] = ['quiz_sets'];
+import { ParentProfileLink } from '@/components/admin/ParentProfileModal';
+import { ListToolbar } from '@/components/admin/ListToolbar';
+import { approveItem, parentNames, usePendingCounts } from '@/lib/superAdmin';
+import { matches, sortBy, type SortOrder } from '@/lib/people';
 
 type Row = {
   id: string; title: string; subtitle: string | null; heading_color: string; cover_path: string | null; status: string; updated_at: string; owner_id: string | null; visibility: Visibility;
   questions: { prompt_text: string | null; prompt_audio_path: string | null; answers: { slot: number; image_path: string | null; text: string | null; is_correct: boolean }[] }[];
 };
-type View = { id: string; title: string; subtitle: string | null; heading_color: string; cover_path: string | null; pub: boolean; visibility: Visibility; owner: string | null; count: number; total: number; updated: string; copied?: boolean };
+type View = { id: string; title: string; subtitle: string | null; heading_color: string; cover_path: string | null; pub: boolean; visibility: Visibility; owner: string | null; count: number; total: number; updated: string; updatedAt: string; copied?: boolean };
 
 function toView(r: Row): View {
   const complete = r.questions.filter((q) => {
@@ -33,6 +34,7 @@ function toView(r: Row): View {
   return {
     id: r.id, title: r.title, subtitle: r.subtitle, heading_color: r.heading_color, cover_path: r.cover_path, pub: r.status === 'published', visibility: r.visibility, owner: r.owner_id,
     count: complete, total: r.questions.length,
+    updatedAt: r.updated_at,
     updated: new Date(r.updated_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
   };
 }
@@ -43,6 +45,9 @@ export default function SetsPage() {
   const [error, setError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<View | null>(null);
   const [busy, setBusy] = useState(false);
+  const [query, setQuery] = useState('');
+  const [sort, setSort] = useState<SortOrder>('newest');
+  const [approving, setApproving] = useState<string | null>(null);
   const role = useMyRole();
   const { scope, setScope } = useContentScope(role);
   const pending = usePendingCounts(role).sets;
@@ -76,12 +81,27 @@ export default function SetsPage() {
     await load();
   }
 
+  async function approve(r: View) {
+    setApproving(r.id);
+    setError(null);
+    try { await approveItem('quiz_sets', r.id); await load(); } catch (e) { setError((e as Error).message); } finally { setApproving(null); }
+  }
+
   // "Mine" = my own sets (any state); "Global" = approved sets of other families, read-only (N3);
   // "Parent published" = published sets of every parent, of any status, view only (V9, Super Admin).
-  const mine = (rows ?? []).filter((r) =>
+  // "Review queue" = the sets parents shared and that wait for approval (V3).
+  const inScope = (rows ?? []).filter((r) =>
     scope === 'mine' ? r.owner === me || (role === 'super_admin' && r.owner === null)
       : scope === 'parents' ? r.pub && owners.has(r.owner ?? '')
+      : scope === 'queue' ? r.visibility === 'pending' && owners.has(r.owner ?? '')
       : r.visibility === 'global' && (role === 'super_admin' || r.owner !== me));
+  // Every tab: search by set name or parent name; newest first (by last update) or A to Z.
+  const mine = sortBy(
+    inScope.filter((r) => matches(query, r.title, owners.get(r.owner ?? ''))),
+    sort,
+    (r) => ({ created: r.updatedAt, name: r.title }),
+  );
+  const showOwner = scope === 'parents' || scope === 'queue';
   // A Super Admin edits their own sets, copies included (V8); a parent edits a private set of their own.
   const editable = (r: View) => role === 'super_admin' ? (scope === 'mine' && (r.owner === me || r.owner === null)) || (scope === 'global' && r.visibility === 'global') : scope === 'mine' && r.visibility === 'private';
   const th = { padding: '16px 12px', fontWeight: 700 } as const;
@@ -93,21 +113,30 @@ export default function SetsPage() {
           <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Quiz sets</h1>
           <p style={{ margin: '6px 0 0', color: '#7A6458', fontSize: 15 }}>Create sets, and delete the ones you no longer need.</p>
         </div>
-        {scope === 'mine' && <Link href="/admin/sets/new" style={{ height: 46, padding: '0 22px', borderRadius: 12, background: '#5A4038', color: '#fff', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+        {scope === 'mine' && <Link href="/admin/sets/new" style={{ height: 40, padding: '0 18px', borderRadius: 10, background: '#5A4038', color: '#fff', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
           New quiz set
         </Link>}
       </div>
       <ContentTabs scope={scope} onChange={setScope} role={role} pending={pending} />
       {error && <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700, fontSize: 14 }}>{error}</p>}
-      {scope === 'queue' ? <ReviewQueue tables={SET_TABLES} /> : (<>
+      {scope === 'queue' && <p style={{ margin: 0, color: '#7A6458', fontSize: 14 }}>Shared by parents. Approve to create a global copy you own; the parent keeps the original, back in private.</p>}
+      <ListToolbar
+        query={query}
+        onQuery={setQuery}
+        searchLabel="Search quiz sets and parents"
+        placeholder={role === 'super_admin' ? 'Search by set or parent name' : 'Search by set name'}
+        sort={sort}
+        onSort={setSort}
+      />
+      <>
 
       <div style={{ background: '#fff', borderRadius: 18, boxShadow: '0 1px 0 #EADCC8', overflowX: 'auto' }}>
         <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse', fontSize: 15 }}>
           <thead>
             <tr style={{ textAlign: 'left', color: '#7A6458', fontSize: 13, textTransform: 'uppercase', letterSpacing: 0.6 }}>
               <th style={{ ...th, padding: '16px 20px' }}>Set</th>
-              {scope === 'parents' && <th style={th}>Owner</th>}
+              {showOwner && <th style={th}>Owner</th>}
               <th style={th}>Questions</th>
               <th style={th}>Status</th>
               <th style={th}>Updated</th>
@@ -115,10 +144,10 @@ export default function SetsPage() {
             </tr>
           </thead>
           <tbody>
-            {[...mine].reverse().map((r) => (
+            {mine.map((r) => (
               <tr key={r.id} className={s.row} style={{ borderTop: '1px solid #F1E7DA' }}>
                 <td style={{ padding: '12px 20px' }}>
-                  <Link href={`/admin/sets/${r.id}`} style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', color: 'inherit' }}>
+                  <Link href={`/admin/sets/${r.id}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', color: 'inherit' }}>
                     <Thumb path={r.cover_path} color={r.heading_color} />
                     <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <span style={{ fontFamily: "'Baloo 2', sans-serif", fontSize: 20, fontWeight: 600, lineHeight: 1.1, color: r.heading_color }}>{r.title}</span>
@@ -126,7 +155,7 @@ export default function SetsPage() {
                     </span>
                   </Link>
                 </td>
-                {scope === 'parents' && <td style={{ padding: '12px 12px', fontWeight: 700 }}>{owners.get(r.owner ?? '') || 'Parent'}</td>}
+                {showOwner && <td style={{ padding: '12px 12px', fontWeight: 700 }}><ParentProfileLink id={r.owner ?? ''} name={owners.get(r.owner ?? '') || 'Parent'} /></td>}
                 <td style={{ padding: '12px 12px' }}>{r.count}{r.total > r.count ? <span style={{ color: '#7A5410', fontSize: 13 }}> · {r.total - r.count} incomplete</span> : null}</td>
                 <td style={{ padding: '12px 12px' }}>
                   <span style={{ display: 'inline-flex', gap: 8, flexWrap: 'wrap' }}>
@@ -136,17 +165,18 @@ export default function SetsPage() {
                 </td>
                 <td style={{ padding: '12px 12px', color: '#7A6458' }}>{r.updated}</td>
                 <td style={{ padding: '12px 20px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                  <Link href={`/admin/sets/${r.id}`} className={s.link} style={{ fontWeight: 700, marginRight: 8, padding: '8px 10px' }}>{editable(r) ? 'Edit' : 'View'}</Link>
+                  <Link href={`/admin/sets/${r.id}`} target="_blank" rel="noopener noreferrer" className={s.link} style={{ fontWeight: 700, marginRight: 8, padding: '8px 10px' }}>{editable(r) ? 'Edit' : 'View'}</Link>
+                  {scope === 'queue' && <button type="button" className={styles.primary} style={{ marginLeft: 8 }} aria-label={`Approve ${r.title}`} disabled={approving !== null} onClick={() => void approve(r)}>{approving === r.id ? 'Approving…' : 'Approve'}</button>}
                   {scope === 'mine' && r.visibility === 'private' && <button type="button" className={s.danger} aria-label={`Delete ${r.title}`} onClick={() => setConfirm(r)} style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 15, color: '#A8484F', background: 'transparent', border: 'none', borderRadius: 8, padding: '8px 10px', cursor: 'pointer' }}>Delete</button>}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {rows && mine.length === 0 && <p style={{ margin: 0, padding: '32px 20px', textAlign: 'center', color: '#7A6458' }}>{scope === 'mine' ? 'No quiz sets yet. Create your first one with “New quiz set”.' : scope === 'parents' ? 'No parent has published a quiz set yet.' : 'No global quiz sets yet.'}</p>}
+        {rows && mine.length === 0 && <p style={{ margin: 0, padding: '32px 20px', textAlign: 'center', color: '#7A6458' }}>{query.trim() && inScope.length > 0 ? 'No quiz sets match.' : scope === 'queue' ? 'Nothing is waiting for review.' : scope === 'mine' ? 'No quiz sets yet. Create your first one with “New quiz set”.' : scope === 'parents' ? 'No parent has published a quiz set yet.' : 'No global quiz sets yet.'}</p>}
       </div>
       <p style={{ margin: 0, fontSize: 13, color: '#7A6458' }}>A set needs at least one complete question before it can be published.</p>
-      </>)}
+      </>
 
       {confirm && (
         <ConfirmDialog

@@ -14,7 +14,7 @@ import { Pic } from '@/components/Pic';
 const EDGE = 0.01;
 const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 const round3 = (v: number) => Math.round(v * 1000) / 1000;
-const small = { ...ghostBtn, height: 34, padding: '0 12px', fontSize: 13 } as const;
+const small = ghostBtn;
 /** Play-state key of one object's sound: per row, because two objects may share one file. */
 const rowKey = (i: number, path: string | null) => `${i}:${path ?? ''}`;
 
@@ -139,7 +139,7 @@ export function FindMarkerEditor({ src, objects, onChange, onLibrarySound }: Pro
             <input type="range" aria-label="Radius" min={3} max={15} step={1} value={radiusPct} onChange={(e) => setRadius(Number(e.target.value))} style={{ width: 160, accentColor: '#3F6B48' }} />
             <span style={{ fontWeight: 400, color: '#7A6458', minWidth: 32 }}>{radiusPct}%</span>
           </label>
-          <button type="button" className={`${s.btn} ${s.danger}`} style={{ ...dangerBtn, height: 36 }} onClick={remove}>Delete object</button>
+          <button type="button" className={`${s.btn} ${s.danger}`} style={dangerBtn} onClick={remove}>Delete object</button>
         </div>
       )}
 

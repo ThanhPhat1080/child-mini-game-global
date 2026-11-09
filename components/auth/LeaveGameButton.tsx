@@ -63,6 +63,7 @@ export default function LeaveGameButton() {
     setSum(false);
     stopMusic();
     clearVisitor();
+    clearActiveChild(); // a signed-in parent's guest cookie too; the middleware then sends them to the picker
     router.push('/play/sign-in');
   }
 
