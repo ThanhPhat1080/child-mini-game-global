@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render } from '@testing-library/react';
-import { BEE_CYCLE, BEES, BIRD_SRC, PINK_BIRD_SRC, SkyScene, flowerSeat } from '@/components/play/SkyScene';
+import { BEE_CYCLE, BEES, BIRD_SRC, PINK_BIRD_SRC, SkyFront, SkyScene, flowerSeat } from '@/components/play/SkyScene';
+import { PlayBackdrop } from '@/components/play/PlayBackdrop';
 import { wavePath } from '@/components/play/SkyBees';
 
 afterEach(cleanup);
@@ -20,10 +21,13 @@ describe('SkyScene birds and bees', () => {
     expect(pink).toHaveLength(1);
     expect(pink[0].getAttribute('transform')).toBe('scale(-1 1)'); // faces left: it flies the other way
     expect(container.querySelectorAll('ellipse[rx="140"]').length).toBe(5); // the five drifting clouds stay
+    // every bird is drawn after every cloud, so it flies in front of them
+    const lastCloud = [...container.querySelectorAll('ellipse[rx="140"]')].pop()!;
+    images.forEach((img) => expect(lastCloud.compareDocumentPosition(img) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy());
   });
 
   it('three bees fly legs that land on flowers, then leave the screen', () => {
-    const { container } = render(<SkyScene lively />);
+    const { container } = render(<SkyFront />);
     const bees = container.querySelectorAll('[data-bee]');
     expect(bees).toHaveLength(3);
     const seats = [2, 3, 4].map(flowerSeat).map((p) => p.join(','));
@@ -51,7 +55,17 @@ describe('SkyScene birds and bees', () => {
     expect(endOf(d)).toEqual([300, 40]);
   });
 
-  it('the plain and festive skies have no birds and no bees', () => {
+  it('the backdrop stacks sky, princess, prince, then the bees on top, and the bee layer lets clicks through', () => {
+    const { container } = render(<PlayBackdrop />);
+    expect(container.querySelector('svg [data-bee]')).toBeTruthy();
+    const order = [...container.children].map((el) => el.querySelector('[data-bee]') ? 'bees' : el.querySelector('image') ? 'sky' : el.getAttribute('src')?.includes('princess') ? 'princess' : el.getAttribute('src')?.includes('prince') ? 'prince' : el.tagName);
+    expect(order).toEqual(['sky', 'princess', 'prince', 'bees']);
+    expect((container.lastElementChild!.querySelector('svg') as SVGElement).style.pointerEvents).toBe('none');
+  });
+
+  it('the back sky has no bees; the plain and festive skies have no birds and no bees', () => {
+    expect(render(<SkyScene lively />).container.querySelectorAll('[data-bee]')).toHaveLength(0);
+    cleanup();
     const { container } = render(<SkyScene festive />);
     expect(container.querySelectorAll('image')).toHaveLength(0);
     expect(container.querySelectorAll('[data-bee]')).toHaveLength(0);

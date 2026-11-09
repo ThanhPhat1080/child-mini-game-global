@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Pic } from '@/components/Pic';
 import { BounceText } from '@/components/BounceText';
-import { SkyScene } from '@/components/play/SkyScene';
+import { PlayBackdrop } from '@/components/play/PlayBackdrop';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { clearVisitor } from '@/lib/visitor';
 import { EntryChooser } from '@/components/play/EntryChooser';
@@ -52,9 +52,7 @@ export default function PlaySignIn() {
 
   return (
     <div className={`${play.wrap} hm-child`}>
-      <div className={play.sky}><SkyScene lively /></div>
-      <Pic src="/images/princess.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroLeft}`} />
-      <Pic src="/images/prince.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroRight}`} />
+      <PlayBackdrop />
       <div className={play.col}>
         <div className={play.brandRow}>
           <Pic src="/seed/fish.svg" alt="" width={84} height={84} className={play.logo} />

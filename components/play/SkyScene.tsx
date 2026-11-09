@@ -47,14 +47,30 @@ const BIRDS: { src: string; y: number; w: number; dur: number; delay: number; ba
   { src: PINK_BIRD_SRC, y: 250, w: 130, dur: 48, delay: -14, back: true },
 ];
 
+/** Both sky layers share one frame, so a bee on the front layer sits exactly on a flower of the back layer. */
+const FRAME = { viewBox: '0 0 1920 1080', preserveAspectRatio: 'xMidYMid slice', style: { position: 'absolute', inset: 0, width: '100%', height: '100%' } } as const;
+
+/**
+ * The front layer of the lively sky: the bees, drawn above the princess and prince (the page puts it after them).
+ * It lets clicks through to everything under it.
+ */
+export function SkyFront() {
+  return (
+    <svg aria-hidden="true" width="100%" height="100%" {...FRAME} style={{ ...FRAME.style, pointerEvents: 'none' }}>
+      <SkyBees routes={BEES} />
+    </svg>
+  );
+}
+
 /**
  * The sky, sun, clouds and hills behind the play area (FS1). `festive` adds balloons and stars (FS1, Task 8).
- * `lively` (grown-up sign-in page) adds drifting clouds, birds crossing the sky and swaying grass and flowers.
+ * `lively` (grown-up sign-in page) adds drifting clouds, birds crossing the sky (drawn after the clouds, so in front of them)
+ * and swaying grass and flowers; its bees are on the front layer (SkyFront).
  * Decorative only; every motion stops under prefers-reduced-motion.
  */
 export function SkyScene({ festive = false, lively = false }: { festive?: boolean; lively?: boolean }) {
   return (
-    <svg aria-hidden="true" width="100%" height="100%" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+    <svg aria-hidden="true" width="100%" height="100%" {...FRAME}>
       <circle cx="1620" cy="190" r="96" fill="#F6E2A6" />
       <circle cx="1620" cy="190" r="140" fill="#F6E2A6" opacity="0.35" />
       {!lively && (
@@ -123,7 +139,6 @@ export function SkyScene({ festive = false, lively = false }: { festive?: boolea
               </g>
             </g>
           ))}
-          <SkyBees routes={BEES} />
         </>
       )}
       {festive && (

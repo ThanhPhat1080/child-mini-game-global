@@ -21,6 +21,8 @@
 
 /* the arrival order: sky (0s) -> princess -> prince -> ABC Play (letters bounce in) -> sign-in form */
 .sky { position: absolute; inset: 0; animation: skyIn 1s ease-out both; }
+/* the bees' layer: after the heroes in the page, so above them; under the content (.col, z-index 1); clicks pass through */
+.skyFront { position: absolute; inset: 0; pointer-events: none; }
 .rest { display: flex; flex-direction: column; gap: 18px; animation: restIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 3.1s both; }
 @keyframes skyIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes heroIn { from { opacity: 0; transform: translateY(70px) scale(0.9) rotate(-1.6deg); } 60% { opacity: 1; } to { opacity: 1; transform: translateY(0) scale(1) rotate(-1.6deg); } }

@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { WindowCorners } from '@/components/ChildScreen';
 import { BounceText } from '@/components/BounceText';
-import { Pic } from '@/components/Pic';
-import { SkyScene } from '@/components/play/SkyScene';
+import { PlayBackdrop } from '@/components/play/PlayBackdrop';
 import { GenderCards, type GenderRefs } from '@/components/play/GenderCards';
 import { GuestDetails } from '@/components/play/GuestDetails';
 import type { AgeBand, Gender } from '@/lib/childTheme';
@@ -98,9 +97,7 @@ export default function GuestSetup() {
 
   return (
     <div className={`${play.wrap} ${styles.page} hm-child`}>
-      <div className={play.sky}><SkyScene lively /></div>
-      <Pic src="/images/princess.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroLeft}`} />
-      <Pic src="/images/prince.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroRight}`} />
+      <PlayBackdrop />
       {phase === 'gender' && <WindowCorners back={{ href: '/play/sign-in', label: 'Back' }} />}
       <div className={styles.col}>
         <h1 className={`${styles.who} ${locked ? styles.whoOff : ''}`}><BounceText text="Who are you?" delay={0.3} /></h1>
