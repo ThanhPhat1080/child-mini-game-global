@@ -98,7 +98,7 @@ export default function GuestSetup() {
   return (
     <div className={`${play.wrap} ${styles.page} hm-child`}>
       <PlayBackdrop />
-      {phase === 'gender' && <WindowCorners back={{ href: '/play/sign-in', label: 'Back' }} />}
+      <WindowCorners back={phase === 'gender' ? { href: '/play/sign-in', label: 'Back' } : undefined} music />
       <div className={styles.col}>
         <h1 className={`${styles.who} ${locked ? styles.whoOff : ''}`}><BounceText text="Who are you?" delay={0.3} /></h1>
         <GenderCards

@@ -27,8 +27,9 @@ export function MusicButton() {
     getMyChildSettings()
       .then((data) => {
         loadMusic(DEFAULT_MUSIC_URL, MUSIC_VOLUME);
-        // The welcome screen waits for the "tap to enter" press (ADR-016).
-        if (pathname !== '/') resumeMusic();
+        // Starts on arrival on any child screen. A browser blocks sound before the first tap or key, so a blocked
+        // start waits for that first tap and then plays (lib/audio).
+        resumeMusic();
       }, () => undefined);
   }, [pathname]);
 

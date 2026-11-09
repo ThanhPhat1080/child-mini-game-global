@@ -6,6 +6,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 const h = vi.hoisted(() => ({ push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: h.push, replace: h.push, refresh: vi.fn() }) }));
 
+vi.mock('@/components/MusicButton', () => ({ MusicButton: () => null }));
 import GuestSetup from '@/app/play/guest/page';
 import { getVisitor, clearVisitor } from '@/lib/visitor';
 

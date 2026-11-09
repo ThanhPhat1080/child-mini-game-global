@@ -77,7 +77,7 @@ export default function Play() {
   }
 
   return (
-    <ChildScreen logout>
+    <ChildScreen logout music>
       <SkyScene festive />
       {failed ? (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

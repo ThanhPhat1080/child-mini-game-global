@@ -22,6 +22,7 @@ vi.mock('@/lib/childSession', () => ({ setActiveChild: h.setActive, setGuestPlay
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p}` : null) }));
 vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ auth: { getSession: h.session, signOut: h.signOut } }) }));
 
+vi.mock('@/components/MusicButton', () => ({ MusicButton: () => null }));
 import Play from '@/app/play/page';
 
 const kid = (n: number, over: Partial<Child> = {}): Child => ({
