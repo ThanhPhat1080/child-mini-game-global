@@ -4,6 +4,7 @@ import { useEffect, useReducer } from 'react';
 import { usePathname } from 'next/navigation';
 import { getMyChildSettings } from '@/lib/settings';
 import { mediaUrl } from '@/lib/media';
+import { musicUrl } from '@/lib/defaultMusic';
 import {
   hasMusic,
   isMusicPlaying,
@@ -26,8 +27,7 @@ export function MusicButton() {
     restoreMusicPref();
     getMyChildSettings()
       .then((data) => {
-        if (!data) return;
-        loadMusic(mediaUrl(data.music_path), data.music_volume);
+        loadMusic(musicUrl(mediaUrl(data?.music_path)), data?.music_volume ?? 30);
         // The welcome screen waits for the "tap to enter" press (ADR-016).
         if (pathname !== '/') resumeMusic();
       }, () => undefined);

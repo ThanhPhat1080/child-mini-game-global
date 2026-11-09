@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getChildSettings, updateChildSettings, type ChildSettingsRow } from '@/lib/settings';
 import { mediaUrl, removeMedia } from '@/lib/media';
+import { DEFAULT_MUSIC_URL } from '@/lib/defaultMusic';
 import { applause, ohOh, speakKid, yay, type SoundHandle } from '@/lib/sfx';
 import styles from '@/app/admin/admin.module.css';
 import { Toast, useToast } from '@/components/admin/Toast';
@@ -140,8 +141,8 @@ export function ChildSounds({ childId }: { childId: string }) {
   function toggle(kind: AudioKind) {
     const key = fileKey(kind);
     const path = shown(kind);
-    const url = mediaUrl(path);
-    if (!url || !path) return;
+    const url = kind === 'music' ? mediaUrl(path) ?? DEFAULT_MUSIC_URL : mediaUrl(path);
+    if (!url || (!path && kind !== 'music')) return;
     if (playing === key && preview.current) {
       preview.current.pause();
       preview.current = null;
@@ -191,17 +192,15 @@ export function ChildSounds({ childId }: { childId: string }) {
         <div className={styles.head} style={{ alignItems: 'flex-end' }}>
           <div>
             <h2>Background music</h2>
-            <p>Instrumental, royalty-free. The selected track loops quietly.</p>
+            <p>A calm built-in track plays by default. Optionally choose your own; it loops quietly.</p>
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{soundActions('music', 'background music', false)}</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{soundActions('music', 'background music', true)}</div>
         </div>
         <div className={`${styles.row} ${shown('music') ? styles.rowSel : ''}`}>
-          {shown('music') && (
-            <PlayButton playing={playing === fileKey('music')} label={playing === fileKey('music') ? 'Pause track' : 'Play track'} onClick={() => toggle('music')} />
-          )}
+          <PlayButton playing={playing === fileKey('music')} label={playing === fileKey('music') ? 'Pause track' : 'Play track'} onClick={() => toggle('music')} />
           <div className={styles.rowText}>
-            <div className={styles.rowTitle}>{baseName(shown('music')) ?? 'No track yet'}</div>
-            <div className={styles.rowMeta}>Loops on the child screens</div>
+            <div className={styles.rowTitle}>{baseName(shown('music')) ?? 'Built-in track'}</div>
+            <div className={styles.rowMeta}>{shown('music') ? 'Your own track. Loops on the child screens' : 'Plays by default, no upload needed. Loops on the child screens'}</div>
           </div>
         </div>
         <div className={styles.volume}>

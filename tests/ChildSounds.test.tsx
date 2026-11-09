@@ -44,6 +44,19 @@ describe('ChildSounds (N2, A25, A26)', () => {
     await waitFor(() => expect(h.removeMedia).toHaveBeenCalledWith(['snd/old.mp3']));
   });
 
+  it('shows the built-in track when no music is chosen, and Use built-in goes back to it', async () => {
+    h.getChildSettings.mockResolvedValue({ ...row, music_path: null });
+    render(<ChildSounds childId="c1" />);
+    await screen.findByText('Built-in track');
+    expect(screen.getByRole('button', { name: 'Play track' })).toBeTruthy();
+    cleanup();
+    h.getChildSettings.mockResolvedValue(row);
+    render(<ChildSounds childId="c1" />);
+    await screen.findByText('old.mp3');
+    fireEvent.click(screen.getByRole('button', { name: 'Use built-in' }));
+    expect(screen.getByText('Built-in track')).toBeTruthy();
+  });
+
   it('Revert drops the draft', async () => {
     render(<ChildSounds childId="c1" />);
     await screen.findByText('old.mp3');
