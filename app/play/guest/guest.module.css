@@ -38,8 +38,8 @@
 .input { width: 100%; height: 58px; font: 700 24px 'Nunito', sans-serif; padding: 12px 18px; border-radius: 16px; border: 2px solid #e9dccb; background: #fff; color: #5a4038; user-select: text; -webkit-user-select: text; }
 .input:focus-visible { outline: 4px solid #7a5c50; outline-offset: 2px; }
 .hint { font-size: 14px; color: #8a6e63; margin: 6px 0 0; min-height: 18px; }
-.seg { display: flex; border-radius: 18px; overflow: hidden; border: 2px solid #e9dccb; }
-.segBtn { flex: 1; height: 58px; font: 700 24px 'Nunito', sans-serif; border: 0; background: #fff; color: #8a6e63; cursor: pointer; }
+.seg { display: flex; width: 260px; border-radius: 14px; overflow: hidden; border: 2px solid #e9dccb; }
+.segBtn { flex: 1; height: 42px; font: 700 18px 'Nunito', sans-serif; border: 0; background: #fff; color: #8a6e63; cursor: pointer; }
 .segBtn:focus-visible { outline: 4px solid #7a5c50; outline-offset: -4px; }
 .segOn { background: #8fb3d1; color: #3f6285; }
 .formGirl .segOn { background: #e59aa1; color: #9a4550; }
