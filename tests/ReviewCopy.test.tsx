@@ -132,6 +132,8 @@ describe('a Super Admin row (V10)', () => {
     render(<ShareToggle table="spot_levels" id="l1" visibility="private" superOwned onChanged={changed} />);
     expect(screen.queryByRole('switch')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Publish to everyone' }));
+    expect(h.rpc).not.toHaveBeenCalled(); // asks first
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Publish' }));
     await waitFor(() => expect(h.rpc).toHaveBeenCalledWith('publish_own', { p_table: 'spot_levels', p_id: 'l1' }));
     await waitFor(() => expect(changed).toHaveBeenCalledWith('global'));
   });
@@ -141,6 +143,8 @@ describe('a Super Admin row (V10)', () => {
     render(<ShareToggle table="find_levels" id="f1" visibility="global" superOwned onChanged={changed} />);
     expect(screen.queryByRole('button', { name: 'Request edit' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Unpublish' }));
+    expect(h.rpc).not.toHaveBeenCalled(); // asks first
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Unpublish' }));
     await waitFor(() => expect(h.rpc).toHaveBeenCalledWith('unpublish_item', { p_table: 'find_levels', p_id: 'f1' }));
     await waitFor(() => expect(changed).toHaveBeenCalledWith('private'));
   });
@@ -150,6 +154,7 @@ describe('a Super Admin row (V10)', () => {
     const changed = vi.fn();
     render(<ShareToggle table="quiz_sets" id="q1" visibility="private" superOwned onChanged={changed} />);
     fireEvent.click(screen.getByRole('button', { name: 'Publish to everyone' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Publish' }));
     expect(await screen.findByRole('alert')).toBeTruthy();
     expect(changed).not.toHaveBeenCalled();
   });
@@ -232,10 +237,13 @@ describe('Sets page as a Super Admin (V8, V9)', () => {
     expect(screen.queryByText('Draft of Lan')).toBeNull();
   });
 
-  it('Review queue shows the queue, not the set table', async () => {
+  it('Review queue lists the pending sets of parents with View and Approve, no Reject', async () => {
     render(<SetsPage />);
     fireEvent.click(await screen.findByRole('tab', { name: /Review queue/ }));
-    expect(await screen.findByText('Nothing is waiting for review.')).toBeTruthy();
-    expect(screen.queryByRole('table')).toBeNull();
+    const row = (await screen.findByText('Draft of Lan')).closest('tr') as HTMLElement;
+    expect(within(row).getByRole('link', { name: 'View' })).toBeTruthy();
+    expect(within(row).getByRole('button', { name: 'Approve Draft of Lan' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Reject/ })).toBeNull();
+    expect(screen.queryByText('Colours')).toBeNull(); // private, not waiting
   });
 });

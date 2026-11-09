@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { publishOwn, unpublishItem } from '@/lib/superAdmin';
 import type { ContentTable, Visibility } from '@/lib/review';
 import s from '@/components/admin/admin-ui.module.css';
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 
 /**
  * A Super Admin's own row (V8, V10): "Publish to everyone" for a private row (no review), "Unpublish" for a
@@ -14,6 +15,7 @@ export function GlobalToggle({ table, id, visibility, onChanged }: {
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [asking, setAsking] = useState<'publish' | 'unpublish' | null>(null);
 
   async function run(next: Visibility, fn: () => Promise<void>) {
     setBusy(true); setError(null);
@@ -24,6 +26,7 @@ export function GlobalToggle({ table, id, visibility, onChanged }: {
       setError((e as Error).message || 'Could not change the sharing.');
     } finally {
       setBusy(false);
+      setAsking(null);
     }
   }
 
@@ -35,16 +38,38 @@ export function GlobalToggle({ table, id, visibility, onChanged }: {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
       {visibility === 'private' && (
-        <button type="button" className={s.btn} style={primary} disabled={busy} onClick={() => void run('global', () => publishOwn(table, id))}>
+        <button type="button" className={s.btn} style={primary} disabled={busy} onClick={() => setAsking('publish')}>
           Publish to everyone
         </button>
       )}
       {visibility === 'global' && (
-        <button type="button" className={`${s.btn} ${s.ghost}`} style={ghost} disabled={busy} onClick={() => void run('private', () => unpublishItem(table, id))}>
+        <button type="button" className={`${s.btn} ${s.ghost}`} style={ghost} disabled={busy} onClick={() => setAsking('unpublish')}>
           Unpublish
         </button>
       )}
       {visibility === 'pending' && <p role="status" style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#7A5410' }}>Under review.</p>}
+      {asking === 'publish' && (
+        <ConfirmDialog
+          tone="neutral"
+          title="Publish to everyone?"
+          body="It becomes a global item that every family's children can play. You can unpublish it later."
+          button="Publish"
+          busy={busy}
+          onCancel={() => setAsking(null)}
+          onConfirm={() => void run('global', () => publishOwn(table, id))}
+        />
+      )}
+      {asking === 'unpublish' && (
+        <ConfirmDialog
+          tone="neutral"
+          title="Unpublish this item?"
+          body="It is hidden from every child again and goes back to private. You can publish it again later."
+          button="Unpublish"
+          busy={busy}
+          onCancel={() => setAsking(null)}
+          onConfirm={() => void run('private', () => unpublishItem(table, id))}
+        />
+      )}
       {error && <p role="alert" style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#A8484F' }}>{error}</p>}
     </div>
   );

@@ -87,6 +87,7 @@ test('share, approve, ban: the whole review loop', async ({ browser }) => {
   const sw = parent.getByRole('switch', { name: 'Share with all children' }).first();
   if (!(await sw.isVisible())) await parent.getByRole('article', { name: 'Card 1', exact: true }).locator('summary').click();
   await sw.click();
+  await parent.getByRole('alertdialog').getByRole('button', { name: 'Send for review' }).click(); // sharing asks first
   await expect.poll(async () => (await getState()).memory_cards.filter((c) => c.visibility === 'pending').length).toBe(1);
   await parent.reload();
   await expect(parent.getByText('Under review').first()).toBeVisible();
