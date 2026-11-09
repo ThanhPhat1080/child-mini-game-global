@@ -2,10 +2,8 @@
 
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Stage } from '@/components/Stage';
+import { ChildScreen, CornerBack } from '@/components/ChildScreen';
 import { Hills } from '@/components/Hills';
-import { BackButton } from '@/components/BackButton';
-import { MusicButton } from '@/components/MusicButton';
 import { SpotBoard, type SpotRipple } from '@/components/spot/SpotBoard';
 import { SpotDots } from '@/components/spot/SpotDots';
 import { SpotDone } from '@/components/spot/SpotDone';
@@ -133,16 +131,14 @@ export default function SpotPlay() {
   const urlB = level ? mediaUrl(level.image_b_path) : null;
 
   return (
-    <Stage>
+    <ChildScreen music>
       <div data-spot-play data-won={won ? 'true' : 'false'} className={reduced ? 'hm-reduced' : undefined} style={{ position: 'absolute', inset: 0 }}>
         {won && praise ? (
           <SpotDone childName={praise.name} completeUrl={praise.url} onAgain={again} levelsHref={LEVELS} />
         ) : (
           <>
             <Hills />
-            <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', alignItems: 'center' }}>
-              <BackButton href={LEVELS} game="spot" />
-            </div>
+            <CornerBack href={LEVELS} game="spot" />
           </>
         )}
         {phase === 'missing' && (
@@ -162,8 +158,7 @@ export default function SpotPlay() {
             </div>
           </>
         )}
-        <MusicButton />
       </div>
-    </Stage>
+    </ChildScreen>
   );
 }

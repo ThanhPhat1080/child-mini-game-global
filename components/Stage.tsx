@@ -5,8 +5,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 const W = 1920;
 const H = 1080;
 
-/** Fixed 1920x1080 canvas scaled to fit any window, like the prototype boards. */
-export function Stage({ children }: { children: ReactNode }) {
+/** The scale that fits the 1920x1080 stage into the window. */
+export function useStageScale(): number {
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
@@ -15,6 +15,12 @@ export function Stage({ children }: { children: ReactNode }) {
     window.addEventListener('resize', fit);
     return () => window.removeEventListener('resize', fit);
   }, []);
+  return scale;
+}
+
+/** Fixed 1920x1080 canvas scaled to fit any window, like the prototype boards. */
+export function Stage({ children }: { children: ReactNode }) {
+  const scale = useStageScale();
 
   return (
     <div className="hm-child" style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#FBF4E9' }}>

@@ -3,10 +3,8 @@
 import { LoadError } from '@/components/LoadError';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Stage } from '@/components/Stage';
+import { ChildScreen, CornerBack } from '@/components/ChildScreen';
 import { Hills } from '@/components/Hills';
-import { BackButton } from '@/components/BackButton';
-import { MusicButton } from '@/components/MusicButton';
 import { MemoryDone } from '@/components/memory/MemoryDone';
 import { MemoryTile } from '@/components/memory/MemoryTile';
 import { FlowerBack } from '@/components/memory/FlowerBack';
@@ -199,16 +197,14 @@ export default function MemoryPlay() {
   const size = level ? tileSize(level) : 0;
 
   return (
-    <Stage>
+    <ChildScreen music>
       <div data-memory-play data-won={won ? 'true' : 'false'} data-flips={won?.flips} className={reduced ? 'hm-reduced' : undefined} style={{ position: 'absolute', inset: 0 }}>
         {won && praise ? (
           <MemoryDone flips={won.flips} childName={praise.name} completeUrl={praise.url} onAgain={again} levelsHref="/games/memory" />
         ) : (
           <>
             <Hills />
-            <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', alignItems: 'center' }}>
-              <BackButton href="/games/memory" game="memory" />
-            </div>
+            <CornerBack href="/games/memory" game="memory" />
           </>
         )}
         {!!loadErr && <LoadError error={loadErr} onRetry={() => { setLoadErr(null); setPhase('loading'); setAttempt((n) => n + 1); }} />}
@@ -240,8 +236,7 @@ export default function MemoryPlay() {
             </div>
           </div>
         )}
-        <MusicButton />
       </div>
-    </Stage>
+    </ChildScreen>
   );
 }

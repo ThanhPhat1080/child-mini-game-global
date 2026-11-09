@@ -2,10 +2,8 @@
 
 import { LoadError } from '@/components/LoadError';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Stage } from '@/components/Stage';
+import { ChildScreen, CornerBack } from '@/components/ChildScreen';
 import { Hills } from '@/components/Hills';
-import { BackButton } from '@/components/BackButton';
-import { MusicButton } from '@/components/MusicButton';
 import { ListenHelp } from '@/components/ListenHelp';
 import { ListenQuestion } from '@/components/listen/ListenQuestion';
 import { Confetti } from '@/components/Confetti';
@@ -318,15 +316,15 @@ export default function ListenPlay() {
   const finished = done && praise !== null;
 
   return (
-    <Stage>
+    <ChildScreen music>
       <div data-listen-play data-done={done ? 'true' : 'false'} className={reduced ? 'hm-reduced' : undefined} style={{ position: 'absolute', inset: 0 }}>
         {finished ? (
           <ListenDone wrong={finish} cards={roundCards} childName={praise.name} completeUrl={praise.url} onAgain={again} gamesHref="/games" />
         ) : (
         <>
         <Hills />
-        <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <BackButton href="/games" label="Back to games" game="listen" />
+        <CornerBack href="/games" label="Back to games" game="listen" />
+        <div style={{ position: 'absolute', top: 48, zIndex: 2, left: 56, right: 56, display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
           {!done && (
             <button
               ref={helpBtn}
@@ -376,9 +374,8 @@ export default function ListenPlay() {
         ))}
         </>
         )}
-        <MusicButton />
         {help && <ListenHelp playHref={null} onClose={closeHelp} />}
       </div>
-    </Stage>
+    </ChildScreen>
   );
 }
