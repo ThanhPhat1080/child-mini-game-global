@@ -296,7 +296,7 @@ Full spec: `docs/superpowers/specs/2026-11-08-guest-play-design.md` (approved mo
 - **GU6** `lib/visitor.ts`: localStorage `cp_visitor` plus cookie `cp_visitor=1`; a bare cookie is not a visitor.
 - **GU7** Leave asks the two-digit sum (`AdultCheck`); a right answer stops the music, clears the visitor and goes to the chooser.
 - **GU8** A parent sign-in (play or admin) clears the visitor; a signed-in parent never sees the chooser.
-- **GU9** Middleware: `/play/guest` open; `/play/sign-in` with a profile goes to `/play`.
+- **GU9** Middleware: `/play/guest` open; `/play/sign-in` with a profile goes to `/play`. A signed-in parent with no child reaches `/play/guest` from the picker's Guest card and gets the same setup (Boy or Girl, name, age); the data stays in the browser and leaving asks the sum.
 - **GU10** No profile and a visitor cookie: `/` and `/games/*` open, `/play` goes to `/`, `/admin` goes to sign-in.
 - **GU11** The cookie only opens pages; RLS decides data.
 - **GU12** A visitor writes nothing: no insert, update, upsert, rpc or upload; synthetic child settings; `playerId()` null.
