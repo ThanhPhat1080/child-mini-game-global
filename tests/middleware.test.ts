@@ -88,7 +88,7 @@ describe('middleware route protection (U11, U12, U13)', () => {
     });
   }
 
-  const open = ['/admin/sign-in', '/admin/forbidden', '/admin/suspended', '/play/sign-in', '/sign-up'];
+  const open = ['/admin/sign-in', '/admin/forbidden', '/admin/suspended', '/sign-up'];
   for (const path of open) {
     it(`${path} is open for everyone`, async () => {
       for (const who of whos) expect(await visit(path, who)).toBe(NEXT);
@@ -131,7 +131,7 @@ describe('middleware route protection (U11, U12, U13)', () => {
       expect(await visit('/games/quiz/x?preview=1', 'noProfile', null)).toBe(PLAY_IN);
     });
 
-    it('/play is never redirected', async () => {
+    it('/play is never redirected without a visitor', async () => {
       for (const who of whos) {
         expect(await visit('/play', who, null)).toBe(NEXT);
         expect(await visit('/play', who, 'cp_child=nope')).toBe(NEXT);
@@ -160,7 +160,54 @@ describe('middleware route protection (U11, U12, U13)', () => {
     expect(res.cookies.get('sb-token')?.value).toBe('fresh');
   });
 
-  it('matches the welcome page, /games and /admin', () => {
-    expect(config.matcher).toEqual(['/', '/games/:path*', '/admin/:path*']);
+  it('matches the welcome page, the picker, the sign-in chooser, /games and /admin', () => {
+    expect(config.matcher).toEqual(['/', '/play', '/play/sign-in', '/play/guest', '/games/:path*', '/admin/:path*']);
+  });
+});
+
+// Guest Play (GU9-GU11, GT2): a visitor is a cookie plus saved data in the browser; the cookie only opens pages.
+describe('guest play routes (GU9-GU11)', () => {
+  const VISITOR = 'cp_visitor=1';
+  const cookie = (...parts: string[]) => parts.join('; ');
+
+  it('a visitor with no profile opens Welcome and the games', async () => {
+    for (const path of ['/', '/games', '/games/quiz/abc']) {
+      expect(await visit(path, 'signedOut', VISITOR)).toBe(NEXT);
+      expect(await visit(path, 'noProfile', VISITOR)).toBe(NEXT);
+    }
+  });
+
+  it('a visitor on the picker goes to Welcome', async () => {
+    expect(await visit('/play', 'signedOut', VISITOR)).toBe('/');
+    expect(await visit('/play', 'noProfile', cookie(VISITOR, 'cp_child=nope'))).toBe('/');
+  });
+
+  it('a visitor at /admin lands on the admin sign-in, never admin', async () => {
+    expect(await visit('/admin', 'signedOut', VISITOR)).toBe(ADMIN_IN);
+    expect(await visit('/admin/settings', 'noProfile', VISITOR)).toBe(ADMIN_IN);
+  });
+
+  it('a visitor without the cookie still goes to the sign-in chooser', async () => {
+    expect(await visit('/', 'signedOut', null)).toBe(PLAY_IN);
+  });
+
+  it('a profile beats the visitor cookie: no child sends the parent to the picker', async () => {
+    expect(await visit('/', 'parent', VISITOR)).toBe(PICKER);
+    expect(await visit('/games', 'parent', cookie(VISITOR))).toBe(PICKER);
+  });
+
+  it('a signed-in parent on the sign-in chooser goes to the picker; a signed-out visitor sees it', async () => {
+    expect(await visit('/play/sign-in', 'parent', null)).toBe(PICKER);
+    expect(await visit('/play/sign-in', 'superAdmin', null)).toBe(PICKER);
+    expect(await visit('/play/sign-in', 'signedOut', null)).toBe(NEXT);
+    expect(await visit('/play/sign-in', 'noProfile', VISITOR)).toBe(NEXT);
+  });
+
+  it('/play/guest is open for a signed-out visitor, and a signed-in parent goes to /play (Q14)', async () => {
+    expect(await visit('/play/guest', 'signedOut', null)).toBe(NEXT);
+    expect(await visit('/play/guest', 'noProfile', VISITOR)).toBe(NEXT);
+    expect(await visit('/play/guest', 'parent', null)).toBe(PICKER);
+    expect(await visit('/play/guest', 'parent', VISITOR)).toBe(PICKER);
+    expect(await visit('/play/guest', 'superAdmin', null)).toBe(PICKER);
   });
 });

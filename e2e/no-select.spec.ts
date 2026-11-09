@@ -40,6 +40,7 @@ test('pictures on child screens are not draggable (NS3)', async ({ page }) => {
 
 test('the email field keeps normal text selection (NS4)', async ({ page }) => {
   await page.goto('/play/sign-in');
+  await page.getByRole('button', { name: 'Log in' }).click();
   // type=email has no selection API, so read the computed rule: inputs under .hm-child get user-select: text
   const email = page.getByLabel('Email');
   await expect(email).toBeVisible();

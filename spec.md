@@ -279,3 +279,26 @@ Design: `docs/superpowers/specs/2026-11-07-puzzle-pairs-design.md` (mockup in `d
 | A34 | Media: `puzzle_pictures.image_path` and `audio_path` count as used. A file used by the list cannot be deleted from the library, renaming it re-points the rows (`MEDIA_SOURCES`, `media_in_use`, `media_used_by_others`). |
 | A35 | Seed: four active rows, `fish`/`seed/fish.svg`, `triangle`/`seed/triangle.svg`, `house`/`seed/house.svg`, `apple`/`seed/apple.svg`, no sound; the migration skips a row whose `image_path` already exists. |
 | A36 | Every admin wait (Profile, Cards, Find, Spot, Puzzle, Global content, Set editor, Parent detail, Media library) shows the same fish over soft ripples (`AdminLoading`), with no visible words. A screen reader hears "Loading…" (Profile: "Loading your profile…"). Reduced motion keeps the fish still. |
+
+## Guest Play and No-Select (2026-11-08)
+
+Full spec: `docs/superpowers/specs/2026-11-08-guest-play-design.md` (approved mockup v7 changes in its section 5.1).
+
+- **NS1** Child screens paint no text selection and drag no picture: one `.hm-child` rule in `app/globals.css`; inputs keep normal selection.
+- **NS2** `.hm-child` is on `Stage` (Welcome, `/games`, every game, `/play`) and on `/play/sign-in` and `/play/guest`. Admin never gets it.
+- **NS3** `Pic` renders `draggable={false}`; games that drag with pointer events are unaffected.
+- **NS4** PIN and email inputs keep normal selection, copy and paste.
+- **GU1** `/play/sign-in` is a chooser: Log in (the parent form, in place) and Guest (`/play/guest`); arrows and Enter/Space.
+- **GU2** `/play/guest` step 1: "Who are you?" and Boy/Girl cards with the head pictures; Left/Right move, a click picks.
+- **GU3** The pick glides the card to the header avatar (about 600 ms); the form follows 200 ms later; reduced motion is a cross-fade.
+- **GU4** Details: name (1-20 characters after trim), age 2-5 or 5-10 (stored only), OK goes to Welcome; the X returns to Boy/Girl and keeps the name.
+- **GU5** A visitor plays Welcome, `/games` and every game as the child, with the gender's colours and head.
+- **GU6** `lib/visitor.ts`: localStorage `cp_visitor` plus cookie `cp_visitor=1`; a bare cookie is not a visitor.
+- **GU7** Leave asks the two-digit sum (`AdultCheck`); a right answer stops the music, clears the visitor and goes to the chooser.
+- **GU8** A parent sign-in (play or admin) clears the visitor; a signed-in parent never sees the chooser.
+- **GU9** Middleware: `/play/guest` open; `/play/sign-in` with a profile goes to `/play`.
+- **GU10** No profile and a visitor cookie: `/` and `/games/*` open, `/play` goes to `/`, `/admin` goes to sign-in.
+- **GU11** The cookie only opens pages; RLS decides data.
+- **GU12** A visitor writes nothing: no insert, update, upsert, rpc or upload; synthetic child settings; `playerId()` null.
+- **GU13** `20261108300000_guest_anon_read.sql`: anon reads global published/active rows of `quiz_sets`, `memory_cards`, `spot_levels`, `find_levels`, `card_groups`, and their questions and answers; no function grant.
+- **GU14** `public/images/prince-head.webp` and `princess-head.webp`, 320 px, round.

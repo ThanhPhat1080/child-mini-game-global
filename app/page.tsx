@@ -1,7 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { useRouter } from 'next/navigation';
+import { isGuestPlay } from '@/lib/childSession';
+import { clearVisitor, getVisitor, hasVisitorMarker } from '@/lib/visitor';
 import { mediaUrl } from '@/lib/media';
 import { playOnce, startMusic } from '@/lib/audio';
 import { BOY_WELCOME_VARS, GENDER_THEME } from '@/lib/childTheme';
@@ -18,7 +21,15 @@ const CROWN = 'M4 38 L8 10 L20 24 L30 4 L40 24 L52 10 L56 38 Z';
 /** Welcome (C1, FP9). Nothing plays until the child taps the big button (ADR-016). The picture and colors follow the child's gender. */
 export default function Welcome() {
   const child = useActiveChild();
+  const router = useRouter();
   const settings = child.settings;
+  // A bare or forged visitor cookie (marker, no saved data) and no child: back to the sign-in chooser (Review Focus 1).
+  // A failed load with a real child or a real visitor stays on the page, as before.
+  useEffect(() => {
+    if (child.status !== 'failed' || getVisitor() || isGuestPlay() || !hasVisitorMarker()) return;
+    clearVisitor();
+    router.replace('/play/sign-in');
+  }, [child.status, router]);
   const known = child.status !== 'loading';
   const [entered, setEntered] = useState(false);
   const theme = GENDER_THEME[child.gender ?? 'female'];

@@ -3,14 +3,17 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { adminAccess, getMyProfile } from '@/lib/auth/roles';
 import { ACTIVE_CHILD_COOKIE, GUEST_COOKIE } from '@/lib/childSession';
+import { VISITOR_COOKIE } from '@/lib/visitor';
 
 const ADMIN_SIGN_IN = '/admin/sign-in';
 const PLAY_SIGN_IN = '/play/sign-in';
 const PICKER = '/play';
+const GUEST_SETUP = '/play/guest';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Pages anyone may open, signed in or not (no redirect loops). */
-const OPEN = new Set(['/play', ADMIN_SIGN_IN, '/admin/forbidden', '/admin/suspended', PLAY_SIGN_IN, '/sign-up']);
+// /play and /play/sign-in are not here: they redirect a visitor or a signed-in parent (GU9, GU10).
+const OPEN = new Set([ADMIN_SIGN_IN, '/admin/forbidden', '/admin/suspended', '/sign-up']);
 
 const ADMIN_TARGET = { signin: ADMIN_SIGN_IN, forbidden: '/admin/forbidden', banned: '/admin/suspended' } as const;
 
@@ -19,7 +22,7 @@ const ADMIN_TARGET = { signin: ADMIN_SIGN_IN, forbidden: '/admin/forbidden', ban
  * effect immediately. `/` and `/games/*` need a signed-in profile and an active child (cookie that selects
  * one of the parent's own `children` rows through RLS) or the guest cookie (no child: global content only);
  * `/admin/*` follows `adminAccess`.
- * `/play` and `/play/sign-in` are not matched and stay open.
+ * `/play/sign-in` and `/play/guest` send a signed-in parent to `/play`; `/play` sends a visitor to `/` (GU9, GU10).
  */
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -44,18 +47,33 @@ export async function middleware(request: NextRequest) {
   ) as unknown as SupabaseClient;
 
   const profile = await getMyProfile(supabase);
+  const visitor = request.cookies.get(VISITOR_COOKIE)?.value === '1';
+
+  // The sign-in chooser: a signed-in parent never sees it (Q14, GU9). A visitor on the picker goes to Welcome (GU10).
+  if (path === PLAY_SIGN_IN) return profile ? redirectTo(request, response, PICKER) : response;
+  if (path === PICKER) return !profile && visitor ? redirectTo(request, response, '/') : response;
+  // A signed-in parent never sets up a visitor on this device (Q14): /play/guest goes to the picker.
+  if (path === GUEST_SETUP) return profile ? redirectTo(request, response, PICKER) : response;
+
   const isAdminArea = path === '/admin' || path.startsWith('/admin/');
 
   let target: string | null;
   if (isAdminArea) {
     const access = adminAccess(profile);
     target = access === 'ok' ? null : ADMIN_TARGET[access];
+  } else if (!profile) {
+    // A visitor (cookie, valid data checked by the page) may open Welcome and the games (GU10, GU11).
+    target = visitor ? null : PLAY_SIGN_IN;
   } else {
     const guest = request.cookies.get(GUEST_COOKIE)?.value === '1';
-    target = !profile ? PLAY_SIGN_IN : (request.nextUrl.searchParams.get('preview') === '1' || guest || (await hasActiveChild(request, supabase, profile.user_id))) ? null : PICKER;
+    // A profile beats the visitor cookie: the visitor is ignored here (GU8).
+    target = request.nextUrl.searchParams.get('preview') === '1' || guest || (await hasActiveChild(request, supabase, profile.user_id)) ? null : PICKER;
   }
   if (!target) return response;
+  return redirectTo(request, response, target);
+}
 
+function redirectTo(request: NextRequest, response: NextResponse, target: string): NextResponse {
   const url = request.nextUrl.clone();
   url.pathname = target;
   url.search = '';
@@ -74,5 +92,5 @@ async function hasActiveChild(request: NextRequest, supabase: SupabaseClient, pa
 }
 
 export const config = {
-  matcher: ['/', '/games/:path*', '/admin/:path*'],
+  matcher: ['/', '/play', '/play/sign-in', '/play/guest', '/games/:path*', '/admin/:path*'],
 };

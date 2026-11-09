@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { getActiveChildId } from '@/lib/childSession';
+import { getVisitor } from '@/lib/visitor';
 import { mediaUrl } from '@/lib/media';
 import { GENDER_THEME, type Gender } from '@/lib/childTheme';
 
@@ -42,6 +43,9 @@ export function celebrationSlots(pics: CelebrationPictures): { left: Celebration
  */
 export async function fetchCelebrationPictures(): Promise<CelebrationPictures> {
   try {
+    // A visitor has no uploads: the built-in character of the visitor's gender (GU12).
+    const visitor = getVisitor();
+    if (visitor) return { a: null, b: null, gender: visitor.gender };
     const id = getActiveChildId();
     if (!id) return NONE;
     const { data, error } = await createSupabaseBrowserClient()
