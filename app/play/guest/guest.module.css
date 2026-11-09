@@ -6,7 +6,7 @@
 .hiGirl, .hiBoy { font: 800 38px 'Baloo 2', 'Nunito', sans-serif; margin: 0 0 14px; padding-right: 64px; text-wrap: balance; }
 .hiGirl { color: #9a4550; }
 .hiBoy { color: #3f6285; }
-.who { font-size: 96px; font-weight: 600; line-height: 1.1; color: #8a5560; margin: 20px 0 0; text-align: center; white-space: nowrap; } /* the same title as /play */
+.who { font-family: 'Baloo 2', 'Nunito', sans-serif; font-size: min(5vw, 8.889vh); font-weight: 600; line-height: 1.1; color: #8a5560; margin: 14px 0 0; text-align: center; white-space: nowrap; } /* the /play title: 96px on its 1920x1080 stage, scaled to the window */
 
 .whoOff { opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
 .who { transition: opacity 0.4s ease; }
