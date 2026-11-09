@@ -57,6 +57,18 @@ describe('MediaLibraryDialog', () => {
     expect(screen.getByRole('button', { name: 'Close picture' })).toBeTruthy();
   });
 
+  it('clicking anywhere on a sound row selects it; the pencil starts renaming without selecting', async () => {
+    lib.listLibrary.mockResolvedValue(['library/bell.mp3', 'library/drum.mp3']);
+    render(<MediaLibraryDialog kind="audio" onChoose={vi.fn()} onClose={vi.fn()} />);
+    const row = (await screen.findByRole('button', { name: 'Choose bell.mp3' })).closest('li') as HTMLElement;
+    fireEvent.click(row);
+    expect(row.getAttribute('data-selected')).toBe('true');
+    const other = screen.getByRole('button', { name: 'Choose drum.mp3' }).closest('li') as HTMLElement;
+    fireEvent.click(screen.getByRole('button', { name: 'Rename drum.mp3' }));
+    expect(other.getAttribute('data-selected')).toBe('false');
+    expect(await screen.findByRole('textbox', { name: 'Rename drum.mp3' })).toBeTruthy();
+  });
+
   it('choosing a picture calls onChoose with its path and then closes', async () => {
     lib.listLibrary.mockResolvedValue(['cards/c1.png']);
     const onChoose = vi.fn();

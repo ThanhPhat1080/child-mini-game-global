@@ -92,6 +92,14 @@ const DeleteButton = ({ label, busy, onClick, style, hidden }: { label: string; 
   </button>
 );
 
+/** Small pencil button beside the trash: starts renaming the file. */
+const RenameButton = ({ label, busy, onClick, hidden }: { label: string; busy: boolean; onClick: () => void; hidden?: boolean }) => hidden ? null : (
+  <button type="button" aria-label={label} title="Rename" disabled={busy} onClick={onClick}
+    style={{ width: 30, height: 30, borderRadius: 15, border: 'none', background: 'transparent', color: '#6E5A4E', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.5 : 1, padding: 0, flex: 'none' }}>
+    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z" /></svg>
+  </button>
+);
+
 /** "Validating..." / "Deleting..." beside the delete button of a file that is being removed. */
 const RemovingText = ({ phase, style }: { phase: 'validating' | 'deleting'; style?: React.CSSProperties }) => (
   <span role="status" style={{ fontSize: 12, fontWeight: 700, color: '#6E5A4E', fontFamily: 'Nunito, sans-serif', ...style }}>{phase === 'validating' ? 'Validating...' : 'Deleting...'}</span>
@@ -387,7 +395,9 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
         const playing = preview.isPlaying(p);
         const phase = removing.get(p);
         return (
-          <li key={p} data-selected={on ? 'true' : 'false'} aria-busy={!!phase} style={{ opacity: phase ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 14, background: on ? '#F6EADC' : '#FBF4E9', border: on ? '2px solid #5A4038' : '1.5px solid transparent', boxSizing: 'border-box' }}>
+          <li key={p} data-selected={on ? 'true' : 'false'} aria-busy={!!phase}
+            onClick={(e) => { if (dialog && !phase && renaming !== p && !(e.target as HTMLElement).closest('button, input')) setSelected(p); }}
+            style={{ cursor: dialog && !phase && renaming !== p ? 'pointer' : 'default', opacity: phase ? 0.5 : 1, display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 14, background: on ? '#F6EADC' : '#FBF4E9', border: on ? '2px solid #5A4038' : '1.5px solid transparent', boxSizing: 'border-box' }}>
             <PlayButton playing={playing} label={`${playing ? 'Pause' : 'Play'} ${name}`} disabled={!!phase} onClick={() => preview.toggle(p, mediaUrl(p))} />
             {renaming === p ? (
               <RenameableName path={p} editing onStart={() => undefined} onSave={(n) => void rename(p, n)} onCancel={() => setRenaming(null)} style={audioNameStyle} />
@@ -404,6 +414,7 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
               )
             )}
             {phase && <RemovingText phase={phase} />}
+            <RenameButton hidden={!canEdit(p) || renaming === p} label={`Rename ${name}`} busy={!!phase || pendingRenames.has(p)} onClick={() => setRenaming(p)} />
             <DeleteButton hidden={!canEdit(p)} label={`Delete ${name}`} busy={!!phase} onClick={() => void askDelete(p)} style={{ background: 'transparent' }} />
           </li>
         );
