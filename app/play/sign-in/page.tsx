@@ -43,7 +43,7 @@ export default function PlaySignIn() {
   }
 
   return (
-    <div className={play.wrap}>
+    <div className={`${play.wrap} hm-child`}>
       <div className={play.sky}><SkyScene lively /></div>
       <Pic src="/images/princess.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroLeft}`} />
       <Pic src="/images/prince.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroRight}`} />

@@ -198,3 +198,8 @@ button.hm-tap:active{transform:scale(.94)}
 .hm-reduced .hm-so-obj,.hm-reduced .hm-so-obj.hm-so-slide,.hm-reduced .hm-so-example{transition:none;--so-lift:1}
 .hm-reduced .hm-so-example:hover{transform:none}
 @media (prefers-reduced-motion: reduce){.hm-so-obj,.hm-so-obj.hm-so-slide,.hm-so-example{transition:none;--so-lift:1}.hm-so-example:hover{transform:none}}
+
+/* No-select on child screens (NS1): no text selection, no picture drag. Inputs keep normal selection. */
+.hm-child, .hm-child * { user-select: none; -webkit-user-select: none; }
+.hm-child img, .hm-child svg image { -webkit-user-drag: none; }
+.hm-child input, .hm-child textarea, .hm-child [contenteditable] { user-select: text; -webkit-user-select: text; }
