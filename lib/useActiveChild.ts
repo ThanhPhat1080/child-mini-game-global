@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import type { Gender } from '@/lib/childTheme';
 import { mediaUrl } from '@/lib/media';
-import { getMyChildSettings, type ChildSettings } from '@/lib/settings';
+import { getMyChildSettings, visitorSettings, type ChildSettings } from '@/lib/settings';
+import { getVisitor, VISITOR_HEAD } from '@/lib/visitor';
 
 /** The child on this device, for the play screens (FP1). `failed` also covers "no child chosen". */
 export type ActiveChild =
@@ -15,6 +16,12 @@ export function useActiveChild(): ActiveChild {
   const [state, setState] = useState<ActiveChild>({ status: 'loading', settings: null, name: '', avatarUrl: null, gender: null });
 
   useEffect(() => {
+    // A visitor is the child: no database call (GU12).
+    const visitor = getVisitor();
+    if (visitor) {
+      setState({ status: 'ready', settings: visitorSettings(visitor), name: visitor.name, avatarUrl: VISITOR_HEAD[visitor.gender], gender: visitor.gender });
+      return;
+    }
     let live = true;
     getMyChildSettings()
       .then((settings) => {

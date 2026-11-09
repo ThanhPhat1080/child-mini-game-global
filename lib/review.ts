@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { getMyProfile, type Role } from '@/lib/auth/roles';
 import { isGuestPlay } from '@/lib/childSession';
+import { getVisitor } from '@/lib/visitor';
 
 /** The tables a parent can share (spec V2). questions/answers follow their set. */
 export type ContentTable = 'quiz_sets' | 'memory_cards' | 'spot_levels' | 'card_groups' | 'find_levels';
@@ -139,7 +140,8 @@ export function useContentScope(role?: Role | null): { scope: Scope; setScope: (
  * device is in guest play (no child: only global content is listed).
  */
 export async function playerId(): Promise<string | null> {
-  if (isGuestPlay()) return null;
+  // A visitor reads global rows only, like guest play (GU12). Checked before the parent's session.
+  if (getVisitor() || isGuestPlay()) return null;
   try { return await getMyUserId(); } catch { return null; }
 }
 
