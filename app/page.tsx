@@ -10,6 +10,7 @@ import { playOnce, startMusic } from '@/lib/audio';
 import { BOY_WELCOME_VARS, GENDER_THEME } from '@/lib/childTheme';
 import { useActiveChild } from '@/lib/useActiveChild';
 import { ChildScreen } from '@/components/ChildScreen';
+import { LivelyScene } from '@/components/play/LivelyScene';
 import { BounceText } from '@/components/BounceText';
 import styles from './welcome.module.css';
 import { Pic } from '@/components/Pic';
@@ -42,25 +43,9 @@ export default function Welcome() {
   return (
     <ChildScreen music leave>
       <div className={styles.scene} data-welcome-scene style={vars}>
-        <svg aria-hidden="true" width="1920" height="1080" viewBox="0 0 1920 1080" style={{ position: 'absolute', inset: 0 }}>
-          <circle cx="1620" cy="190" r="96" fill="#F6E2A6" />
-          <circle cx="1620" cy="190" r="140" fill="#F6E2A6" opacity="0.35" />
-          <g className={styles.drift}>
-            <ellipse cx="320" cy="180" rx="130" ry="44" fill="#FFFFFF" opacity="0.9" />
-            <ellipse cx="400" cy="160" rx="90" ry="40" fill="#FFFFFF" opacity="0.9" />
-          </g>
-          <g className={styles.drift}>
-            <ellipse cx="1100" cy="120" rx="110" ry="36" fill="#FFFFFF" opacity="0.8" />
-          </g>
-          <path d="M0 860 C 320 760 620 800 960 860 C 1300 920 1600 820 1920 840 L1920 1080 L0 1080 Z" fill="#D9E3CC" />
-          <path d="M0 950 C 400 880 800 930 1180 970 C 1500 1000 1720 940 1920 950 L1920 1080 L0 1080 Z" fill="#C7D6BA" />
-          <circle cx="260" cy="930" r="10" fill="#EBB7BC" />
-          <circle cx="300" cy="950" r="8" fill="#F6E2A6" />
-          <circle cx="1500" cy="960" r="10" fill="#EBB7BC" />
-          <circle cx="1540" cy="940" r="8" fill="#FFFFFF" />
-        </svg>
 
-        {known && (
+        <LivelyScene>
+          {known && (
           <div className={`${styles.princess} ${styles.float}`}>
             <Pic src={theme.hero} alt={theme.heroAlt} width={520} height={655} />
             <svg aria-hidden="true" width="520" height="655" viewBox="0 0 520 655">
@@ -75,8 +60,8 @@ export default function Welcome() {
               </g>
             </svg>
           </div>
-        )}
-
+          )}
+        </LivelyScene>
 
         {!known ? null : !entered ? (
           <div className={`${styles.center} ${styles.enterWrap}`}>

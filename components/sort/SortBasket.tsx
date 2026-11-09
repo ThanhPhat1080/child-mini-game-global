@@ -13,6 +13,8 @@ type Props = {
   onExampleTap: () => void;
   /** Gives the page the tray element, to find where a dropped card landed. */
   basketRef: (el: HTMLElement | null) => void;
+  /** A card is being dragged over this tray: it glows and swells so the child sees it is ready to take the card. */
+  ready?: boolean;
 };
 
 const TONES = [
@@ -21,13 +23,14 @@ const TONES = [
 ] as const;
 
 /** A warm tray with an example card and three slots. The tray itself is the drop area. */
-export function SortBasket({ index, basket, placed, onExampleTap, basketRef }: Props) {
+export function SortBasket({ index, basket, placed, onExampleTap, basketRef, ready = false }: Props) {
   const t = TONES[index];
   const slotBox = { width: 150, height: 150, boxSizing: 'border-box', borderRadius: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' } as const;
   return (
     <div
       data-basket={index}
       ref={basketRef}
+      data-ready={ready || undefined}
       className="hm-so-basket"
       style={{ width: 760, height: 520, boxSizing: 'border-box', borderRadius: 72, background: t.bg, border: `14px solid ${t.ring}`, boxShadow: `0 20px 0 ${t.shadow}`, padding: '36px 44px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}
     >

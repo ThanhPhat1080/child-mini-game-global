@@ -19,16 +19,30 @@ export function dragDelta(from: Pt, to: Pt, scale: number): Pt {
   return { x: (to.x - from.x) / scale, y: (to.y - from.y) / scale };
 }
 
+/** Distance in client pixels from `p` to the rectangle (0 when inside; left/top inclusive, right/bottom exclusive). */
+function gap(p: Pt, r: Rect): number {
+  const dx = Math.max(r.left - p.x, 0, p.x - (r.left + r.width) + Number.EPSILON);
+  const dy = Math.max(r.top - p.y, 0, p.y - (r.top + r.height) + Number.EPSILON);
+  const inside = p.x >= r.left && p.x < r.left + r.width && p.y >= r.top && p.y < r.top + r.height;
+  return inside ? 0 : Math.max(Math.hypot(dx, dy), Number.MIN_VALUE);
+}
+
 /**
- * Index (0 or 1) of the first basket rect (client pixels) that contains `p`, or null.
+ * Index (0 or 1) of the basket rect (client pixels) that holds `p`, or null. A `margin` (client pixels, default 0) also
+ * accepts a pointer that is a little outside a rect, so a drop that just misses the tray still lands; the nearest tray wins.
  * Left and top edges are inclusive, right and bottom exclusive. A null entry is skipped but keeps its index.
  */
-export function hitBasket(p: Pt, rects: readonly (Rect | null)[]): 0 | 1 | null {
+export function hitBasket(p: Pt, rects: readonly (Rect | null)[], margin = 0): 0 | 1 | null {
+  let best: 0 | 1 | null = null;
+  let bestGap = Infinity;
   for (let i = 0; i < rects.length && i < 2; i++) {
     const r = rects[i];
-    if (r && p.x >= r.left && p.x < r.left + r.width && p.y >= r.top && p.y < r.top + r.height) return i as 0 | 1;
+    if (!r) continue;
+    const g = gap(p, r);
+    const ok = g === 0 || (margin > 0 && g <= margin);
+    if (ok && g < bestGap) { best = i as 0 | 1; bestGap = g; }
   }
-  return null;
+  return best;
 }
 
 /** True when the pointer travelled farther than TAP_SLOP_PX (straight-line distance) from `from` to `to`. */

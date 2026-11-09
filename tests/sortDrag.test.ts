@@ -23,6 +23,20 @@ describe('dragDelta', () => {
   });
 });
 
+describe('hitBasket margin', () => {
+  const a: Rect = { left: 0, top: 0, width: 100, height: 100 };
+  const b: Rect = { left: 200, top: 0, width: 100, height: 100 };
+  it('a pointer just outside a tray still counts within the margin', () => {
+    expect(hitBasket({ x: 130, y: 50 }, [a, b], 40)).toBe(0);
+    expect(hitBasket({ x: 170, y: 50 }, [a, b], 40)).toBe(1);
+  });
+  it('picks the nearer tray when the margins overlap, and none when far away', () => {
+    expect(hitBasket({ x: 140, y: 50 }, [a, b], 80)).toBe(0);
+    expect(hitBasket({ x: 165, y: 50 }, [a, b], 80)).toBe(1);
+    expect(hitBasket({ x: 150, y: 300 }, [a, b], 40)).toBeNull();
+  });
+});
+
 describe('hitBasket', () => {
   const a: Rect = { left: 0, top: 0, width: 100, height: 100 };
   const b: Rect = { left: 200, top: 0, width: 100, height: 100 };

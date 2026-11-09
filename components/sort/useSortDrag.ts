@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { dragDelta, hitBasket, moved, stageScale, type Pt, type Rect } from '@/lib/sort/drag';
+import { dragDelta, hitBasket, moved, stageScale, type Pt } from '@/lib/sort/drag';
 
 export type SortDragOptions = {
   /** The page root that fills the scaled stage; its on-screen width gives the stage scale. */
@@ -17,6 +17,9 @@ export type SortDragOptions = {
 
 export type SortDragging = { id: string; dx: number; dy: number };
 
+/** How far outside a tray (stage pixels) a release still counts as a drop into it. */
+export const DROP_MARGIN = 45;
+
 type Live = { id: string; pointerId: number; start: Pt; scale: number; lifted: boolean; detach: () => void };
 
 const pt = (e: { clientX: number; clientY: number }): Pt => ({ x: e.clientX, y: e.clientY });
@@ -29,10 +32,13 @@ const pt = (e: { clientX: number; clientY: number }): Pt => ({ x: e.clientX, y: 
  */
 export function useSortDrag(opts: SortDragOptions): {
   dragging: SortDragging | null;
+  /** The tray the pointer is over right now while dragging (the page lights it up), else null. */
+  hover: 0 | 1 | null;
   press: (id: string, e: React.PointerEvent<HTMLElement>) => void;
   cancel: () => void;
 } {
   const [dragging, setDragging] = useState<SortDragging | null>(null);
+  const [hover, setHover] = useState<0 | 1 | null>(null);
   const optsRef = useRef(opts);
   const live = useRef<Live | null>(null);
 
@@ -47,6 +53,7 @@ export function useSortDrag(opts: SortDragOptions): {
     live.current = null;
     d.detach();
     setDragging(null);
+    setHover(null);
     return d;
   }, []);
 
@@ -63,6 +70,9 @@ export function useSortDrag(opts: SortDragOptions): {
         return stage ? stageScale(stage.getBoundingClientRect().width) : fallback;
       };
 
+      const trayRects = () => [0, 1].map((i) => optsRef.current.basketRefs.current?.[i]?.getBoundingClientRect() ?? null);
+      const margin = () => DROP_MARGIN * readScale(1);
+
       const onMove = (ev: PointerEvent) => {
         const d = live.current;
         if (!d || ev.pointerId !== d.pointerId) return;
@@ -72,15 +82,16 @@ export function useSortDrag(opts: SortDragOptions): {
         d.scale = readScale(d.scale);
         const delta = dragDelta(d.start, p, d.scale);
         setDragging({ id: d.id, dx: delta.x, dy: delta.y });
+        setHover(hitBasket(p, trayRects(), margin()));
       };
       const onUp = (ev: PointerEvent) => {
         const d = live.current;
         if (!d || ev.pointerId !== d.pointerId) return;
         const p = pt(ev);
         const lifted = d.lifted || moved(d.start, p);
-        const rects: (Rect | null)[] = [0, 1].map((i) => optsRef.current.basketRefs.current?.[i]?.getBoundingClientRect() ?? null);
+        const target = hitBasket(p, trayRects(), margin());
         end();
-        if (lifted) optsRef.current.onDrop(d.id, hitBasket(p, rects));
+        if (lifted) optsRef.current.onDrop(d.id, target);
         else optsRef.current.onTap(d.id);
       };
       const onCancel = (ev: PointerEvent) => {
@@ -129,5 +140,5 @@ export function useSortDrag(opts: SortDragOptions): {
     [],
   );
 
-  return { dragging, press, cancel };
+  return { dragging, hover, press, cancel };
 }

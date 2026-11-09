@@ -93,6 +93,22 @@ test('a drop on empty space plays nothing and leaves the object in place', async
   await expect.poll(() => obj(page, id).boundingBox()).toEqual(before);
 });
 
+test('a tray lights up while a card is dragged over it and goes dark when it leaves', async ({ page }) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await open(page);
+  const id = (await ids(page))[0];
+  const from = await center(obj(page, id));
+  const tray = await center(basketOf(page, id));
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(tray.x, tray.y, { steps: 12 });
+  await expect(basketOf(page, id)).toHaveAttribute('data-ready', 'true');
+  await expect(otherBasket(page, id)).not.toHaveAttribute('data-ready', 'true');
+  await page.mouse.move(960, 450, { steps: 8 }); // the gap between the trays
+  await expect(basketOf(page, id)).not.toHaveAttribute('data-ready', 'true');
+  await page.mouse.up();
+});
+
 test('a tap leaves the object in place', async ({ page }) => {
   await open(page);
   const id = (await ids(page))[0];
