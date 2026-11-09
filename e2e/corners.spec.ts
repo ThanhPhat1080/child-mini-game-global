@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { CHILD, makeCards, makeFindLevels, makeSpotLevels, pickChild, reset } from './support/fixtures';
+import { CHILD, SIGNED_OUT, makeCards, makeFindLevels, makeSpotLevels, pickChild, reset } from './support/fixtures';
 
 // Layout of the corner controls on a 1920x1080 screen (FP10, FP11, FP13).
 test.use({ viewport: { width: 1920, height: 1080 } });
@@ -96,3 +96,21 @@ test('sign-out on /play and Leave game on /games are the same button, bottom-lef
   expect(a!.x).toBeLessThan(960); // left half of the screen
 });
 
+
+// The window-laid pages (play sign-in and guest setup) pin the music button to the window's bottom-right at any window shape.
+test.describe('window-laid pages', () => {
+  test.use({ storageState: SIGNED_OUT });
+
+for (const [w, h] of [[1920, 1080], [1280, 900], [900, 1000], [2200, 700]] as const) {
+  test(`music button stays bottom-right on /play/sign-in in a ${w}x${h} window`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await page.goto('/play/sign-in');
+    const music = page.getByRole('button', { name: /background music/i });
+    await expect(music).toBeVisible();
+    const box = await music.boundingBox();
+    const scale = Math.min(w / 1920, h / 1080);
+    expect(Math.abs(w - (box!.x + box!.width) - 56 * scale)).toBeLessThan(2);
+    expect(Math.abs(h - (box!.y + box!.height) - 48 * scale)).toBeLessThan(2);
+  });
+}
+});
