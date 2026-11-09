@@ -136,7 +136,7 @@ export default function ParentsPage() {
               >
                 {ks.length === 0
                   ? <p className={styles.note}>No children yet.</p>
-                  : ks.map((k) => <ChildCard key={k.id} child={k} onEdit={() => setEditing(k)} onRemove={() => setTarget(k)} />)}
+                  : ks.map((k) => <ChildCard key={k.id} child={k} size="lg" onEdit={() => setEditing(k)} onRemove={() => setTarget(k)} />)}
               </ParentRow>
             </li>
           );

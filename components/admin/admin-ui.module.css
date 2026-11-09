@@ -164,7 +164,9 @@
 .chevIcon { transition: transform 0.2s ease; }
 .chevOpen .chevIcon { transform: rotate(90deg); }
 @media (prefers-reduced-motion: reduce) { .chevIcon { transition: none; } }
-.parentKids { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.parentKids { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 1180px) { .parentKids { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) { .parentKids { grid-template-columns: minmax(0, 1fr); } }
 
 /* Messages page (U17, N9): parent and time on the left, the message and its buttons on the right; one column on a phone. */
 .msgItem { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 8px 28px; align-items: start; }
