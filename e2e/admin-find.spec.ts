@@ -113,7 +113,6 @@ test('(c) a picture shared by two levels survives deleting one, and is removed w
   await page.getByRole('button', { name: 'Add level' }).click();
   await article(page, 2).getByRole('button', { name: '+ Choose images', exact: true }).click();
   await page.getByRole('dialog', { name: 'Image Library' }).getByRole('button', { name: `Choose ${basename(shared)}` }).click();
-  await page.getByRole('dialog', { name: basename(shared) }).getByRole('button', { name: 'Close picture' }).click(); // choosing also opens the zoom view
   await page.getByRole('dialog', { name: 'Image Library' }).getByRole('button', { name: 'OK', exact: true }).click();
   await expect(picture(page, 2)).toBeVisible();
   await clickPicture(page, 2, 0.6, 0.5);

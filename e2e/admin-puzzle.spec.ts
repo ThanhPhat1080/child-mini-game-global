@@ -39,7 +39,6 @@ test('the Super Admin adds a library picture "star", saves it; then turns "fish"
   await page.getByRole('button', { name: 'Add from Image Library', exact: true }).click();
   const library = page.getByRole('dialog', { name: 'Image Library' });
   await library.getByRole('button', { name: `Choose ${STAR_FILE}` }).click();
-  await page.getByRole('dialog', { name: STAR_FILE }).getByRole('button', { name: 'Close picture' }).click(); // choosing also opens the zoom view
   await library.getByRole('button', { name: 'OK', exact: true }).click();
   await expect(page.getByLabel('Word for picture 5', { exact: true })).toHaveValue('');
   await expect(save(page)).toBeDisabled();

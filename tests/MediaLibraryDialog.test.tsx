@@ -47,6 +47,16 @@ describe('MediaLibraryDialog', () => {
     expect(screen.queryByRole('button', { name: 'Play c1.png' })).toBeNull();
   });
 
+  it('a click selects without enlarging; the magnifier button enlarges', async () => {
+    lib.listLibrary.mockResolvedValue(['cards/c1.png']);
+    render(<MediaLibraryDialog kind="image" onChoose={vi.fn()} onClose={vi.fn()} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Choose c1.png' }));
+    expect(screen.getByRole('button', { name: 'Choose c1.png' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByRole('button', { name: 'Close picture' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Enlarge c1.png' }));
+    expect(screen.getByRole('button', { name: 'Close picture' })).toBeTruthy();
+  });
+
   it('choosing a picture calls onChoose with its path and then closes', async () => {
     lib.listLibrary.mockResolvedValue(['cards/c1.png']);
     const onChoose = vi.fn();
@@ -365,11 +375,11 @@ describe('MediaLibraryDialog size limits for cropped pictures', () => {
     expect(order()).toEqual(before.map((n) => (n === 'Choose a.png' ? 'Choose zz.png' : n)));
   });
 
-  it('clicking a picture selects it and opens it at full size; Escape closes only the viewer', async () => {
+  it('the magnifier opens a picture at full size; Escape closes only the viewer', async () => {
     lib.listLibrary.mockResolvedValue(['library/a.png']);
     const onClose = vi.fn();
     render(<MediaLibraryDialog kind="image" onChoose={() => undefined} onClose={onClose} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Choose a.png' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Enlarge a.png' }));
     const viewer = screen.getByRole('dialog', { name: 'a.png' });
     expect(within(viewer).getByRole('img').getAttribute('src')).toBe('https://cdn.test/library/a.png');
     fireEvent.keyDown(window, { key: 'Escape' });
