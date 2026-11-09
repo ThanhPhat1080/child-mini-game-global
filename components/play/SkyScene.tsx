@@ -1,7 +1,32 @@
 import styles from './SkyScene.module.css';
+import { SkyBees, type BeeRoute, type Point } from './SkyBees';
 
 const BLADES = [60, 130, 210, 340, 470, 760, 880, 1040, 1260, 1380, 1560, 1700, 1820];
 const FLOWERS: [number, number, string][] = [[150, 985, '#EBB7BC'], [420, 1010, '#F6E2A6'], [690, 990, '#FFFFFF'], [1010, 1015, '#EBB7BC'], [1300, 992, '#F6E2A6'], [1640, 1005, '#FFFFFF'], [1780, 985, '#EBB7BC']];
+/** Where a bee sits on flower i: on top of its head (the head is 58px above the stem foot). */
+export const flowerSeat = (i: number): Point => [FLOWERS[i][0], FLOWERS[i][1] - 66];
+/**
+ * Three bees weave over the meadow and land on the middle flowers (the ones the princess and prince do not cover).
+ * Every route lasts BEE_CYCLE seconds (legs + rests + wait) and they start 2.5 s apart, so the schedule repeats exactly
+ * and two bees never sit on the same flower: A on 2 (5-7.5 s) and 3 (11.1-13.6 s), B on 4 (7.1-10.1 s), C on 4 (10.5-12.5 s) and 2 (17-19.5 s).
+ */
+export const BEE_CYCLE = 24;
+export const BEES: BeeRoute[] = [
+  { id: 'beeA', from: [-60, 760], scale: 1.3, wait: 4.4, legs: [
+    { to: flowerSeat(2), secs: 5, waves: 4, amp: 28, rest: 2.5 },
+    { to: flowerSeat(3), secs: 3.6, waves: 3, amp: 34, rest: 2.5 },
+    { to: [1990, 640], secs: 6, waves: 5, amp: 30, rest: 0 },
+  ] },
+  { id: 'beeB', from: [1990, 780], scale: 1.1, wait: 8.9, legs: [
+    { to: flowerSeat(4), secs: 4.6, waves: 4, amp: 26, rest: 3 },
+    { to: [-60, 700], secs: 7.5, waves: 6, amp: 30, rest: 0 },
+  ] },
+  { id: 'beeC', from: [-60, 840], scale: 1.2, wait: 5.5, legs: [
+    { to: flowerSeat(4), secs: 5.5, waves: 5, amp: 24, rest: 2 },
+    { to: flowerSeat(2), secs: 4.5, waves: 4, amp: 30, rest: 2.5 },
+    { to: [-60, 720], secs: 4, waves: 4, amp: 28, rest: 0 },
+  ] },
+];
 
 /** Lively clouds: [start x, y, scale, seconds to cross the sky, opacity]. Each one travels left to right and wraps around. */
 const CLOUDS: [number, number, number, number, number][] = [
@@ -11,13 +36,15 @@ const CLOUDS: [number, number, number, number, number][] = [
   [1620, 340, 0.6, 190, 0.66],
   [520, 60, 0.7, 140, 0.72],
 ];
-/** The flying bird (an animated image that flaps on its own; 320x272), facing right. */
+/** The flying birds (animated images that flap on their own; 320x272), both drawn facing right. */
 export const BIRD_SRC = '/images/bird-fly.webp';
+export const PINK_BIRD_SRC = '/images/bird-pink-fly.webp';
 const BIRD_RATIO = 272 / 320;
-/** Lively birds: one bird and a smaller one farther away, both crossing left to right with the clouds. [y, width, seconds to cross, delay]. */
-const BIRDS: [number, number, number, number][] = [
-  [210, 150, 40, 1.4],
-  [300, 96, 56, -24],
+/** Lively birds: a yellow bird and a smaller one farther away cross left to right with the clouds; a pink one crosses back (mirrored). */
+const BIRDS: { src: string; y: number; w: number; dur: number; delay: number; back?: boolean }[] = [
+  { src: BIRD_SRC, y: 210, w: 150, dur: 40, delay: 1.4 },
+  { src: BIRD_SRC, y: 300, w: 96, dur: 56, delay: -24 },
+  { src: PINK_BIRD_SRC, y: 250, w: 130, dur: 48, delay: -14, back: true },
 ];
 
 /**
@@ -67,11 +94,11 @@ export function SkyScene({ festive = false, lively = false }: { festive?: boolea
               </g>
             );
           })}
-          {BIRDS.map(([y, w, dur, delay], i) => (
+          {BIRDS.map(({ src, y, w, dur, delay, back }, i) => (
             <g key={i} transform={`translate(0 ${y})`}>
-              <g className={styles.fly} style={{ animationDuration: `${dur}s`, animationDelay: `${delay}s` }}>
+              <g className={back ? styles.flyBack : styles.fly} style={{ animationDuration: `${dur}s`, animationDelay: `${delay}s` }}>
                 <g className={styles.birdWave} style={{ animationDelay: `${-i * 1.7}s` }}>
-                  <image href={BIRD_SRC} x={-w / 2} y={(-w * BIRD_RATIO) / 2} width={w} height={w * BIRD_RATIO} />
+                  <image href={src} x={-w / 2} y={(-w * BIRD_RATIO) / 2} width={w} height={w * BIRD_RATIO} transform={back ? 'scale(-1 1)' : undefined} />
                 </g>
               </g>
             </g>
@@ -96,6 +123,7 @@ export function SkyScene({ festive = false, lively = false }: { festive?: boolea
               </g>
             </g>
           ))}
+          <SkyBees routes={BEES} />
         </>
       )}
       {festive && (
