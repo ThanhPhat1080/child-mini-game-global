@@ -243,7 +243,7 @@ export default function SortPlay() {
   const sliding = Object.values(objState).some((s) => s === 'sliding');
   const busy = phase !== 'play' || help || settling || sliding;
 
-  const { dragging, press, cancel } = useSortDrag({ stageRef, basketRefs, busy, onPickUp, onTap, onDrop });
+  const { dragging, hover, press, cancel } = useSortDrag({ stageRef, basketRefs, busy, onPickUp, onTap, onDrop });
   useEffect(() => { cancelDrag.current = cancel; }, [cancel]);
 
   const basketRefCbs = useMemo(
@@ -360,6 +360,7 @@ export default function SortPlay() {
                     index={i as 0 | 1}
                     basket={b}
                     placed={placed[i]}
+                    ready={hover === i}
                     onExampleTap={() => { if (!finishPending()) say(b.example); }}
                     basketRef={basketRefCbs[i]}
                   />
