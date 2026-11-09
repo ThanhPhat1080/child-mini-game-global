@@ -19,18 +19,14 @@
 .heroLeft { left: 2vw; --d: 0.8s; }
 .heroRight { right: 2vw; --d: 1.2s; animation-duration: 1s, 6.5s; }
 
-/* the arrival order: sky (0s) -> princess -> prince -> ABC Play (letters bounce in) -> sign-in form */
-.sky { position: absolute; inset: 0; animation: skyIn 1s ease-out both; }
-/* the bees' layer: after the heroes in the page, so above them; under the content (.col, z-index 1); clicks pass through */
-.skyFront { position: absolute; inset: 0; pointer-events: none; }
+/* the arrival order: sky (0s, LivelyScene) -> princess -> prince -> ABC Play (letters bounce in) -> sign-in form */
 .rest { display: flex; flex-direction: column; gap: 18px; animation: restIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) 3.1s both; }
-@keyframes skyIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes heroIn { from { opacity: 0; transform: translateY(70px) scale(0.9) rotate(-1.6deg); } 60% { opacity: 1; } to { opacity: 1; transform: translateY(0) scale(1) rotate(-1.6deg); } }
 @keyframes heroSway { 0%, 100% { transform: translateY(0) rotate(-1.6deg); } 50% { transform: translateY(-10px) rotate(1.6deg); } }
 @keyframes fishPop { from { opacity: 0; transform: scale(0) rotate(-40deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
 @keyframes fishWiggle { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-8deg) translateY(-3px); } 75% { transform: rotate(8deg) translateY(-3px); } }
 @keyframes restIn { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
-@media (prefers-reduced-motion: reduce) { .hero, .sky, .rest, .logo { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .hero, .rest, .logo { animation: none; } }
 /* 900-1200px: bigger characters, partly behind the sign-in card */
 @media (max-width: 1200px) { .hero { width: 38vw; } .heroLeft { left: -3vw; } .heroRight { right: -3vw; } }
 /* narrower windows: the characters grow and tuck behind the sign-in card; on phones they go away */
