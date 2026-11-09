@@ -77,6 +77,27 @@ test.describe('guest UI on a desktop window', () => {
     await expect(page.getByLabel("Child's name")).toBeVisible();
   });
 
+  test('the Back on the guest step sits in the top-left corner of the screen', async ({ page }) => {
+    await page.goto('/play/guest');
+    const box = await page.getByRole('link', { name: 'Back' }).boundingBox();
+    expect(box!.x).toBeLessThan(60);
+    expect(box!.y).toBeLessThan(60);
+  });
+
+  test('the details form says Hi, Princess for a girl', async ({ page }) => {
+    await page.goto('/play/guest');
+    await page.getByRole('button', { name: 'Girl' }).click();
+    await expect(page.getByRole('heading', { name: 'Hi, Princess' })).toBeVisible();
+    const box = await page.getByRole('button', { name: 'Close' }).boundingBox();
+    // the X does not overlap the heading text (its right edge, not the box)
+    const textRight = await page.getByRole('heading', { name: 'Hi, Princess' }).evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return range.getBoundingClientRect().right;
+    });
+    expect(box!.x).toBeGreaterThan(textRight);
+  });
+
   test('the Back on the guest step goes to the chooser with no question', async ({ page }) => {
     await page.goto('/play/guest');
     await page.getByRole('link', { name: 'Back' }).click(); // the in-game round Back is a link

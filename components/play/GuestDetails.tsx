@@ -22,6 +22,7 @@ export function GuestDetails({ gender, name, ageBand, valid, onName, onAge, onCl
   }
   return (
     <form className={`${styles.form} ${gender === 'female' ? styles.formGirl : ''}`} onSubmit={submit} noValidate>
+      <h2 className={gender === 'female' ? styles.hiGirl : styles.hiBoy}>{gender === 'female' ? 'Hi, Princess' : 'Hi, Prince'}</h2>
       <button type="button" className={styles.closeX} aria-label="Close" onClick={onClose}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
           <path d="M6 6l12 12M18 6L6 18" />

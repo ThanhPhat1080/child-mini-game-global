@@ -81,12 +81,14 @@ export default function GuestSetup() {
       <div className={play.sky}><SkyScene lively /></div>
       <Pic src="/images/princess.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroLeft}`} />
       <Pic src="/images/prince.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroRight}`} />
+      {step === 'gender' && (
+        <div className={styles.backSlot}>
+          <BackButton href="/play/sign-in" label="Back" />
+        </div>
+      )}
       <div className={styles.col}>
         {step === 'gender' && (
           <>
-            <div className={styles.backSlot}>
-              <BackButton href="/play/sign-in" label="Back" />
-            </div>
             <h1 className={styles.who}><BounceText text="Who are you?" delay={0.3} /></h1>
             <GenderCards
               onPick={pick}
