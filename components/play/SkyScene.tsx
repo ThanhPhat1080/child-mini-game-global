@@ -11,11 +11,14 @@ const CLOUDS: [number, number, number, number, number][] = [
   [1620, 340, 0.6, 190, 0.66],
   [520, 60, 0.7, 140, 0.72],
 ];
-/** Lively birds: three in a V crossing left to right, two smaller and farther away crossing right to left. */
-const FLOCKS = [
-  { y: 200, scale: 1.3, fly: 'flockA', dur: 42, delay: 1.4, color: '#7A5C50', birds: [[0, 0], [-70, -34], [-70, 34]] },
-  { y: 330, scale: 0.8, fly: 'flockB', dur: 58, delay: -26, color: '#9A8076', birds: [[0, 0], [60, 28]] },
-] as const;
+/** The flying bird (an animated image that flaps on its own; 320x272), facing right. */
+export const BIRD_SRC = '/images/bird-fly.webp';
+const BIRD_RATIO = 272 / 320;
+/** Lively birds: one bird and a smaller one farther away, both crossing left to right with the clouds. [y, width, seconds to cross, delay]. */
+const BIRDS: [number, number, number, number][] = [
+  [210, 150, 40, 1.4],
+  [300, 96, 56, -24],
+];
 
 /**
  * The sky, sun, clouds and hills behind the play area (FS1). `festive` adds balloons and stars (FS1, Task 8).
@@ -64,17 +67,11 @@ export function SkyScene({ festive = false, lively = false }: { festive?: boolea
               </g>
             );
           })}
-          {FLOCKS.map((f, i) => (
-            <g key={i} transform={`translate(0 ${f.y})`}>
-              <g className={styles[f.fly]} style={{ animationDuration: `${f.dur}s`, animationDelay: `${f.delay}s` }}>
+          {BIRDS.map(([y, w, dur, delay], i) => (
+            <g key={i} transform={`translate(0 ${y})`}>
+              <g className={styles.fly} style={{ animationDuration: `${dur}s`, animationDelay: `${delay}s` }}>
                 <g className={styles.birdWave} style={{ animationDelay: `${-i * 1.7}s` }}>
-                  {f.birds.map(([dx, dy], j) => (
-                    <g key={j} transform={`translate(${dx * f.scale} ${dy * f.scale}) scale(${f.scale})`}>
-                      <g className={styles.flap} style={{ animationDelay: `${-j * 0.23 - i * 0.4}s` }}>
-                        <path transform="scale(1.6)" d="M-18 0 Q-9 -14 0 0 Q9 -14 18 0" fill="none" stroke={f.color} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
-                      </g>
-                    </g>
-                  ))}
+                  <image href={BIRD_SRC} x={-w / 2} y={(-w * BIRD_RATIO) / 2} width={w} height={w * BIRD_RATIO} />
                 </g>
               </g>
             </g>
