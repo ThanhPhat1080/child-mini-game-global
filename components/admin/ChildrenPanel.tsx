@@ -59,10 +59,10 @@ export function ChildrenPanel() {
       {full && <p className={styles.note}>You have reached the limit of {MAX_CHILDREN} children.</p>}
       {kids && kids.length === 0 && <p className={styles.note}>No children yet. Add the first one.</p>}
 
-      <ul className={ui.childGrid}>
+      <ul className={`${ui.childGrid} ${ui.childGridLg}`}>
         {(kids ?? []).map((k) => (
           <li key={k.id}>
-            <ChildCard child={k} onEdit={() => setEditing({ mode: 'edit', child: k })} onRemove={() => setRemoving(k)} />
+            <ChildCard child={k} size="lg" onEdit={() => setEditing({ mode: 'edit', child: k })} onRemove={() => setRemoving(k)} />
           </li>
         ))}
         <li>
