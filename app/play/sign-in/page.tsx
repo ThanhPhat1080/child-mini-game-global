@@ -8,6 +8,7 @@ import { BounceText } from '@/components/BounceText';
 import { PlayBackdrop } from '@/components/play/PlayBackdrop';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { clearVisitor } from '@/lib/visitor';
+import { WindowCorners } from '@/components/ChildScreen';
 import { EntryChooser } from '@/components/play/EntryChooser';
 import styles from '../../admin/admin.module.css';
 import play from './playSignIn.module.css';
@@ -53,6 +54,7 @@ export default function PlaySignIn() {
   return (
     <div className={`${play.wrap} hm-child`}>
       <PlayBackdrop />
+      <WindowCorners music />
       <div className={play.col}>
         <div className={play.brandRow}>
           <Pic src="/seed/fish.svg" alt="" width={84} height={84} className={play.logo} />

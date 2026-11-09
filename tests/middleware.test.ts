@@ -203,11 +203,11 @@ describe('guest play routes (GU9-GU11)', () => {
     expect(await visit('/play/sign-in', 'noProfile', VISITOR)).toBe(NEXT);
   });
 
-  it('/play/guest is open for a signed-out visitor, and a signed-in parent goes to /play (Q14)', async () => {
+  it('/play/guest is open for a signed-out visitor and for a signed-in parent with no child (Q14)', async () => {
     expect(await visit('/play/guest', 'signedOut', null)).toBe(NEXT);
     expect(await visit('/play/guest', 'noProfile', VISITOR)).toBe(NEXT);
-    expect(await visit('/play/guest', 'parent', null)).toBe(PICKER);
-    expect(await visit('/play/guest', 'parent', VISITOR)).toBe(PICKER);
-    expect(await visit('/play/guest', 'superAdmin', null)).toBe(PICKER);
+    expect(await visit('/play/guest', 'parent', null)).toBe(NEXT);
+    expect(await visit('/play/guest', 'parent', VISITOR)).toBe(NEXT);
+    expect(await visit('/play/guest', 'superAdmin', null)).toBe(NEXT);
   });
 });

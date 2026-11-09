@@ -8,6 +8,7 @@ import { PlayBackdrop } from '@/components/play/PlayBackdrop';
 import { GenderCards, type GenderRefs } from '@/components/play/GenderCards';
 import { GuestDetails } from '@/components/play/GuestDetails';
 import type { AgeBand, Gender } from '@/lib/childTheme';
+import { isGuestPlay } from '@/lib/childSession';
 import { saveVisitor, validateVisitor } from '@/lib/visitor';
 import play from '../sign-in/playSignIn.module.css';
 import styles from './guest.module.css';
@@ -35,9 +36,12 @@ export default function GuestSetup() {
   const [ageBand, setAgeBand] = useState<AgeBand>('2-5');
   const refs = useRef<GenderRefs>({ male: null, female: null });
   const headerRef = useRef<HTMLDivElement>(null);
+  // a signed-in parent (guest cookie set by the picker) goes back to the picker, a visitor to the sign-in chooser
+  const [backHref, setBackHref] = useState('/play/sign-in');
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(() => { if (isGuestPlay()) setBackHref('/play'); }, []);
 
   const valid = validateVisitor({ name, gender, ageBand }).ok;
 
@@ -98,7 +102,7 @@ export default function GuestSetup() {
   return (
     <div className={`${play.wrap} ${styles.page} hm-child`}>
       <PlayBackdrop />
-      {phase === 'gender' && <WindowCorners back={{ href: '/play/sign-in', label: 'Back' }} />}
+      <WindowCorners back={phase === 'gender' ? { href: backHref, label: 'Back' } : undefined} music />
       <div className={styles.col}>
         <h1 className={`${styles.who} ${locked ? styles.whoOff : ''}`}><BounceText text="Who are you?" delay={0.3} /></h1>
         <GenderCards

@@ -51,7 +51,7 @@ export function SpotMarkerEditor({ srcA, srcB, differences, onChange, readOnly =
   }
 
   const smallCount = differences.filter((d) => d.r < SMALL_R).length;
-  const tab = (on: boolean) => ({ ...ghostBtn, height: 36, background: on ? '#5A4038' : '#fff', color: on ? '#fff' : '#4A3830' }) as const;
+  const tab = (on: boolean) => ({ ...ghostBtn, background: on ? '#5A4038' : '#fff', color: on ? '#fff' : '#4A3830' }) as const;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -113,7 +113,7 @@ export function SpotMarkerEditor({ srcA, srcB, differences, onChange, readOnly =
             <input type="range" aria-label="Radius" min={4} max={12} step={1} value={Math.round(differences[sel].r * 100)} onChange={(e) => setRadius(Number(e.target.value))} style={{ width: 160, accentColor: '#3F6B48' }} />
             <span style={{ fontWeight: 400, color: '#7A6458', minWidth: 32 }}>{Math.round(differences[sel].r * 100)}%</span>
           </label>
-          <button type="button" className={`${s.btn} ${s.danger}`} style={{ ...dangerBtn, height: 36 }} onClick={remove}>Delete spot</button>
+          <button type="button" className={`${s.btn} ${s.danger}`} style={dangerBtn} onClick={remove}>Delete spot</button>
         </div>
       )}
     </div>

@@ -7,7 +7,7 @@ import { ghostBtn } from './editor-parts';
 import s from './admin-ui.module.css';
 
 /** One line: the label never wraps, so the button keeps its height. */
-const small = { ...ghostBtn, height: 34, padding: '0 12px', fontSize: 13, whiteSpace: 'nowrap' } as const;
+const small = { ...ghostBtn, whiteSpace: 'nowrap' } as const;
 
 /**
  * "Choose from library" next to an upload button (A24). `label` names the field for screen readers, e.g. "card 3 picture".

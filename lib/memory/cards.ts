@@ -1,5 +1,5 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { dropOwnCopies, familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
+import { familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
 import { mediaUrl } from '@/lib/media';
 import { speakKid } from '@/lib/sfx';
 import type { MemoryCard } from '@/lib/memory/types';
@@ -12,7 +12,7 @@ export async function fetchActiveCards(): Promise<MemoryCard[]> {
     me,
   ).order('created_at');
   if (error) throw new Error(error.message);
-  return prepareCards(dropOwnCopies((data ?? []) as MemoryCard[], me), me);
+  return prepareCards((data ?? []) as MemoryCard[], me);
 }
 
 const normWord = (w: string) => w.trim().toLowerCase().replace(/\s+/g, ' ');

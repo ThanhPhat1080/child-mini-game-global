@@ -20,7 +20,7 @@ import { lockedOwn, type Visibility } from '@/lib/review';
 /** Accepted level pictures (A14). */
 export const SPOT_IMG_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
 
-const small = { ...ghostBtn, height: 34, padding: '0 12px', fontSize: 13 } as const;
+const small = ghostBtn;
 const hint = { fontSize: 12, color: '#7A6458' } as const;
 
 type Side = 'a' | 'b';
@@ -94,7 +94,7 @@ export function SpotLevelPanel({ l, n, message, shapeWarning, startCrop, onCropp
           {!l.isNew && (
             <Link href={`/games/spot/${l.id}?preview=1`} target="_blank" rel="noopener" className={`${s.btn} ${s.ghost}`} style={{ ...small, display: 'inline-flex', alignItems: 'center', textDecoration: 'none', boxSizing: 'border-box' }}>Preview as child</Link>
           )}
-          {onAskDelete && <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete level ${n}`} onClick={onAskDelete} style={{ ...dangerBtn, height: 34 }}>Delete</button>}
+          {onAskDelete && <button type="button" className={`${s.btn} ${s.danger}`} aria-label={`Delete level ${n}`} onClick={onAskDelete} style={dangerBtn}>Delete</button>}
         </div>
         </EditLock>
       </div>

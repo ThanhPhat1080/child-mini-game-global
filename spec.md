@@ -14,13 +14,13 @@ Out of scope for Phase 1: everything in Phase 2. Phase 2 is only "more games" (s
 ## 3. Child flow (computer browser; layout designed on a 1920x1080 canvas scaled to the window, ADR-012, ADR-028)
 | ID | Requirement |
 |----|-------------|
-| C1 | Welcome: large "tap to enter" button. On press: greeting audio plays, background music starts (looping), then "Start game" appears (ADR-016). Princess illustration at the left. Shows the child's name from settings. |
+| C1 | Welcome: large "tap to enter" button. Background music starts on arrival on any child screen (the browser may hold it until the first tap, so it starts at the latest on this press), with the music on/off button bottom-right on every child screen (not in the admin). On press: greeting audio plays, then "Start game" appears (ADR-016). Princess illustration at the left. Shows the child's name from settings. |
 | C2 | Game list: carousel with only "Quiz". Moves with Left/Right keys, click-and-hold drag, arrow buttons, dots. A drag never triggers the card click (ADR-018). Enter/click opens the game. Registry-based so more games can be added later (ADR-014). |
-| C3 | Quiz set selection: cards of published sets: cover, name in heading color, optional sub-title, question-count pill, star if finished (ADR-020). Select with click, or by keyboard: Left/Right arrows move between sets, Enter or Space opens one. |
+| C3 | Quiz set selection: cards of published sets: cover, name in heading color, optional sub-title, question-count pill, and a star badge (top-left) on the family's own sets only (ADR-020). Select with click, or by keyboard: Left/Right arrows move between sets, Enter or Space opens one. |
 | C4 | Question: shows prompt image/text and plays prompt audio if present. 2-3 answers, each a number + fixed color (1 rose, 2 sky, 3 butter, ADR-019) plus an image, a text, or both; an answer with neither is invalid (the question is incomplete and hidden from the child). A text-only answer shows its text large on the card. Choose by click, keys 1/2/3 (ADR-007), or Left/Right arrows to move between the answers and Enter or Space to pick the focused one. No timer. |
 | C5 | Wrong answer: soft "Oh-oh", the wrong card dims gently, child tries again. No penalty, no lives. |
 | C6 | Correct answer: "Hooray!" with slow pastel confetti, then a 3 s "Continue in 3s" countdown moves to the next question (ADR-021). |
-| C7 | Set completed screen with praise and a way back to set selection. The set is marked finished (star). |
+| C7 | Set completed screen with praise and a way back to set selection. |
 | C8 | Navigation back (Esc/Back key and a picture button) from set selection to game list and from a question to set selection. |
 | C9 | No screen requires reading. Any text is decorative or admin-written. Vietnamese diacritics render correctly (ADR-017). |
 | C10 | Motion is slow; `prefers-reduced-motion` disables or reduces confetti and transitions (ADR-006, ADR-021). |
@@ -28,7 +28,7 @@ Out of scope for Phase 1: everything in Phase 2. Phase 2 is only "more games" (s
 | C12 | Question screen has three bands (header, question row with image + replay-voice + text, answers) with no overlap (ADR-025). Set-completed screen shows the girl image and a light confetti burst with applause and a spoken "You did it" (ADR-026). |
 | C13 | Game list: the "? Quiz" badge on set selection opens a "How to play" popup (the game list card only shows a decorative "?" icon, since the PO decision: the child only chooses a game there and watches the tutorial inside the game) (4-step carousel); the large avatar shows a "Hi I'm <name>. Let's play together!" bubble (blue for a boy, pink for a girl) when tapped. Added after the first draft (plan T8, T9). |
 | C14 | Question reading: the question is read aloud, then each answer (unless the question's "Read the answers aloud" is off); the picked answer is always read before the Hooray / Oh-oh popup; Hooray / Oh-oh / You did it can use custom sounds from Settings. Added after the first draft (plan T3, T10, T11). |
-| C15 | Progress: a question is finished only when its right answer is picked; finished questions are kept per set in localStorage and cleared when the set is completed (the star stays). Added after the first draft (plan T10, T11). |
+| C15 | Progress: a question is finished only when its right answer is picked; finished questions are kept per set in localStorage and cleared when the set is completed. Added after the first draft (plan T10, T11). |
 
 ## 3b. Phase 2: game registry, Memory Match, Listen & Pick and Sort It (child)
 Details for G1 and M1-M10: `docs/superpowers/specs/2026-10-29-memory-match-design.md`; for L1-L10: `docs/superpowers/specs/2026-10-30-listen-pick-design.md`; for R1-R10 (Sort It): `docs/superpowers/specs/2026-10-30-sort-it-design.md`; Spot the Differences is in section 3c.
@@ -104,7 +104,7 @@ Details for every row: `docs/superpowers/specs/2026-10-30-find-it-design.md`.
 | ID | Requirement |
 |----|-------------|
 | A1 | Sign-in with email + password. Wrong credentials show an inline error. Unauthenticated users cannot open admin routes. |
-| A2 | Settings: child's name, upload greeting audio, upload background music (with play-to-check), optional custom sounds for Hooray, Oh-oh and You did it, save. |
+| A2 | Settings (the background music is the built-in `public/seed/sounds/background-track.mp3`, no upload and no volume setting): child's name, upload greeting audio, optional custom sounds for Hooray, Oh-oh and You did it, save. |
 | A3 | Set list: table of sets (name, question count, status draft/published) and a front-page preview strip that mirrors C3 using the same card component (ADR-023). Actions: new set, edit, delete. |
 | A4 | Set editor: name, optional sub-title, heading color (6 presets + custom color picker + hex input, low-contrast warning), cover upload with live preview, status, question list. |
 | A5 | Add/edit question: prompt text and/or prompt audio, prompt image (optional; PNG/JPG/WebP, max 2 MB, cropped to a square in the admin (A24), shown in a 300x300 frame, fitted not stretched, ADR-032); prompt audio is upload only (no recording); Save has a Revert button next to it; answer image button says "Upload image", 2-3 answers each with an image upload, exactly one marked correct; each question has a "Read the answers aloud" checkbox (default on) that controls only reading all answers after the question; the picked answer is always read; each answer may have a text that is read aloud when the child picks it (the Hooray / Oh-oh popup follows the reading); "Preview as child" opens in a new tab; the editor header with Save / Revert stays visible while scrolling. Completeness checklist shows what is missing; Save is disabled until complete (ADR-023). |
@@ -144,7 +144,7 @@ Details for every row: `docs/superpowers/specs/2026-10-30-find-it-design.md`.
 | A24 | Crop before upload (ADR-032): every bitmap picture (PNG, JPG, WebP) the admin uploads opens a crop window (a square the parent moves and resizes, with Save and Cancel; Esc cancels). The picture is saved as a square WebP, at most 1024 px per side. Cancel uploads nothing. SVG files are not cropped. |
 | A25 | Spot the Differences: picture B starts from the square chosen for picture A in the same editing session, so both pictures show the same region. A picture chosen from the library is not cropped and gives no starting square. |
 | A26 | Pictures uploaded before ADR-032 are not re-cropped. They are shown fitted inside the square frame (`object-fit: contain`), so nothing overflows. |
-| A24 | Every admin upload of a picture or sound (Cards, Spot, Question and its answers, Set cover, Settings avatar, greeting, background music and feedback sounds) also has "Choose from library", which opens the library dialog (A23) and points the field at the chosen path. Nothing is uploaded and no file is copied. The Upload button stays. |
+| A24 | Every admin upload of a picture or sound (Cards, Spot, Question and its answers, Set cover, Settings avatar, greeting and feedback sounds) also has "Choose from library", which opens the library dialog (A23) and points the field at the chosen path. Nothing is uploaded and no file is copied. The Upload button stays. |
 | A25 | In the library's sound list (and the Find It object sound), each sound has a play / pause toggle. One preview plays at a time: starting another stops the first; pause keeps the position; closing the dialog or leaving the page stops it. |
 | A26 | Reuse keeps files safe: choosing a library file deletes nothing. Replacing or removing a picture or sound still goes through the A23 reference guard, so a file that another record still uses is kept. |
 | A27 | Find and Spot level lists: each level is collapsed to its header (title, on/off, Preview as child, Delete) and small picture(s); the editor controls (choose/paste picture, markers, tip) show when it is opened. A new level starts open. A level missing data shows an "Incomplete" badge. Levels are listed by **creation date**, newest first by default, with a sort icon button that reverses it; a level's number is its creation order, so a new level is "Level <last>". There are no up/down buttons; Save writes `sort_order` in creation order. |
@@ -206,7 +206,7 @@ Spec: `docs/superpowers/specs/2026-11-06-super-admin-people-design.md`. Parents 
 ## 4f. Phase 4: review per game and Super Admin copies (2026-11-06)
 Spec: `docs/superpowers/specs/2026-11-06-review-copy-design.md`. Review tab per game, approve creates a Super Admin copy, parents' published tab.
 - V8 Approve creates a global copy owned by the Super Admin; the parent's original goes back to private (the parent keeps editing it). The family sees only the original.
-- V9 Super Admin tabs per game: Mine, Review queue (red dot with count), Parent published (view only, every parent's published or active row with the owner's name). A family never sees its own original twice (the copy is dropped for that family).
+- V9 Super Admin tabs per game: Mine, Review queue (red dot with count), Parent published (view only, every parent's published or active row with the owner's name). A family's children see the family's own approved rows and the global rows, so a row the Super Admin approved shows twice for that family (the original and the global copy); that duplicate is accepted.
 - V10 Super Admin publishes own private rows without review (publish_own) and unpublishes them; a parent's row shows "Global copy" when a copy exists.
 - V11 The copy references the parent's media paths and adds 0 bytes to the Super Admin's quota. The owner cannot rename a file a copy uses; delete is refused while a copy uses it.
 - V12 A quiz copy is inserted as draft, then its questions and answers are copied, then the status is set (publish gate).
@@ -296,7 +296,7 @@ Full spec: `docs/superpowers/specs/2026-11-08-guest-play-design.md` (approved mo
 - **GU6** `lib/visitor.ts`: localStorage `cp_visitor` plus cookie `cp_visitor=1`; a bare cookie is not a visitor.
 - **GU7** Leave asks the two-digit sum (`AdultCheck`); a right answer stops the music, clears the visitor and goes to the chooser.
 - **GU8** A parent sign-in (play or admin) clears the visitor; a signed-in parent never sees the chooser.
-- **GU9** Middleware: `/play/guest` open; `/play/sign-in` with a profile goes to `/play`.
+- **GU9** Middleware: `/play/guest` open; `/play/sign-in` with a profile goes to `/play`. A signed-in parent with no child reaches `/play/guest` from the picker's Guest card and gets the same setup (Boy or Girl, name, age); the data stays in the browser and leaving asks the sum.
 - **GU10** No profile and a visitor cookie: `/` and `/games/*` open, `/play` goes to `/`, `/admin` goes to sign-in.
 - **GU11** The cookie only opens pages; RLS decides data.
 - **GU12** A visitor writes nothing: no insert, update, upsert, rpc or upload; synthetic child settings; `playerId()` null.

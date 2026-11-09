@@ -26,8 +26,8 @@ export function BanDialog({ name, busy, onCancel, onConfirm }: {
         <label htmlFor="ban-note" style={{ fontSize: 14, fontWeight: 700 }}>Note for the parent (optional)</label>
         <textarea id="ban-note" rows={3} value={note} onChange={(e) => setNote(e.target.value)} />
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-          <button type="button" className={s.ghost} onClick={onCancel} style={{ height: 44, padding: '0 20px', borderRadius: 12, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer' }}>Cancel</button>
-          <button type="button" disabled={!code || busy} onClick={() => onConfirm(code, note.trim())} style={{ height: 44, padding: '0 20px', borderRadius: 12, border: 'none', background: '#A8484F', color: '#fff', fontWeight: 700, fontSize: 15, cursor: 'pointer', opacity: !code || busy ? 0.6 : 1 }}>Ban</button>
+          <button type="button" className={s.ghost} onClick={onCancel} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: '1.5px solid #E3D5C4', background: '#fff', color: '#4A3830', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' }}>Cancel</button>
+          <button type="button" disabled={!code || busy} onClick={() => onConfirm(code, note.trim())} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#A8484F', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer', opacity: !code || busy ? 0.6 : 1 }}>Ban</button>
         </div>
       </div>
     </div>

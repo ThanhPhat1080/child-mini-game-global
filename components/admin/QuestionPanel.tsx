@@ -93,7 +93,7 @@ export function QuestionPanel({ d, cur, q, locked, onSelect, onAdd, onMove, onEd
             </span>
             <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>No questions yet</h2>
             <p style={{ margin: 0, color: '#6E5A4E', fontSize: 15, maxWidth: 360 }}>Each question has a voice (optional) and 2–3 picture answers. The child taps a picture, or presses 1, 2 or 3.</p>
-            <button type="button" className={s.btn} onClick={onAdd} style={{ height: 46, padding: '0 22px', borderRadius: 12, border: 'none', background: '#5A4038', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 15, cursor: 'pointer' }}>Add your first question</button>
+            <button type="button" className={s.btn} onClick={onAdd} style={{ height: 40, padding: '0 18px', borderRadius: 10, border: 'none', background: '#5A4038', color: '#fff', fontWeight: 700, fontFamily: 'Nunito, sans-serif', fontSize: 14, cursor: 'pointer' }}>Add your first question</button>
           </div>
         )}
 
@@ -101,7 +101,7 @@ export function QuestionPanel({ d, cur, q, locked, onSelect, onAdd, onMove, onEd
           <>
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
               <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Question {cur + 1}</h2>
-              <button type="button" className={s.danger} onClick={onAskDelete} style={{ ...dangerBtn, height: 38 }}>Delete question</button>
+              <button type="button" className={s.danger} onClick={onAskDelete} style={dangerBtn}>Delete question</button>
             </div>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} aria-label="Question checklist">

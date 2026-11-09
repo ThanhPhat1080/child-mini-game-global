@@ -42,7 +42,7 @@ type Editing = { mode: 'create' } | { mode: 'edit'; child: Child } | null;
  * parent's levels, view only. Ban, restore and quota are optimistic: the page shows the new value first and puts the
  * old one back if the database refuses (CLAUDE.md, Optimistic UI). Removing a child is not optimistic.
  */
-export default function ParentDetail({ id }: { id: string }) {
+export default function ParentDetail({ id, embedded = false }: { id: string; embedded?: boolean }) {
   // undefined while loading, null when no parent has this id
   const [person, setPerson] = useState<PersonRow | null | undefined>(undefined);
   const [kids, setKids] = useState<Child[] | null>(null);
@@ -132,7 +132,7 @@ export default function ParentDetail({ id }: { id: string }) {
     return (
       <>
         <p className={styles.note}>This parent was not found.</p>
-        <Link href="/admin/parents">Back to parents</Link>
+        {!embedded && <Link href="/admin/parents">Back to parents</Link>}
         <Toast toast={toast} onClose={close} />
       </>
     );
@@ -144,7 +144,7 @@ export default function ParentDetail({ id }: { id: string }) {
 
   return (
     <>
-      <Link href="/admin/parents" style={{ fontSize: 14, fontWeight: 700, color: '#8A5560' }}>← Parents</Link>
+      {!embedded && <Link href="/admin/parents" style={{ fontSize: 14, fontWeight: 700, color: '#8A5560' }}>← Parents</Link>}
 
       <div className={styles.head}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
@@ -176,7 +176,7 @@ export default function ParentDetail({ id }: { id: string }) {
             value={quotaText ?? String(mb(person.quotaBytes))}
             onChange={(e) => setQuotaText(e.target.value)}
           />
-          <button type="button" className={styles.primary} style={{ height: 40, padding: '0 16px', fontSize: 14 }} disabled={savingQuota || !quotaValid} onClick={saveQuota}>Save</button>
+          <button type="button" className={styles.primary} disabled={savingQuota || !quotaValid} onClick={saveQuota}>Save</button>
         </div>
       </section>
 
@@ -244,6 +244,7 @@ export default function ParentDetail({ id }: { id: string }) {
       {editing && (
         <ChildModal
           mode={editing.mode}
+          compact
           parentId={id}
           child={editing.mode === 'edit' ? editing.child : undefined}
           onClose={() => setEditing(null)}

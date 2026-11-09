@@ -26,15 +26,15 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('MediaLibraryDialog', () => {
-  it('Close calls onClose like Cancel, and the footer buttons are both 44px high (FA1, FA5)', async () => {
+  it('Close calls onClose like Cancel, and the footer buttons are both 40px high, the one admin button size (FA1, FA5)', async () => {
     lib.listLibrary.mockResolvedValue(['cards/c1.png']);
     const onClose = vi.fn();
     render(<MediaLibraryDialog kind="image" onChoose={() => undefined} onClose={onClose} />);
     const dialog = screen.getByRole('dialog', { name: 'Image Library' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalledTimes(1);
-    expect((within(dialog).getByRole('button', { name: 'Cancel' }) as HTMLElement).style.height).toBe('44px');
-    expect((within(dialog).getByRole('button', { name: 'OK' }) as HTMLElement).style.height).toBe('44px');
+    expect((within(dialog).getByRole('button', { name: 'Cancel' }) as HTMLElement).style.height).toBe('40px');
+    expect((within(dialog).getByRole('button', { name: 'OK' }) as HTMLElement).style.height).toBe('40px');
   });
 
   it('is a labelled dialog that lists pictures as choosable buttons', async () => {
@@ -45,6 +45,28 @@ describe('MediaLibraryDialog', () => {
     expect(await screen.findByRole('button', { name: 'Choose c1.png' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Choose a.png' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Play c1.png' })).toBeNull();
+  });
+
+  it('a click selects without enlarging; the magnifier button enlarges', async () => {
+    lib.listLibrary.mockResolvedValue(['cards/c1.png']);
+    render(<MediaLibraryDialog kind="image" onChoose={vi.fn()} onClose={vi.fn()} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Choose c1.png' }));
+    expect(screen.getByRole('button', { name: 'Choose c1.png' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByRole('button', { name: 'Close picture' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Enlarge c1.png' }));
+    expect(screen.getByRole('button', { name: 'Close picture' })).toBeTruthy();
+  });
+
+  it('clicking anywhere on a sound row selects it; the pencil starts renaming without selecting', async () => {
+    lib.listLibrary.mockResolvedValue(['library/bell.mp3', 'library/drum.mp3']);
+    render(<MediaLibraryDialog kind="audio" onChoose={vi.fn()} onClose={vi.fn()} />);
+    const row = (await screen.findByRole('button', { name: 'Choose bell.mp3' })).closest('li') as HTMLElement;
+    fireEvent.click(row);
+    expect(row.getAttribute('data-selected')).toBe('true');
+    const other = screen.getByRole('button', { name: 'Choose drum.mp3' }).closest('li') as HTMLElement;
+    fireEvent.click(screen.getByRole('button', { name: 'Rename drum.mp3' }));
+    expect(other.getAttribute('data-selected')).toBe('false');
+    expect(await screen.findByRole('textbox', { name: 'Rename drum.mp3' })).toBeTruthy();
   });
 
   it('choosing a picture calls onChoose with its path and then closes', async () => {
@@ -365,11 +387,11 @@ describe('MediaLibraryDialog size limits for cropped pictures', () => {
     expect(order()).toEqual(before.map((n) => (n === 'Choose a.png' ? 'Choose zz.png' : n)));
   });
 
-  it('clicking a picture selects it and opens it at full size; Escape closes only the viewer', async () => {
+  it('the magnifier opens a picture at full size; Escape closes only the viewer', async () => {
     lib.listLibrary.mockResolvedValue(['library/a.png']);
     const onClose = vi.fn();
     render(<MediaLibraryDialog kind="image" onChoose={() => undefined} onClose={onClose} />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Choose a.png' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Enlarge a.png' }));
     const viewer = screen.getByRole('dialog', { name: 'a.png' });
     expect(within(viewer).getByRole('img').getAttribute('src')).toBe('https://cdn.test/library/a.png');
     fireEvent.keyDown(window, { key: 'Escape' });

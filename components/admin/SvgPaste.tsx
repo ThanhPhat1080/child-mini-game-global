@@ -4,7 +4,7 @@ import { useState } from 'react';
 import s from './admin-ui.module.css';
 import { ghostBtn } from './editor-parts';
 
-const small = { ...ghostBtn, height: 34, padding: '0 12px', fontSize: 13 } as const;
+const small = ghostBtn;
 
 /** "Or paste SVG code" under a picture field. `onUse` gets the raw code; the page checks it and stores it as a file. */
 export function SvgPaste({ label, onUse }: { label: string; onUse: (code: string) => void }) {

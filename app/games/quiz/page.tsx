@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { dropOwnCopies, familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
+import { familyOrGlobal, ownerFirst, playerId } from '@/lib/review';
 import { ChildScreen } from '@/components/ChildScreen';
 import { Hills } from '@/components/Hills';
 import { SET_CARD_WIDTH, SetCard, type SetCardData } from '@/components/SetCard';
@@ -20,7 +20,7 @@ const PITCH = SET_CARD_WIDTH + 64; // card width + gap 64
 const STAGE_CENTER = 960; // the 1920 px stage's middle
 const cards = () => Array.from(document.querySelectorAll<HTMLElement>('a[data-set-card]'));
 
-type Row = Omit<SetCardData, 'count'> & { questions: { prompt_text: string | null; prompt_audio_path: string | null; answers: { image_path: string | null; text: string | null; is_correct: boolean }[] }[] };
+type Row = Omit<SetCardData, 'count' | 'mine'> & { owner_id?: string | null; source_id?: string | null; questions: { prompt_text: string | null; prompt_audio_path: string | null; answers: { image_path: string | null; text: string | null; is_correct: boolean }[] }[] };
 
 function isComplete(q: Row['questions'][number]): boolean {
   const a = q.answers;
@@ -32,7 +32,6 @@ export default function QuizSets() {
   const [sets, setSets] = useState<SetCardData[] | null>(null);
   const [failed, setFailed] = useState<unknown>(null);
   const [attempt, setAttempt] = useState(0);
-  const [done, setDone] = useState<Record<string, boolean>>({});
   const [help, setHelp] = useState(false);
   const [idx, setIdx] = useState(0);
   const focused = useRef<unknown>(null);
@@ -59,13 +58,10 @@ export default function QuizSets() {
           me,
         ).order('position');
         if (error) throw new Error(error.message);
-        const rows = ownerFirst(dropOwnCopies((data as unknown as Row[]) ?? [], me), me).map((r) => ({ ...r, count: r.questions.filter(isComplete).length })).filter((r) => r.count > 0);
+        const rows = ownerFirst((data as unknown as Row[]) ?? [], me).map((r) => ({ ...r, count: r.questions.filter(isComplete).length, mine: !!me && r.owner_id === me })).filter((r) => r.count > 0);
         if (!live) return;
         setSets(rows);
         setIdx(recallIndex(INDEX_KEY, rows.length));
-        const d: Record<string, boolean> = {};
-        try { rows.forEach((r) => { if (localStorage.getItem(`childPlayer:done:${r.id}`)) d[r.id] = true; }); } catch { /* storage blocked */ }
-        setDone(d);
       })
       .catch((e) => { if (live) { setFailed(e ?? true); setSets([]); } });
     return () => { live = false; };
@@ -149,7 +145,7 @@ export default function QuizSets() {
                   data-set-card
                   draggable={false}
                   className="hm-card"
-                  aria-label={`${s.title}, ${s.count} questions${done[s.id] ? ', completed' : ''}`}
+                  aria-label={`${s.title}, ${s.count} questions`}
                   style={{ display: 'block', borderRadius: 56 }}
                   onFocus={() => { setIdx(i); setDx(0); }}
                   onClick={(e) => {
@@ -159,7 +155,7 @@ export default function QuizSets() {
                     pressIdx.current = null;
                   }}
                 >
-                  <SetCard set={s} index={i} done={done[s.id]} />
+                  <SetCard set={s} index={i} />
                 </Link>
               </div>
             ))}

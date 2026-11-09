@@ -85,7 +85,7 @@ describe('fetchQuestionSources (H4)', () => {
     expect(src.cards).toEqual(cardRows);
     expect(callsOf('quiz_sets', 'eq')[0].args).toEqual(['status', 'published']);
     expect(callsOf('quiz_sets', 'or')[0].args).toEqual(['owner_id.eq.me,visibility.eq.global']);
-    expect(callsOf('questions', 'in')[0].args).toEqual(['set_id', ['s1', 's2']]);
+    expect(callsOf('questions', 'in')[0].args).toEqual(['set_id', ['s1', 's2', 'copy']]); // the global copy of the family's own set is read too: duplicates are accepted
     expect(String(callsOf('questions', 'select')[0].args[0])).toContain('answers(slot, image_path, text, is_correct)');
   });
 

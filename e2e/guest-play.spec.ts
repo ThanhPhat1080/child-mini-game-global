@@ -138,7 +138,7 @@ test.describe('guest UI on a desktop window', () => {
   test('Log in shows a text Back that returns to the chooser', async ({ page }) => {
     await page.goto('/play/sign-in');
     await page.getByRole('button', { name: 'Log in' }).click();
-    const back = page.getByRole('button', { name: 'Back' });
+    const back = page.getByRole('button', { name: 'Back', exact: true }); // exact: "background music" also contains "back"
     await expect(back).toBeVisible();
     await expect(back).toHaveText(/Back/);
     await back.click();

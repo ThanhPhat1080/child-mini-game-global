@@ -28,7 +28,7 @@ Existing rules still hold: RLS decides access and the UI mirrors it; calm and sl
 | Q4 | Age | Segmented switch 2-5 / 5-10 like the admin child dialog, but bigger. Stored only, it filters nothing in this change. |
 | Q5 | Leave | Leave (top left) opens the existing Leave dialog; Leave then asks the two-digit sum (`AdultCheck`), because leaving erases the name. Inside games the back button keeps going to `/` or `/games` as today. |
 | Q6 | Parent-side guest | The existing signed-in-parent guest (`GuestPickCard`, cookie `cp_guest`) stays as it is. The new guest is a separate mode called **visitor** in code. |
-| Q7 | Sounds | The repo has no default greeting or music (`public/seed/sounds` holds only `complete`, `hooray`, `ohoh`). A visitor has no greeting and no music; the games use their built-in effects. |
+| Q7 | Sounds | The repo has no default greeting or music (`public/seed/sounds` holds only `complete`, `hooray`, `ohoh`). A visitor has no greeting; the built-in background track (`background-track.mp3`) plays for everyone, and the games use their built-in effects. |
 | Q8 | Text | The gender cards are for the child: head picture, color, ♂/♀ and the existing `GENDER_THEME` label (Boy, Girl). The name + age step is a grown-up screen (English labels allowed, as on sign-in). Name required, 1-20 characters after trim. |
 | Q9 | Head pictures | New files `public/images/prince-head.webp` and `public/images/princess-head.webp`, cut from `prince.webp` / `princess.webp`, shown in a round frame. |
 | Q10 | Feedback loop | Static HTML mockup of the 4 steps with motion first; the PO approves it; then code; then Playwright screenshots compared with the mockup. |

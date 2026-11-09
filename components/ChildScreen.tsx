@@ -51,16 +51,28 @@ export function ChildScreen({ children, ...corners }: ChildCornerProps & { child
 }
 
 /**
- * The same corner controls for a page that is laid out in the window, not on the stage (Guest Play setup): they are
- * drawn on an invisible 1920x1080 sheet scaled like the stage, so they keep the stage size and place.
+ * The same corner controls for a page that is laid out in the window, not on the stage (the play sign-in and the
+ * Guest Play setup). Each corner gets its own invisible 1920x1080 sheet, scaled like the stage but pinned to that
+ * corner of the window, so a control keeps its stage size and sits in its corner at any window shape: Back top-left,
+ * Leave game and sign-out bottom-left, music bottom-right. Add a control to a corner here, not on the page.
  */
-export function WindowCorners(props: ChildCornerProps) {
+export function WindowCorners({ back, music, leave, logout }: ChildCornerProps) {
   const scale = useStageScale();
-  return (
-    <div style={{ position: 'absolute', left: 0, top: 0, width: 1920, height: 1080, transform: `scale(${scale})`, transformOrigin: 'top left', pointerEvents: 'none', zIndex: 3 }}>
-      <div style={{ pointerEvents: 'auto' }}>
-        <ChildCorners {...props} />
-      </div>
+  const sheet = (corner: 'tl' | 'bl' | 'br', children: ReactNode) => (
+    <div
+      style={{
+        position: 'fixed', width: 1920, height: 1080, transform: `scale(${scale})`, pointerEvents: 'none', zIndex: 3,
+        ...(corner === 'tl' ? { left: 0, top: 0, transformOrigin: 'top left' } : corner === 'bl' ? { left: 0, bottom: 0, transformOrigin: 'bottom left' } : { right: 0, bottom: 0, transformOrigin: 'bottom right' }),
+      }}
+    >
+      <div style={{ pointerEvents: 'auto' }}>{children}</div>
     </div>
+  );
+  return (
+    <>
+      {back && sheet('tl', <CornerBack {...back} />)}
+      {(leave || logout) && sheet('bl', <>{leave && <LeaveGameButton />}{logout && <LogoutButton />}</>)}
+      {music && sheet('br', <MusicButton />)}
+    </>
   );
 }

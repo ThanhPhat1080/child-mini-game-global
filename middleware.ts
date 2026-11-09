@@ -22,7 +22,7 @@ const ADMIN_TARGET = { signin: ADMIN_SIGN_IN, forbidden: '/admin/forbidden', ban
  * effect immediately. `/` and `/games/*` need a signed-in profile and an active child (cookie that selects
  * one of the parent's own `children` rows through RLS) or the guest cookie (no child: global content only);
  * `/admin/*` follows `adminAccess`.
- * `/play/sign-in` and `/play/guest` send a signed-in parent to `/play`; `/play` sends a visitor to `/` (GU9, GU10).
+ * `/play/sign-in` sends a signed-in parent to `/play`; `/play/guest` is open to all; `/play` sends a visitor to `/` (GU9, GU10).
  */
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -52,8 +52,8 @@ export async function middleware(request: NextRequest) {
   // The sign-in chooser: a signed-in parent never sees it (Q14, GU9). A visitor on the picker goes to Welcome (GU10).
   if (path === PLAY_SIGN_IN) return profile ? redirectTo(request, response, PICKER) : response;
   if (path === PICKER) return !profile && visitor ? redirectTo(request, response, '/') : response;
-  // A signed-in parent never sets up a visitor on this device (Q14): /play/guest goes to the picker.
-  if (path === GUEST_SETUP) return profile ? redirectTo(request, response, PICKER) : response;
+  // The guest setup is open to a signed-in parent too: with no child yet, the picker's Guest card leads here (Q14).
+  if (path === GUEST_SETUP) return response;
 
   const isAdminArea = path === '/admin' || path.startsWith('/admin/');
 

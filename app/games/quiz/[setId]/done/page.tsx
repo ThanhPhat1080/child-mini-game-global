@@ -12,7 +12,7 @@ import { handleChoiceKey } from '@/lib/keynav';
 
 const btn = { width: 160, height: 160, borderRadius: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' } as const;
 
-/** Set completed (C7). Saves the star for this set (localStorage, per set id). */
+/** Set completed (C7). */
 export default function Done() {
   const { setId } = useParams<{ setId: string }>();
   const [name, setName] = useState('');
@@ -20,7 +20,6 @@ export default function Done() {
   const [custom, setCustom] = useState<string | null>(null);
 
   useEffect(() => {
-    try { localStorage.setItem(`childPlayer:done:${setId}`, '1'); } catch { /* storage blocked */ }
     getMyChildSettings().then((data) => { setName(data?.child_name ?? ''); setCustom(mediaUrl(data?.complete_path)); setLoaded(true); }, () => setLoaded(true));
   }, [setId]);
 

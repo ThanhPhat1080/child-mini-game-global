@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ELevel } from '@/lib/spot/adminLevels';
 
@@ -70,6 +70,7 @@ describe('Super Admin Global tab', () => {
     render(<SpotPage />);
     await screen.findByRole('article', { name: 'Level 1' });
     fireEvent.click(screen.getByRole('button', { name: 'Unpublish' }));
+    fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Unpublish' }));
     await waitFor(() => expect(screen.queryByRole('article', { name: 'Level 1' })).toBeNull());
     expect(h.unpublish).toHaveBeenCalledWith('spot_levels', 'l1');
     expect(h.saveLevels).not.toHaveBeenCalled();

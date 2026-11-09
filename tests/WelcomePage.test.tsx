@@ -12,6 +12,7 @@ vi.mock('next/link', () => ({
 }));
 
 import Welcome from '@/app/page';
+import { startMusic } from '@/lib/audio';
 
 const base = { child_name: 'Bi', greeting_path: null, music_path: null, music_volume: 30, avatar_path: null };
 const enter = () => screen.queryByRole('button', { name: 'Tap to enter' });
@@ -56,6 +57,13 @@ describe('Welcome by gender (FP9, FP1)', () => {
     expect(at(bees.parentElement)).toBeGreaterThan(at(screen.getByAltText('Chibi princess with a magic wand').closest('div')));
     expect(at(bees.parentElement)).toBeLessThan(at(screen.getByLabelText('Start game').closest('[class*="center"]')));
   });
+  it('tap to enter starts the built-in track, even if an old own track is saved (C1)', async () => {
+    h.get.mockResolvedValue({ ...base, gender: 'female', music_path: 'snd/m.mp3' });
+    render(<Welcome />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Tap to enter' }));
+    expect(startMusic).toHaveBeenLastCalledWith('/seed/sounds/background-track.mp3', 30);
+  });
+
   it('a failed load shows the princess and still lets the child enter', async () => {
     h.get.mockRejectedValue(new Error('x'));
     render(<Welcome />);
