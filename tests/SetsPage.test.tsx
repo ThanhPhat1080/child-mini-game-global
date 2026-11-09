@@ -48,7 +48,7 @@ afterEach(() => {
   localStorage.clear();
 });
 
-// T4 / A3: set list table, actions, front-page preview strip.
+// T4 / A3: set list table and actions.
 describe('Admin set list (T4, A3)', () => {
   it('TC1: the table shows name, question count and draft/published status for each set', async () => {
     render(<SetsPage />);
@@ -106,20 +106,11 @@ describe('Admin set list (T4, A3)', () => {
     expect((await screen.findByRole('alert')).textContent).toBe('Could not delete.');
   });
 
-  it('TC7: the preview strip shows published sets with at least one complete question, using SetCard', async () => {
+  it('the front page preview is gone: no preview strip on the sets page', async () => {
     render(<SetsPage />);
-    const card = await screen.findByLabelText('Animals, 2 questions');
-    // SetCard renders the name and the question-count pill from the shared component.
-    expect(within(card).getByText('Animals')).toBeTruthy();
-    expect(within(card).getByText('2 questions')).toBeTruthy();
-    expect(screen.queryByLabelText(/^Colors,/)).toBeNull();
-    expect(screen.queryByLabelText(/^Empty draft,/)).toBeNull();
-  });
-
-  it('TC8: with no published sets the strip explains that the Quiz screen will be empty', async () => {
-    h.rows = [set('s2', 'Colors', 'draft', [done(1)])];
-    render(<SetsPage />);
-    expect(await screen.findByText(/No published sets yet/)).toBeTruthy();
+    await waitFor(() => rowOf('Animals'));
+    expect(screen.queryByText('Front page preview')).toBeNull();
+    expect(screen.queryByLabelText('Animals, 2 questions')).toBeNull();
   });
 
   it('TC9: with no sets at all the table shows a friendly empty message', async () => {

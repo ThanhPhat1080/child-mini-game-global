@@ -172,6 +172,13 @@ async function signInAdminForm(page: Page, who: { email: string; password: strin
 /** Signs the parent in on the play device (/play/sign-in) and waits for the picker. */
 export async function signInOnDevice(page: Page, who: { email: string; password: string } = ACCOUNTS.parent): Promise<void> {
   await page.goto('/play/sign-in');
+  // a parent already signed in on this device is sent straight to /play (GU9, Q14)
+  if (/\/play\/sign-in/.test(page.url())) {
+    await page.getByRole('button', { name: 'Log in' }).click(); // the chooser comes first (GU1)
+  } else {
+    await page.waitForURL('**/play');
+    return;
+  }
   await page.getByLabel('Email').fill(who.email);
   await page.getByLabel('Password').fill(who.password);
   await page.getByRole('button', { name: 'Sign in' }).click();

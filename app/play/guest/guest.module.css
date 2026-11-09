@@ -1,0 +1,55 @@
+/* Guest Play setup (GU2-GU4): the same sky as the chooser; the Boy / Girl cards, the header avatar and the details form. */
+.col { position: relative; z-index: 1; width: 100%; max-width: 440px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding-top: 96px; box-sizing: border-box; }
+.back { position: absolute; top: 0; left: 0; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e9dccb; background: #fffdf8; color: #5a4038; font-size: 22px; cursor: pointer; z-index: 2; }
+.back:focus-visible { outline: 4px solid #7a5c50; outline-offset: 3px; }
+.who { font: 800 36px 'Baloo 2', 'Nunito', sans-serif; color: #5a4038; margin: 40px 0 0; text-align: center; text-wrap: balance; }
+
+.genderRow { display: flex; gap: 18px; margin-top: 40px; justify-content: center; }
+.gcard { width: 170px; text-align: center; background: none; border: 0; padding: 0; cursor: pointer; color: inherit; font: inherit; transition: transform 0.25s ease, opacity 0.2s ease; }
+/* the breathing is on the head, not the button: a moving button is never still for a click */
+.ring { animation: breathe 3.6s ease-in-out infinite; }
+.girl .ring { animation-delay: 0.5s; }
+.gcard:hover, .gcard:focus-visible { transform: translateY(-6px); }
+.gcard:focus-visible { outline: 4px solid #7a5c50; outline-offset: 6px; border-radius: 50%; }
+.ring { display: block; width: 150px; height: 150px; margin: 0 auto 10px; border-radius: 50%; overflow: hidden; border: 8px solid #8fb3d1; background: #fff; box-shadow: 0 8px 20px rgba(90, 64, 56, 0.12); }
+.girl .ring { border-color: #e59aa1; }
+.ring img { width: 100%; height: 100%; object-fit: cover; }
+.lbl { display: block; font: 800 24px 'Baloo 2', 'Nunito', sans-serif; color: #3f6285; }
+.girl .lbl { color: #9a4550; }
+.leave { opacity: 0; transform: scale(0.6); pointer-events: none; transition: opacity 0.4s ease, transform 0.4s ease; }
+.picked { transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); pointer-events: none; }
+
+.header { margin-top: 28px; height: 120px; width: 120px; opacity: 0; transition: opacity 0.4s ease; }
+.headerOn { opacity: 1; }
+.avatar { width: 120px; height: 120px; border-radius: 50%; overflow: hidden; border: 5px solid #8fb3d1; background: #fff; }
+.headerGirl .avatar { border-color: #e59aa1; }
+
+.details { position: relative; width: 100%; margin-top: 24px; opacity: 0; transform: translateY(60px); transition: transform 0.5s ease, opacity 0.5s ease; }
+.detailsOn { opacity: 1; transform: none; }
+.form { position: relative; background: #fffcf2; border-radius: 26px; padding: 22px 20px; box-shadow: 0 8px 22px rgba(90, 64, 56, 0.12); border: 3px solid #8fb3d1; }
+.formGirl { border-color: #e59aa1; }
+.label { display: block; font: 700 15px 'Nunito', sans-serif; color: #8a6e63; margin: 14px 0 6px; }
+.input { width: 100%; font: 700 24px 'Nunito', sans-serif; padding: 12px 14px; border-radius: 16px; border: 2px solid #e9dccb; background: #fff; color: #5a4038; user-select: text; -webkit-user-select: text; }
+.input:focus-visible { outline: 4px solid #7a5c50; outline-offset: 2px; }
+.hint { font-size: 13px; color: #8a6e63; margin: 6px 0 0; min-height: 18px; }
+.seg { display: flex; border-radius: 16px; overflow: hidden; border: 2px solid #e9dccb; }
+.segBtn { flex: 1; height: 58px; font: 700 24px 'Nunito', sans-serif; border: 0; background: #fff; color: #8a6e63; cursor: pointer; }
+.segBtn:focus-visible { outline: 4px solid #7a5c50; outline-offset: -4px; }
+.segOn { background: #8fb3d1; color: #3f6285; }
+.formGirl .segOn { background: #e59aa1; color: #9a4550; }
+.ok { margin-top: 22px; width: 100%; height: 64px; border-radius: 22px; border: 0; font: 800 28px 'Baloo 2', 'Nunito', sans-serif; background: #8fb3d1; color: #3f6285; cursor: pointer; }
+.formGirl .ok { background: #e59aa1; color: #9a4550; }
+.ok:disabled { opacity: 0.45; cursor: not-allowed; }
+.ok:focus-visible { outline: 4px solid #7a5c50; outline-offset: 3px; }
+.closeX { position: absolute; top: 20px; right: 20px; width: 88px; height: 88px; border-radius: 44px; border: none; background: #fff; color: #7a5c50; box-shadow: 0 6px 0 #eadcc8; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }
+.closeX:focus-visible { outline: 6px solid #7a5c50; outline-offset: 4px; }
+.closeX svg { width: 44px; height: 44px; }
+
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+@media (prefers-reduced-motion: reduce) {
+  .gcard { transition: opacity 0.3s ease; }
+  .ring { animation: none; }
+  .gcard:hover, .gcard:focus-visible { transform: none; }
+  .leave, .picked, .details, .header { transition: opacity 0.3s ease !important; transform: none !important; }
+  .details { transform: none; }
+}

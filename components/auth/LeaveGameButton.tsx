@@ -7,6 +7,8 @@ import { ModalClose } from '@/components/ModalClose';
 import { Pic } from '@/components/Pic';
 import { stopMusic } from '@/lib/audio';
 import { clearActiveChild } from '@/lib/childSession';
+import { clearVisitor, isVisitor } from '@/lib/visitor';
+import AdultCheck from './AdultCheck';
 import { GENDER_THEME } from '@/lib/childTheme';
 import { stepFocus } from '@/lib/keynav';
 import { trapTab } from '@/lib/trapTab';
@@ -17,11 +19,14 @@ import auth from './auth.module.css';
 /**
  * Leave game (FP11-FP13). The corner button opens "Leave game?". Stay, X, Esc or a click outside keeps the child
  * in the game. Leave stops the music, forgets the child and goes to the picker. No sum: a child can see this screen.
+ * A visitor (Guest Play, GU7) must answer the two-digit sum first, because leaving erases the guest's name: a right
+ * answer stops the music, clears the visitor and goes to the sign-in chooser; Cancel or a wrong answer keeps playing.
  */
 export default function LeaveGameButton() {
   const router = useRouter();
   const child = useActiveChild();
   const [open, setOpen] = useState(false);
+  const [sum, setSum] = useState(false);
   const btn = useRef<HTMLButtonElement>(null);
   const stay = useRef<HTMLButtonElement>(null);
   const leaveChoice = useRef<HTMLButtonElement>(null);
@@ -42,6 +47,23 @@ export default function LeaveGameButton() {
     stopMusic();
     clearActiveChild();
     router.push('/play');
+  }
+
+  /** The Leave choice: a visitor is asked the sum first (GU7); anyone else leaves at once. */
+  function askLeave() {
+    if (isVisitor()) {
+      flushSync(() => setOpen(false));
+      setSum(true);
+      return;
+    }
+    leave();
+  }
+
+  function visitorLeft() {
+    setSum(false);
+    stopMusic();
+    clearVisitor();
+    router.push('/play/sign-in');
   }
 
   function onKey(e: KeyboardEvent<HTMLDivElement>) {
@@ -69,6 +91,15 @@ export default function LeaveGameButton() {
           </g>
         </svg>
       </button>
+      <AdultCheck
+        open={sum}
+        onPass={visitorLeft}
+        onCancel={() => setSum(false)}
+        title="Leave game?"
+        hint="Finish the sum below to leave."
+        centered
+        twoDigit
+      />
       {open && (
         <div className={play.overlay} data-leave-overlay onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
           <div
@@ -92,7 +123,7 @@ export default function LeaveGameButton() {
                 </svg>
                 Stay
               </button>
-              <button ref={leaveChoice} type="button" className={`hm-tap ${play.leaveBtn}`} onClick={leave}>
+              <button ref={leaveChoice} type="button" className={`hm-tap ${play.leaveBtn}`} onClick={askLeave}>
                 <svg aria-hidden="true" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <g transform="matrix(-1 0 0 1 24 0)">
                     <path d="M9 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4" />

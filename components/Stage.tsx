@@ -17,7 +17,7 @@ export function Stage({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#FBF4E9' }}>
+    <div className="hm-child" style={{ position: 'fixed', inset: 0, overflow: 'hidden', background: '#FBF4E9' }}>
       <div
         style={{
           position: 'absolute',

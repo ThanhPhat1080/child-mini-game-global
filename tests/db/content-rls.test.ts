@@ -206,10 +206,11 @@ describe('content ownership and RLS (U3, U5, V1, V5, V6)', () => {
       expect(await as(a).query(`delete from public.${t.name} where id = $1 returning id`, [id])).toEqual([]);
     });
 
-    it('anon selects nothing and cannot write', async () => {
+    it('anon reads only global live rows and cannot write (GU13, supersedes the closed anon read)', async () => {
       const a = await createUser('parent');
-      await seedRow(t, a, 'global');
-      expect(await visibleIds(null, t)).toEqual([]);
+      const live = await seedRow(t, a, 'global');
+      await seedRow(t, a, 'private');
+      expect(await visibleIds(null, t)).toEqual([live]);
       const { cols, vals } = t.cols(true);
       await expect(
         as(null).query(`insert into public.${t.name} (${cols}) values (${vals})`),

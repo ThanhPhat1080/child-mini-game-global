@@ -17,6 +17,12 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+/** The chooser (GU1) opens first; Log in shows the parent form. */
+function openLogin() {
+  render(<PlaySignIn />);
+  fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+}
+
 function submit() {
   fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'mum@example.com' } });
   fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'longenough1' } });
@@ -25,7 +31,7 @@ function submit() {
 
 describe('Child sign-in page (U9)', () => {
   it('signs in and goes to /play', async () => {
-    render(<PlaySignIn />);
+    openLogin();
     submit();
     await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play'));
     expect(h.signIn).toHaveBeenCalledWith({ email: 'mum@example.com', password: 'longenough1' });
@@ -34,7 +40,7 @@ describe('Child sign-in page (U9)', () => {
 
   it('shows a friendly message on wrong credentials', async () => {
     h.signIn.mockResolvedValue({ data: {}, error: { message: 'Invalid login credentials', code: 'invalid_credentials' } });
-    render(<PlaySignIn />);
+    openLogin();
     submit();
     expect((await screen.findByRole('alert')).textContent).toMatch(/email or password/i);
     expect(h.push).not.toHaveBeenCalled();
@@ -42,7 +48,7 @@ describe('Child sign-in page (U9)', () => {
 
   it('does not leak raw error text', async () => {
     h.signIn.mockResolvedValue({ data: {}, error: { message: 'GoTrue xyz-secret failure', code: 'unexpected_failure' } });
-    render(<PlaySignIn />);
+    openLogin();
     submit();
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).not.toMatch(/xyz-secret|GoTrue/);
@@ -52,7 +58,7 @@ describe('Child sign-in page (U9)', () => {
 
 describe('play area sign-in (FS1-FS4)', () => {
   it('shows the ABC Play brand, the greeting and the Parent Email field', () => {
-    render(<PlaySignIn />);
+    openLogin();
     expect(screen.getByRole('heading', { name: "Let's play together" })).toBeTruthy();
     expect(screen.getByText('Sign in and play along with your child.')).toBeTruthy();
     expect(screen.getByText('ABC Play')).toBeTruthy();
@@ -60,11 +66,11 @@ describe('play area sign-in (FS1-FS4)', () => {
     expect(screen.getByLabelText('Parent Email')).toBeTruthy();
   });
   it('links to sign-up from the play area', () => {
-    render(<PlaySignIn />);
+    openLogin();
     expect(screen.getByRole('link', { name: 'Sign up now' }).getAttribute('href')).toBe('/sign-up?from=play');
   });
   it('the ? button toggles the help panel', () => {
-    render(<PlaySignIn />);
+    openLogin();
     const help = screen.getByRole('button', { name: 'How do I create an account?' });
     expect(help.getAttribute('aria-expanded')).toBe('false');
     expect(screen.queryByText(/Open the link we email you/)).toBeNull();
@@ -75,7 +81,25 @@ describe('play area sign-in (FS1-FS4)', () => {
     expect(screen.queryByText(/Open the link we email you/)).toBeNull();
   });
   it('links to Parent Admin', () => {
-    render(<PlaySignIn />);
+    openLogin();
     expect(screen.getByRole('link', { name: 'Go to Parent Admin' }).getAttribute('href')).toBe('/admin/sign-in');
+  });
+
+  it('the chooser comes first: Log in shows the form, Guest is a link to /play/guest (GU1)', () => {
+    render(<PlaySignIn />);
+    expect(screen.getByRole('link', { name: 'Play as guest' }).getAttribute('href')).toBe('/play/guest');
+    expect(screen.queryByLabelText(/email/i)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Log in' }));
+    expect(screen.getByLabelText(/email/i)).toBeTruthy();
+  });
+
+  it('signing in erases a visitor on this device (GU8)', async () => {
+    localStorage.setItem('cp_visitor', JSON.stringify({ name: 'Mai', gender: 'female', ageBand: '2-5' }));
+    document.cookie = 'cp_visitor=1; Path=/';
+    openLogin();
+    submit();
+    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play'));
+    expect(localStorage.getItem('cp_visitor')).toBeNull();
+    expect(document.cookie).not.toContain('cp_visitor=1');
   });
 });

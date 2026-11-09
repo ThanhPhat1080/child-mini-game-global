@@ -38,6 +38,9 @@ export default function CardsPage() {
   const role = useMyRole();
   const { scope, setScope } = useContentScope(role);
   const pending = usePendingCounts(role).cards;
+  /** Super Admin, Global tab: every global row, editable in place (no new rows, no delete; Unpublish hides one). */
+  const globalEdit = role === 'super_admin' && scope === 'global';
+  const dataScope = globalEdit ? 'global' : 'mine';
   const [saved, setSaved] = useState<ECard[] | null>(null);
   const [draft, setDraft] = useState<ECard[] | null>(null);
   const [savedGroups, setSavedGroups] = useState<EGroup[] | null>(null);
@@ -57,14 +60,14 @@ export default function CardsPage() {
   /** Loads cards and groups as the saved copies; `keepDraftGroups` leaves the group edits in place. */
   const load = useCallback(async (keepDraftGroups = false) => {
     try {
-      const [fresh, groups] = await Promise.all([loadCards(), loadGroups()]);
+      const [fresh, groups] = await Promise.all([loadCards(dataScope), loadGroups(dataScope)]);
       setSaved(fresh); setDraft(fresh);
       setSavedGroups(groups);
       if (!keepDraftGroups) setDraftGroups(groups);
       return true;
     } catch (e) { setError((e as Error).message); return false; }
-  }, []);
-  useEffect(() => { void load(); }, [load]);
+  }, [dataScope]);
+  useEffect(() => { setSaved(null); setDraft(null); setSavedGroups(null); setDraftGroups(null); void load(); }, [load]);
   // picked files live in memory until Save (T15); free their previews when leaving
   useEffect(() => () => clearPending(), []);
 
@@ -83,6 +86,7 @@ export default function CardsPage() {
     return (
       <>
         <h1 style={{ margin: 0, fontSize: 30, fontWeight: 700 }}>Memory cards</h1>
+        {role === 'super_admin' && <ContentTabs scope={scope} onChange={setScope} role={role} pending={pending} />}
         {error ? <p role="alert" style={{ margin: 0, color: '#A8484F', fontWeight: 700 }}>{error}</p> : <AdminLoading />}
       </>
     );
@@ -100,7 +104,8 @@ export default function CardsPage() {
 
   const touch = () => { closeToast(); setError(null); };
   const setVisibility = (id: string, v: Visibility) => {
-    const f = <T extends { id: string }>(xs: T[] | null) => (xs ? xs.map((x) => (x.id === id ? { ...x, visibility: v } : x)) : xs);
+    // Unpublished from the Global tab: the row leaves the list (it is private again).
+    const f = <T extends { id: string }>(xs: T[] | null) => (xs ? (globalEdit && v !== 'global' ? xs.filter((x) => x.id !== id) : xs.map((x) => (x.id === id ? { ...x, visibility: v } : x))) : xs);
     setSaved(f); setDraft(f);
   };
   const edit = (id: string, patch: Partial<ECard>) => { touch(); setDraft(draft.map((c) => (c.id === id ? { ...c, ...patch } : c))); };
@@ -202,8 +207,8 @@ export default function CardsPage() {
           <p style={{ margin: '6px 0 0', color: '#7A6458', fontSize: 15 }}>Pictures and words for the Memory Match game. Turn a card off to keep it out of the game.</p>
         </div>
         {/* Always rendered so the header keeps its height; hidden (and not focusable) on the read-only Global tab. */}
-        <div aria-hidden={scope !== 'mine'} style={{ flex: '0 0 auto', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, visibility: scope === 'mine' ? 'visible' : 'hidden' }}>
-          <CardsHeaderActions dirty={dirty} busy={busy} canSave={canSave} onImport={() => setImportOpen(true)} onRevert={revert} onSave={doSave} />
+        <div aria-hidden={scope !== 'mine' && !globalEdit} style={{ flex: '0 0 auto', maxWidth: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8, visibility: scope === 'mine' || globalEdit ? 'visible' : 'hidden' }}>
+          <CardsHeaderActions dirty={dirty} busy={busy} canSave={canSave} onImport={globalEdit ? undefined : () => setImportOpen(true)} onRevert={revert} onSave={doSave} />
           <span role="status" style={{ fontSize: 13, color: '#7A6458', maxWidth: 420, textAlign: 'right' }}>{status}</span>
         </div>
       </div>
@@ -213,7 +218,7 @@ export default function CardsPage() {
         <ReviewQueue tables={CARD_TABLES} />
       ) : scope === 'parents' ? (
         <GlobalContent table="memory_cards" mode="parents" />
-      ) : scope === 'global' ? (
+      ) : scope === 'global' && !globalEdit ? (
         <GlobalContent table="memory_cards" />
       ) : (
         <>
@@ -228,7 +233,7 @@ export default function CardsPage() {
             </p>
           </section>
 
-          <GroupsPanel groups={draftGroups} usage={usage} onAdd={addGroup} onRename={renameGroup} onDelete={removeGroup} />
+          {!globalEdit && <GroupsPanel groups={draftGroups} usage={usage} onAdd={addGroup} onRename={renameGroup} onDelete={removeGroup} />}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 16 }}>
             {draft.map((c, i) => (
@@ -239,14 +244,14 @@ export default function CardsPage() {
                 onChooseLibrary={(kind, path) => chooseLibrary(c.id, kind, path)}
                 onSvg={(code) => applySvg(c.id, code)}
                 onPlay={() => sayWord({ word: c.word.trim(), audio_path: c.audio })}
-                onAskDelete={() => setConfirm(i)}
+                onAskDelete={globalEdit ? undefined : () => setConfirm(i)}
                 onVisibility={(v) => setVisibility(c.id, v)}
               />
             ))}
-            <button type="button" onClick={add} className={`${s.btn} ${s.dash}`} style={{ minHeight: 200, borderRadius: 18, border: '2px dashed #D9C6B2', background: 'transparent', color: '#5A4038', fontSize: 16, fontWeight: 700, fontFamily: 'Nunito, sans-serif', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            {!globalEdit && <button type="button" onClick={add} className={`${s.btn} ${s.dash}`} style={{ minHeight: 200, borderRadius: 18, border: '2px dashed #D9C6B2', background: 'transparent', color: '#5A4038', fontSize: 16, fontWeight: 700, fontFamily: 'Nunito, sans-serif', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
               <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg>
               Add card
-            </button>
+            </button>}
           </div>
 
           {importOpen && <CardImportDialog groups={draftGroups} onCancel={() => setImportOpen(false)} onImport={importCards} />}

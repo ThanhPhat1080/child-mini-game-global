@@ -1,6 +1,7 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { getActiveChildId } from '@/lib/childSession';
 import type { Gender } from '@/lib/childTheme';
+import { getVisitor, type Visitor } from '@/lib/visitor';
 
 /** `child_settings` columns: sounds and music, one row per child. */
 export type ChildSettingsRow = {
@@ -18,8 +19,29 @@ export type ChildSettings = ChildSettingsRow & { child_name: string | null; avat
 
 type Client = ReturnType<typeof createSupabaseBrowserClient>;
 
+/**
+ * A visitor (Guest Play, GU12) plays as a synthetic child: no sounds, the default music volume, the visitor's name
+ * and gender. Nothing is read from or written to the database.
+ */
+export function visitorSettings(v: Visitor): ChildSettings {
+  return {
+    child_id: 'visitor',
+    greeting_path: null,
+    music_path: null,
+    music_volume: 30,
+    hooray_path: null,
+    ohoh_path: null,
+    complete_path: null,
+    child_name: v.name,
+    avatar_path: null,
+    gender: v.gender,
+  };
+}
+
 /** The active child's settings, or null when no child is chosen or the child is not visible. */
 export async function getMyChildSettings(client: Client = createSupabaseBrowserClient()): Promise<ChildSettings | null> {
+  const visitor = getVisitor();
+  if (visitor) return visitorSettings(visitor);
   const id = getActiveChildId();
   if (!id) return null;
   const [settings, kid] = await Promise.all([

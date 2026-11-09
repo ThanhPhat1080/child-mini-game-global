@@ -4,12 +4,15 @@ import { Pic } from '@/components/Pic';
 
 export type SetCardData = { id: string; title: string; subtitle: string | null; heading_color: string; cover_path: string | null; count: number };
 
+/** Card width in px. Wide enough that a long title or subtitle still sits centred. Height stays 700. */
+export const SET_CARD_WIDTH = 560;
+
 /** Quiz set card shared by the child screen and the admin preview (ADR-023). Matches the QuizSets board. */
 export function SetCard({ set, done, hintEmptyCover }: { set: SetCardData; index?: number; done?: boolean; hintEmptyCover?: boolean }) {
   const cover = mediaUrl(set.cover_path);
   return (
     <span
-      style={{ position: 'relative', width: 480, height: 700, borderRadius: 56, background: '#fff', boxShadow: '0 16px 0 #E3CFC0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, color: '#5A4038', boxSizing: 'border-box' }}
+      style={{ position: 'relative', width: SET_CARD_WIDTH, height: 700, borderRadius: 56, background: '#fff', boxShadow: '0 16px 0 #E3CFC0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, color: '#5A4038', boxSizing: 'border-box' }}
     >
       {done && (
         <span style={{ position: 'absolute', top: -26, right: -26, width: 88, height: 88, borderRadius: 44, background: '#F6E2A6', border: '8px solid #FBF4E9', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>

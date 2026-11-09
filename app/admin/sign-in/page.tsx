@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { adminAccess, getMyProfile } from '@/lib/auth/roles';
+import { clearVisitor } from '@/lib/visitor';
 import styles from '../admin.module.css';
 
 /** Where each adminAccess result goes after sign-in (U11). */
@@ -38,6 +39,7 @@ export default function SignInPage() {
       return;
     }
 
+    clearVisitor(); // a parent wins over a visitor on this device (GU8)
     router.push(DESTINATION[access]);
     router.refresh();
   }
