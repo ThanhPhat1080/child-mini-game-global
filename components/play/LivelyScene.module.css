@@ -1,0 +1,5 @@
+/* the common lively backdrop: the sky fades in first, the bees' layer sits above the heroes and lets every click through */
+.sky { position: absolute; inset: 0; animation: skyIn 1s ease-out both; }
+.front { position: absolute; inset: 0; pointer-events: none; }
+@keyframes skyIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sky { animation: none; } }

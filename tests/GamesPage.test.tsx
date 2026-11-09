@@ -24,6 +24,14 @@ const frame = (name: string) => screen.getByRole('link', { name }) as HTMLElemen
 beforeEach(() => { h.push.mockReset(); sessionStorage.clear(); });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
+describe('games page focus', () => {
+  it('has no birds and no bees: the child needs to focus here', () => {
+    const { container } = render(<Games />);
+    expect(container.querySelectorAll('[data-bee]')).toHaveLength(0);
+    expect(container.querySelectorAll('image[href*="bird"]')).toHaveLength(0);
+  });
+});
+
 describe('games carousel position', () => {
   it('opens on the game that was centered when the child left', () => {
     sessionStorage.setItem('childPlayer:games:index', '2');
