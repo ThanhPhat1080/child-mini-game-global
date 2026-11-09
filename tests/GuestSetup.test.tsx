@@ -95,10 +95,9 @@ describe('guest setup (GU2-GU4)', () => {
     expect(((await screen.findByLabelText("Child's name")) as HTMLInputElement).value).toBe('Mai');
   });
 
-  it('the top-left back on step 1 goes to the sign-in chooser', () => {
+  it('the top-left back on step 1 is the in-game Back link to the sign-in chooser', () => {
     render(<GuestSetup />);
-    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
-    expect(h.push).toHaveBeenCalledWith('/play/sign-in');
+    expect(screen.getByRole('link', { name: 'Back' }).getAttribute('href')).toBe('/play/sign-in');
   });
 
   it('nothing is saved until OK', async () => {

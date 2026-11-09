@@ -6,8 +6,9 @@
 .signupRow { display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; font-size: 15px; }
 .helpBtn { width: 30px; height: 30px; border-radius: 15px; border: 1.5px solid #8fb3d1; background: #fff; color: #3f6285; font: 700 16px 'Nunito', sans-serif; cursor: pointer; }
 .helpBtn:focus-visible { outline: 3px solid #c77d85; outline-offset: 2px; }
-.back { position: absolute; top: -8px; left: -8px; width: 48px; height: 48px; border-radius: 50%; border: 2px solid #e9dccb; background: #fffdf8; color: #5a4038; font-size: 22px; cursor: pointer; z-index: 2; }
-.back:focus-visible { outline: 4px solid #7a5c50; outline-offset: 3px; }
+.backText { position: absolute; top: -8px; left: -8px; z-index: 2; padding: 8px; border: 0; background: none; color: #7a5c50; font: 700 18px 'Nunito', sans-serif; cursor: pointer; }
+.backText:hover { text-decoration: underline; }
+.backText:focus-visible { outline: 3px solid #c77d85; outline-offset: 2px; }
 .helpPanel { background: #fff; border-radius: 16px; padding: 16px 20px; font-size: 14px; line-height: 1.5; }
 .helpPanel p { margin: 0 0 8px; }
 .helpPanel ol { margin: 0; padding-left: 20px; }

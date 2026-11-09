@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { BackButton } from '@/components/BackButton';
 import { BounceText } from '@/components/BounceText';
 import { Pic } from '@/components/Pic';
 import { SkyScene } from '@/components/play/SkyScene';
@@ -59,13 +60,13 @@ export default function GuestSetup() {
   }
 
   function backToGender() {
-    // the reverse of the pick; the typed name stays
+    // back to the Boy / Girl choice at once, so both cards can be picked again; the typed name stays
+    if (timer.current) clearTimeout(timer.current);
     setFormOn(false);
     setStep('gender');
-    timer.current = setTimeout(() => {
-      setLeaving(null);
-      setPickedStyle(null);
-    }, FLIP_MS);
+    setLeaving(null);
+    setPickedStyle(null);
+    setGender(null);
   }
 
   function submit() {
@@ -76,14 +77,16 @@ export default function GuestSetup() {
   }
 
   return (
-    <div className={`${play.wrap} hm-child`}>
+    <div className={`${play.wrap} ${styles.page} hm-child`}>
       <div className={play.sky}><SkyScene lively /></div>
       <Pic src="/images/princess.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroLeft}`} />
       <Pic src="/images/prince.webp" alt="" width={520} height={655} className={`${play.hero} ${play.heroRight}`} />
       <div className={styles.col}>
         {step === 'gender' && (
           <>
-            <button type="button" className={styles.back} aria-label="Back" onClick={() => router.push('/play/sign-in')}>&larr;</button>
+            <div className={styles.backSlot}>
+              <BackButton href="/play/sign-in" label="Back" />
+            </div>
             <h1 className={styles.who}><BounceText text="Who are you?" delay={0.3} /></h1>
             <GenderCards
               onPick={pick}

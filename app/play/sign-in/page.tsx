@@ -68,7 +68,9 @@ export default function PlaySignIn() {
           </div>
         ) : (
         <div className={play.rest}>
-          <button type="button" className={play.back} aria-label="Back" onClick={() => setMode('choose')}>&larr;</button>
+          <button type="button" className={play.backText} onClick={() => setMode('choose')}>
+            <span aria-hidden="true">&larr;</span> Back
+          </button>
           <form className={styles.card} onSubmit={onSubmit} noValidate>
             <div>
               <h1>Let's play together</h1>

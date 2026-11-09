@@ -54,3 +54,43 @@ test('a forged visitor cookie with no saved data goes to the sign-in chooser', a
   await page.goto('/');
   await expect(page).toHaveURL(/\/play\/sign-in$/);
 });
+
+// UI feedback (desktop first): the guest pages fit the window, X lets the child pick again, Back is a text link on Log in.
+test.describe('guest UI on a desktop window', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test('the Boy / Girl step and the details step do not scroll', async ({ page }) => {
+    await page.goto('/play/guest');
+    const fits = () => page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight);
+    expect(await fits()).toBe(true);
+    await page.getByRole('button', { name: 'Girl' }).click();
+    await expect(page.getByLabel("Child's name")).toBeVisible();
+    expect(await fits()).toBe(true);
+  });
+
+  test('after X the child can pick Girl again', async ({ page }) => {
+    await page.goto('/play/guest');
+    await page.getByRole('button', { name: 'Girl' }).click();
+    await expect(page.getByLabel("Child's name")).toBeVisible();
+    await page.getByRole('button', { name: 'Close' }).click();
+    await page.getByRole('button', { name: 'Girl' }).click();
+    await expect(page.getByLabel("Child's name")).toBeVisible();
+  });
+
+  test('the Back on the guest step goes to the chooser with no question', async ({ page }) => {
+    await page.goto('/play/guest');
+    await page.getByRole('link', { name: 'Back' }).click(); // the in-game round Back is a link
+    await expect(page).toHaveURL(/\/play\/sign-in$/);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+  });
+
+  test('Log in shows a text Back that returns to the chooser', async ({ page }) => {
+    await page.goto('/play/sign-in');
+    await page.getByRole('button', { name: 'Log in' }).click();
+    const back = page.getByRole('button', { name: 'Back' });
+    await expect(back).toBeVisible();
+    await expect(back).toHaveText(/Back/);
+    await back.click();
+    await expect(page.getByRole('link', { name: 'Play as guest' })).toBeVisible();
+  });
+});
