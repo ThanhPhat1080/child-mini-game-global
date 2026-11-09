@@ -68,20 +68,32 @@ test.describe('guest UI on a desktop window', () => {
     expect(await fits()).toBe(true);
   });
 
-  test('picking Girl: the avatar glides up to the top and the form slides up from below', async ({ page }) => {
+  test('picking Girl: the avatar glides up once to a fixed spot, then the form rises; X runs it backwards', async ({ page }) => {
     await page.goto('/play/guest');
     const girl = page.getByRole('button', { name: 'Girl' });
-    const before = await girl.boundingBox();
+    const head = page.locator('img[src*="princess-head"]').first();
+    const before = (await head.boundingBox())!;
     await girl.click();
-    // the card stays while it glides (it used to vanish at once)
-    await page.waitForTimeout(150);
-    await expect(girl).toHaveCount(1);
+    // the avatar only moves up (never overshoots and comes back) and the form is not shown until it arrived
+    const ys: number[] = [];
+    for (let i = 0; i < 14; i++) { ys.push((await head.boundingBox())!.y); await page.waitForTimeout(60); }
+    for (let i = 1; i < ys.length; i++) expect(ys[i]).toBeLessThanOrEqual(ys[i - 1] + 2);
     await expect(page.getByLabel("Child's name")).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Girl' })).toHaveCount(0);
-    const avatar = await page.locator('img[src*="princess-head"]').first().boundingBox();
-    const form = await page.getByRole('heading', { name: 'Hi, Princess' }).boundingBox();
-    expect(avatar!.y).toBeLessThan(before!.y); // higher than where the card was
-    expect(form!.y).toBeGreaterThan(avatar!.y + avatar!.height - 1); // the form is below the avatar
+    await page.waitForTimeout(1000);
+    const avatar = (await head.boundingBox())!;
+    expect(avatar.y).toBeLessThan(before.y);
+    expect(avatar.width).toBeLessThan(before.width);
+    expect(Math.abs(avatar.y - ys[ys.length - 1])).toBeLessThan(6); // it had already settled (the ring still breathes a little)
+    const form = (await page.getByRole('heading', { name: 'Hi, Princess' }).boundingBox())!;
+    expect(form.y).toBeGreaterThan(avatar.y + avatar.height - 1); // the form is below the avatar
+    // X: the form goes, the avatar returns to its old place and size, Boy shows again
+    await page.getByRole('button', { name: 'Close' }).click();
+    await expect(page.getByRole('button', { name: 'Boy' })).toBeVisible();
+    await expect(page.getByLabel("Child's name")).toHaveCount(0);
+    await page.waitForTimeout(300);
+    const after = (await head.boundingBox())!;
+    expect(Math.abs(after.y - before.y)).toBeLessThan(8); // the ring breathes a little
+    expect(Math.abs(after.width - before.width)).toBeLessThan(8);
   });
 
   test('after X the child can pick Girl again', async ({ page }) => {

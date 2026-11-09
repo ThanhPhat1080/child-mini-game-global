@@ -9,17 +9,17 @@ import { SkyScene } from '@/components/play/SkyScene';
 import { GenderCards, type GenderRefs } from '@/components/play/GenderCards';
 import { GuestDetails } from '@/components/play/GuestDetails';
 import type { AgeBand, Gender } from '@/lib/childTheme';
-import { saveVisitor, validateVisitor, VISITOR_HEAD } from '@/lib/visitor';
+import { saveVisitor, validateVisitor } from '@/lib/visitor';
 import play from '../sign-in/playSignIn.module.css';
 import styles from './guest.module.css';
 
-/** The avatar glides up to the header slot in this long; the form slides up 200 ms after the pick. */
-const FLIP_MS = 600;
-const FORM_DELAY_MS = 200;
+/** The picked avatar glides to its fixed spot in GLIDE_MS; only then does the form rise (FORM_MS). X runs it backwards. */
+const GLIDE_MS = 650;
+const CLOSE_MS = 700;
 const reduceMotion = () => typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-/** gender: the Boy / Girl choice; moving: the picked card glides up to the header; details: the form. */
-type Phase = 'gender' | 'moving' | 'details';
+/** gender: Boy / Girl; moving: the avatar glides up; details: the form; closing: the form sinks and the avatar returns. */
+type Phase = 'gender' | 'moving' | 'details' | 'closing';
 
 /**
  * Guest Play setup (spec GU2-GU4): Boy or Girl, then the name and age. Play now! saves the visitor and goes to Welcome.
@@ -44,36 +44,46 @@ export default function GuestSetup() {
 
   function pick(g: Gender) {
     if (phase !== 'gender') return;
-    const other: Gender = g === 'male' ? 'female' : 'male';
     setGender(g);
-    setLeaving(other);
+    setLeaving(g === 'male' ? 'female' : 'male');
     if (reduceMotion()) {
       // reduced motion: a cross-fade only, no glide
       setPhase('details');
       setFormOn(true);
       return;
     }
-    // the picked card flies from its place up to the header slot (the header sits above the cards)
-    const from = refs.current[g]?.getBoundingClientRect();
+    // the avatar ring flies to the fixed header spot; the layout above it does not move (the title only fades)
+    const card = refs.current[g];
+    const ring = card?.firstElementChild?.getBoundingClientRect();
+    const box = card?.getBoundingClientRect();
     const to = headerRef.current?.getBoundingClientRect();
-    if (from && to && from.width > 0 && to.width > 0) {
-      setPickedStyle({
-        transform: `translate(${to.left + to.width / 2 - (from.left + from.width / 2)}px, ${to.top + to.height / 2 - (from.top + from.height / 2)}px) scale(${to.width / from.width})`,
-      });
+    if (card && ring && box && to && ring.width > 0 && to.width > 0) {
+      const s = to.width / ring.width;
+      const ox = box.left + box.width / 2;
+      const oy = box.top + box.height / 2;
+      const dx = to.left + to.width / 2 - ox - s * (ring.left + ring.width / 2 - ox);
+      const dy = to.top + to.height / 2 - oy - s * (ring.top + ring.height / 2 - oy);
+      setPickedStyle({ transform: `translate(${dx}px, ${dy}px) scale(${s})` });
     }
     setPhase('moving');
-    timers.current.push(setTimeout(() => setFormOn(true), FORM_DELAY_MS));
-    timers.current.push(setTimeout(() => setPhase('details'), FLIP_MS));
+    // the form rises only after the avatar has arrived
+    timers.current.push(setTimeout(() => { setPhase('details'); setFormOn(true); }, GLIDE_MS));
   }
 
   function backToGender() {
-    // back to the Boy / Girl choice at once, so both cards can be picked again; the typed name stays
+    // the form sinks away, the avatar glides home and grows back, the other avatar fades in; the typed name stays
     timers.current.forEach(clearTimeout);
     timers.current = [];
     setFormOn(false);
-    setPhase('gender');
+    if (reduceMotion()) { reset(); return; }
+    setPhase('closing');
     setLeaving(null);
     setPickedStyle(null);
+    timers.current.push(setTimeout(reset, CLOSE_MS));
+  }
+
+  function reset() {
+    setPhase('gender');
     setGender(null);
   }
 
@@ -84,7 +94,7 @@ export default function GuestSetup() {
     router.push('/');
   }
 
-  const showChoice = phase !== 'details';
+  const locked = phase !== 'gender';
 
   return (
     <div className={`${play.wrap} ${styles.page} hm-child`}>
@@ -97,21 +107,16 @@ export default function GuestSetup() {
         </div>
       )}
       <div className={styles.col}>
-        {phase === 'gender' && (
-          <h1 className={styles.who}><BounceText text="Who are you?" delay={0.3} /></h1>
-        )}
-        {showChoice && (
-          <GenderCards
-            onPick={pick}
-            leaving={leaving}
-            picked={gender}
-            pickedStyle={pickedStyle}
-            refs={refs}
-          />
-        )}
-        <div ref={headerRef} className={`${styles.header} ${phase === 'details' ? styles.headerOn : ''}`}>
-          {gender && <Pic src={VISITOR_HEAD[gender]} alt="" width={320} height={320} className={styles.avatar} />}
-        </div>
+        <h1 className={`${styles.who} ${locked ? styles.whoOff : ''}`}><BounceText text="Who are you?" delay={0.3} /></h1>
+        <GenderCards
+          onPick={pick}
+          leaving={leaving}
+          picked={gender}
+          pickedStyle={pickedStyle}
+          refs={refs}
+          locked={locked}
+        />
+        <div ref={headerRef} className={styles.header} aria-hidden="true" />
         {gender && phase !== 'gender' && (
           <div className={`${styles.details} ${formOn ? styles.detailsOn : ''}`}>
             <GuestDetails

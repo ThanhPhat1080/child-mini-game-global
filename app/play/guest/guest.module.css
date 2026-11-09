@@ -8,6 +8,8 @@
 .hiBoy { color: #3f6285; }
 .who { font: 800 36px 'Baloo 2', 'Nunito', sans-serif; color: #5a4038; margin: 40px 0 0; text-align: center; text-wrap: balance; }
 
+.whoOff { opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
+.who { transition: opacity 0.4s ease; }
 .genderRow { display: flex; gap: 18px; margin-top: 40px; justify-content: center; }
 .gcard { width: 170px; text-align: center; background: none; border: 0; padding: 0; cursor: pointer; color: inherit; font: inherit; transition: transform 0.25s ease, opacity 0.2s ease; }
 /* the breathing is on the head, not the button: a moving button is never still for a click */
@@ -21,17 +23,18 @@
 .lbl { display: block; font: 800 24px 'Baloo 2', 'Nunito', sans-serif; color: #3f6285; }
 .girl .lbl { color: #9a4550; }
 .leave { opacity: 0; transform: scale(0.6); pointer-events: none; transition: opacity 0.4s ease, transform 0.4s ease; }
-.picked { transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); pointer-events: none; }
+.gcard { transition: transform 0.65s cubic-bezier(0.3, 0.1, 0.2, 1), opacity 0.4s ease; }
+.gcard:hover, .gcard:focus-visible { transition-duration: 0.25s, 0.4s; }
+.picked { pointer-events: none; z-index: 2; position: relative; }
+.picked .lbl { opacity: 0; transition: opacity 0.2s ease; }
+.lbl { transition: opacity 0.4s ease 0.3s; }
 
-/* the header slot sits above the cards: the picked card glides up into it (absolute, so the cards keep their place) */
-.header { position: absolute; top: 56px; left: 50%; margin-left: -55px; height: 110px; width: 110px; opacity: 0; transition: opacity 0.2s ease; }
-.headerOn { opacity: 1; }
-.avatar { width: 110px; height: 110px; border-radius: 50%; overflow: hidden; border: 5px solid #8fb3d1; background: #fff; }
-.headerGirl .avatar { border-color: #e59aa1; }
+/* the fixed spot the picked avatar glides to (invisible; it only marks the place) */
+.header { position: absolute; top: 56px; left: 50%; margin-left: -55px; height: 110px; width: 110px; pointer-events: none; }
 
 /* the form slides up from below into place, under the avatar */
-.details { position: absolute; top: 200px; left: 50%; width: 480px; margin-left: -240px; opacity: 0; transform: translateY(90px); transition: transform 0.5s ease, opacity 0.5s ease; }
-.detailsOn { opacity: 1; transform: none; }
+.details { position: absolute; top: 200px; left: 50%; width: 480px; margin-left: -240px; opacity: 0; transform: translateY(120px); transition: transform 0.45s ease, opacity 0.35s ease; }
+.detailsOn { opacity: 1; transform: none; transition: transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), opacity 0.7s ease; }
 .form { position: relative; background: #fffcf2; border-radius: 26px; padding: 26px 30px 30px; box-shadow: 0 8px 22px rgba(90, 64, 56, 0.12); border: 3px solid #8fb3d1; }
 .formGirl { border-color: #e59aa1; }
 .label { display: block; font: 700 16px 'Nunito', sans-serif; color: #8a6e63; margin: 14px 0 6px; }
@@ -58,6 +61,6 @@
   .gcard { transition: opacity 0.3s ease; }
   .ring { animation: none; }
   .gcard:hover, .gcard:focus-visible { transform: none; }
-  .leave, .picked, .details, .header { transition: opacity 0.3s ease !important; transform: none !important; }
+  .leave, .picked, .details { transition: opacity 0.3s ease !important; transform: none !important; }
   .details { transform: none; }
 }
