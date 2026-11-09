@@ -3,7 +3,7 @@
 .page.page { height: 100vh; min-height: 0; padding: 0; overflow: hidden; }
 .col { position: relative; z-index: 1; width: 100%; max-width: 600px; margin: 0 auto; height: 100%; display: flex; flex-direction: column; align-items: center; padding-top: 72px; box-sizing: border-box; }
 .backSlot { position: absolute; top: 24px; left: 24px; z-index: 3; }
-.hiGirl, .hiBoy { font: 800 44px 'Baloo 2', 'Nunito', sans-serif; margin: 0 0 14px; padding-right: 64px; text-wrap: balance; }
+.hiGirl, .hiBoy { font: 800 38px 'Baloo 2', 'Nunito', sans-serif; margin: 0 0 14px; padding-right: 64px; text-wrap: balance; }
 .hiGirl { color: #9a4550; }
 .hiBoy { color: #3f6285; }
 .who { font: 800 36px 'Baloo 2', 'Nunito', sans-serif; color: #5a4038; margin: 40px 0 0; text-align: center; text-wrap: balance; }
@@ -23,25 +23,27 @@
 .leave { opacity: 0; transform: scale(0.6); pointer-events: none; transition: opacity 0.4s ease, transform 0.4s ease; }
 .picked { transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1); pointer-events: none; }
 
-.header { margin-top: 16px; height: 110px; width: 110px; opacity: 0; transition: opacity 0.4s ease; }
+/* the header slot sits above the cards: the picked card glides up into it (absolute, so the cards keep their place) */
+.header { position: absolute; top: 56px; left: 50%; margin-left: -55px; height: 110px; width: 110px; opacity: 0; transition: opacity 0.2s ease; }
 .headerOn { opacity: 1; }
 .avatar { width: 110px; height: 110px; border-radius: 50%; overflow: hidden; border: 5px solid #8fb3d1; background: #fff; }
 .headerGirl .avatar { border-color: #e59aa1; }
 
-.details { position: relative; width: 100%; margin-top: 12px; opacity: 0; transform: translateY(60px); transition: transform 0.5s ease, opacity 0.5s ease; }
+/* the form slides up from below into place, under the avatar */
+.details { position: absolute; top: 200px; left: 50%; width: 480px; margin-left: -240px; opacity: 0; transform: translateY(90px); transition: transform 0.5s ease, opacity 0.5s ease; }
 .detailsOn { opacity: 1; transform: none; }
-.form { position: relative; background: #fffcf2; border-radius: 28px; padding: 32px 40px 40px; box-shadow: 0 8px 22px rgba(90, 64, 56, 0.12); border: 3px solid #8fb3d1; }
+.form { position: relative; background: #fffcf2; border-radius: 26px; padding: 26px 30px 30px; box-shadow: 0 8px 22px rgba(90, 64, 56, 0.12); border: 3px solid #8fb3d1; }
 .formGirl { border-color: #e59aa1; }
-.label { display: block; font: 700 18px 'Nunito', sans-serif; color: #8a6e63; margin: 18px 0 8px; }
-.input { width: 100%; height: 66px; font: 700 28px 'Nunito', sans-serif; padding: 12px 18px; border-radius: 16px; border: 2px solid #e9dccb; background: #fff; color: #5a4038; user-select: text; -webkit-user-select: text; }
+.label { display: block; font: 700 16px 'Nunito', sans-serif; color: #8a6e63; margin: 14px 0 6px; }
+.input { width: 100%; height: 58px; font: 700 24px 'Nunito', sans-serif; padding: 12px 18px; border-radius: 16px; border: 2px solid #e9dccb; background: #fff; color: #5a4038; user-select: text; -webkit-user-select: text; }
 .input:focus-visible { outline: 4px solid #7a5c50; outline-offset: 2px; }
-.hint { font-size: 15px; color: #8a6e63; margin: 6px 0 0; min-height: 18px; }
+.hint { font-size: 14px; color: #8a6e63; margin: 6px 0 0; min-height: 18px; }
 .seg { display: flex; border-radius: 18px; overflow: hidden; border: 2px solid #e9dccb; }
-.segBtn { flex: 1; height: 66px; font: 700 28px 'Nunito', sans-serif; border: 0; background: #fff; color: #8a6e63; cursor: pointer; }
+.segBtn { flex: 1; height: 58px; font: 700 24px 'Nunito', sans-serif; border: 0; background: #fff; color: #8a6e63; cursor: pointer; }
 .segBtn:focus-visible { outline: 4px solid #7a5c50; outline-offset: -4px; }
 .segOn { background: #8fb3d1; color: #3f6285; }
 .formGirl .segOn { background: #e59aa1; color: #9a4550; }
-.ok { margin-top: 22px; width: 100%; height: 72px; border-radius: 24px; border: 0; font: 800 34px 'Baloo 2', 'Nunito', sans-serif; background: #8fb3d1; color: #3f6285; cursor: pointer; }
+.ok { margin-top: 18px; width: 100%; height: 62px; border-radius: 22px; border: 0; font: 800 30px 'Baloo 2', 'Nunito', sans-serif; background: #8fb3d1; color: #3f6285; cursor: pointer; }
 .formGirl .ok { background: #e59aa1; color: #9a4550; }
 .ok:disabled { opacity: 0.45; cursor: not-allowed; }
 .ok:focus-visible { outline: 4px solid #7a5c50; outline-offset: 3px; }

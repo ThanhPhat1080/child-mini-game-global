@@ -68,6 +68,22 @@ test.describe('guest UI on a desktop window', () => {
     expect(await fits()).toBe(true);
   });
 
+  test('picking Girl: the avatar glides up to the top and the form slides up from below', async ({ page }) => {
+    await page.goto('/play/guest');
+    const girl = page.getByRole('button', { name: 'Girl' });
+    const before = await girl.boundingBox();
+    await girl.click();
+    // the card stays while it glides (it used to vanish at once)
+    await page.waitForTimeout(150);
+    await expect(girl).toHaveCount(1);
+    await expect(page.getByLabel("Child's name")).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Girl' })).toHaveCount(0);
+    const avatar = await page.locator('img[src*="princess-head"]').first().boundingBox();
+    const form = await page.getByRole('heading', { name: 'Hi, Princess' }).boundingBox();
+    expect(avatar!.y).toBeLessThan(before!.y); // higher than where the card was
+    expect(form!.y).toBeGreaterThan(avatar!.y + avatar!.height - 1); // the form is below the avatar
+  });
+
   test('after X the child can pick Girl again', async ({ page }) => {
     await page.goto('/play/guest');
     await page.getByRole('button', { name: 'Girl' }).click();
