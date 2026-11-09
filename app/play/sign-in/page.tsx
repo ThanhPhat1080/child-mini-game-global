@@ -7,6 +7,8 @@ import { Pic } from '@/components/Pic';
 import { BounceText } from '@/components/BounceText';
 import { SkyScene } from '@/components/play/SkyScene';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { clearVisitor } from '@/lib/visitor';
+import { EntryChooser } from '@/components/play/EntryChooser';
 import styles from '../../admin/admin.module.css';
 import play from './playSignIn.module.css';
 
@@ -14,9 +16,13 @@ const FRIENDLY = 'That email or password does not look right. Please try again.'
 const GENERIC = 'Something went wrong. Please try again.';
 const BRAND = 'ABC Play';
 
-/** Grown-up sign-in on the child's device (U9, FS1-FS4). The @supabase/ssr browser client persists the session cookie. */
+/**
+ * The play device's door (U9, FS1-FS4, GU1): the chooser (Log in | Guest) first; Log in shows the grown-up sign-in form
+ * in place. The @supabase/ssr browser client persists the session cookie.
+ */
 export default function PlaySignIn() {
   const router = useRouter();
+  const [mode, setMode] = useState<'choose' | 'login'>('choose');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -33,6 +39,8 @@ export default function PlaySignIn() {
         setError(err.code === 'invalid_credentials' || /invalid login/i.test(err.message ?? '') ? FRIENDLY : GENERIC);
         return;
       }
+      // A parent wins: signing in erases any visitor data on this device (GU8, Q14).
+      clearVisitor();
       router.push('/play');
       router.refresh();
     } catch {
@@ -54,7 +62,13 @@ export default function PlaySignIn() {
             <BounceText text={BRAND} delay={1.8} />
           </span>
         </div>
+        {mode === 'choose' ? (
+          <div className={play.rest}>
+            <EntryChooser onLogin={() => setMode('login')} />
+          </div>
+        ) : (
         <div className={play.rest}>
+          <button type="button" className={play.back} aria-label="Back" onClick={() => setMode('choose')}>&larr;</button>
           <form className={styles.card} onSubmit={onSubmit} noValidate>
             <div>
               <h1>Let's play together</h1>
@@ -97,6 +111,7 @@ export default function PlaySignIn() {
           )}
           <p className={styles.foot}>Managing content? <Link href="/admin/sign-in">Go to Parent Admin</Link></p>
         </div>
+        )}
       </div>
     </div>
   );

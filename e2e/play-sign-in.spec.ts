@@ -6,6 +6,7 @@ test.beforeEach(async () => { await reset(); });
 
 test('from the play sign-in to sign-up and back (FS3, FS6)', async ({ page }) => {
   await page.goto('/play/sign-in');
+  await page.getByRole('button', { name: 'Log in' }).click();
   await page.getByRole('button', { name: 'How do I create an account?' }).click();
   await expect(page.getByText('Open the link we email you to confirm it.')).toBeVisible();
   await page.getByRole('link', { name: 'Sign up now' }).click();
