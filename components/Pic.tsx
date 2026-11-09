@@ -10,5 +10,6 @@ type Props = Omit<ComponentProps<typeof Image>, 'width' | 'height' | 'fill' | 'u
  */
 export function Pic({ width = 1000, height = 1000, src, alt, ...rest }: Props) {
   if (src === '') return null; // next/image throws on an empty src (a missing picture)
-  return <Image loading="eager" {...rest} src={src} alt={alt} width={width} height={height} unoptimized />;
+  // draggable={false}: no picture ghost when a child drags on a child screen (NS3); a caller may override it.
+  return <Image loading="eager" draggable={false} {...rest} src={src} alt={alt} width={width} height={height} unoptimized />;
 }
