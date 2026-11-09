@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { getMyProfile, type Role } from '@/lib/auth/roles';
 import { pendingMessageCount, usePendingCounts } from '@/lib/superAdmin';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import { RedDot } from '@/components/admin/RedDot';
 import styles from '@/app/admin/admin.module.css';
 import ui from '@/components/admin/admin-ui.module.css';
@@ -89,8 +90,16 @@ export function AdminNav({ initialRole = null }: { initialRole?: Role | null }) 
     return () => { cancelAnimationFrame(frame); mq.removeEventListener('change', onChange); };
   }, []);
 
+  const [confirmOut, setConfirmOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   async function signOut() {
-    await createSupabaseBrowserClient().auth.signOut();
+    setSigningOut(true);
+    try {
+      await createSupabaseBrowserClient().auth.signOut();
+    } finally {
+      setSigningOut(false);
+      setConfirmOut(false);
+    }
     router.push('/admin/sign-in');
     router.refresh();
   }
@@ -177,10 +186,21 @@ export function AdminNav({ initialRole = null }: { initialRole?: Role | null }) 
         <svg {...icon}><path d="M14 3h7v7" /><path d="M10 14L21 3" /><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" /></svg>
         <span className={styles.navLabel}>Open child app</span>
       </Link>
-      <button type="button" className={cls(false, styles.navRose)} onClick={signOut} {...tipProps('Sign out')}>
+      <button type="button" className={cls(false, styles.navRose)} onClick={() => setConfirmOut(true)} {...tipProps('Sign out')}>
         <svg {...icon}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
         <span className={styles.navLabel}>Sign out</span>
       </button>
+      {confirmOut && (
+        <ConfirmDialog
+          tone="neutral"
+          title="Sign out?"
+          body="You will need to sign in again to use the admin."
+          button="Sign out"
+          busy={signingOut}
+          onCancel={() => setConfirmOut(false)}
+          onConfirm={() => void signOut()}
+        />
+      )}
       {tip && <div className={styles.navTip} role="presentation" style={{ top: tip.top }}>{tip.text}</div>}
     </nav>
   );
