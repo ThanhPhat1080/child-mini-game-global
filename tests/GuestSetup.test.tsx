@@ -46,7 +46,7 @@ describe('guest setup (GU2-GU4)', () => {
     pickGirl();
     const name = await screen.findByLabelText("Child's name");
     expect(screen.getByRole('button', { name: '2-5' }).getAttribute('aria-pressed')).toBe('true');
-    const ok = screen.getByRole('button', { name: 'OK' }) as HTMLButtonElement;
+    const ok = screen.getByRole('button', { name: 'Play now!' }) as HTMLButtonElement;
     expect(ok.disabled).toBe(true);
     fireEvent.change(name, { target: { value: '   ' } });
     expect(ok.disabled).toBe(true);
@@ -59,7 +59,7 @@ describe('guest setup (GU2-GU4)', () => {
     pickGirl();
     const name = await screen.findByLabelText("Child's name");
     fireEvent.change(name, { target: { value: 'a'.repeat(21) } });
-    expect((screen.getByRole('button', { name: 'OK' }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole('button', { name: 'Play now!' }) as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('Enter in the name field saves the visitor and goes to Welcome', async () => {
@@ -79,7 +79,7 @@ describe('guest setup (GU2-GU4)', () => {
     const name = await screen.findByLabelText("Child's name");
     fireEvent.change(name, { target: { value: 'Mai' } });
     fireEvent.click(screen.getByRole('button', { name: '5-10' }));
-    fireEvent.click(screen.getByRole('button', { name: 'OK' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Play now!' }));
     await waitFor(() => expect(h.push).toHaveBeenCalledWith('/'));
     expect(getVisitor()?.ageBand).toBe('5-10');
   });

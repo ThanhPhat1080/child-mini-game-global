@@ -42,7 +42,7 @@ export function GuestDetails({ gender, name, ageBand, valid, onName, onAge, onCl
       <p className={styles.hint}>1-20 characters</p>
       <span className={styles.label}>Age</span>
       <AgeSwitch value={ageBand} onChange={onAge} />
-      <button type="submit" className={styles.ok} disabled={!valid}>OK</button>
+      <button type="submit" className={styles.ok} disabled={!valid}>Play now!</button>
     </form>
   );
 }

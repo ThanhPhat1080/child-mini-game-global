@@ -11,7 +11,7 @@ async function setupVisitor(page: Page, name: string, gender: 'Boy' | 'Girl'): P
   await expect(page).toHaveURL(/\/play\/guest$/);
   await page.getByRole('button', { name: gender }).click();
   await page.getByLabel("Child's name").fill(name);
-  await page.getByRole('button', { name: 'OK' }).click();
+  await page.getByRole('button', { name: 'Play now!' }).click();
   await expect(page).toHaveURL(/\/$/);
 }
 
