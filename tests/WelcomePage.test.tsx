@@ -57,16 +57,11 @@ describe('Welcome by gender (FP9, FP1)', () => {
     expect(at(bees.parentElement)).toBeGreaterThan(at(screen.getByAltText('Chibi princess with a magic wand').closest('div')));
     expect(at(bees.parentElement)).toBeLessThan(at(screen.getByLabelText('Start game').closest('[class*="center"]')));
   });
-  it('tap to enter starts the built-in track when no music is set, the chosen one otherwise (C1)', async () => {
-    h.get.mockResolvedValue({ ...base, gender: 'female' });
-    render(<Welcome />);
-    fireEvent.click(await screen.findByRole('button', { name: 'Tap to enter' }));
-    expect(startMusic).toHaveBeenLastCalledWith('/seed/sounds/background-track.mp3', 30);
-    cleanup();
+  it('tap to enter starts the built-in track, even if an old own track is saved (C1)', async () => {
     h.get.mockResolvedValue({ ...base, gender: 'female', music_path: 'snd/m.mp3' });
     render(<Welcome />);
     fireEvent.click(await screen.findByRole('button', { name: 'Tap to enter' }));
-    expect(startMusic).toHaveBeenLastCalledWith('/media/snd/m.mp3', 30);
+    expect(startMusic).toHaveBeenLastCalledWith('/seed/sounds/background-track.mp3', 30);
   });
 
   it('a failed load shows the princess and still lets the child enter', async () => {

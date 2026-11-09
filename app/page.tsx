@@ -7,7 +7,7 @@ import { isGuestPlay } from '@/lib/childSession';
 import { clearVisitor, getVisitor, hasVisitorMarker } from '@/lib/visitor';
 import { mediaUrl } from '@/lib/media';
 import { playOnce, startMusic } from '@/lib/audio';
-import { musicUrl } from '@/lib/defaultMusic';
+import { DEFAULT_MUSIC_URL } from '@/lib/defaultMusic';
 import { BOY_WELCOME_VARS, GENDER_THEME } from '@/lib/childTheme';
 import { useActiveChild } from '@/lib/useActiveChild';
 import { ChildScreen } from '@/components/ChildScreen';
@@ -38,7 +38,7 @@ export default function Welcome() {
   function onEnter() {
     setEntered(true);
     playOnce(mediaUrl(settings?.greeting_path));
-    startMusic(musicUrl(mediaUrl(settings?.music_path)), settings?.music_volume ?? 30);
+    startMusic(DEFAULT_MUSIC_URL, settings?.music_volume ?? 30);
   }
 
   return (

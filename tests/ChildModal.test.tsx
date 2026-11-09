@@ -180,7 +180,7 @@ describe('ChildModal (KU3-KU8)', () => {
     expect(btn.getAttribute('aria-expanded')).toBe('false');
     fireEvent.click(btn);
     expect(btn.getAttribute('aria-expanded')).toBe('true');
-    expect(await screen.findByText('Background music')).toBeTruthy();
+    expect(await screen.findByText('Feedback sounds')).toBeTruthy();
   });
 
   it('Esc closes; Esc and backdrop do nothing while saving', async () => {

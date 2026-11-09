@@ -6,4 +6,4 @@ Default "Feedback sounds". Drop the recorded files here (same names):
 
 A family's own upload (Settings > Feedback sounds) wins. A missing file falls back to the built-in synthesized sound.
 
-background-track.mp3 is the default background music (loops on the child screens). A family's own track (Settings > Background music) wins.
+background-track.mp3 is the default background music (loops on the child screens). It is the only background track: families cannot upload their own, only set the volume.
