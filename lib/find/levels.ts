@@ -19,7 +19,7 @@ export async function fetchActiveFindLevels(): Promise<FindLevel[]> {
     .order('sort_order')
     .order('created_at');
   if (error) throw new Error(error.message);
-  return ownerFirst(dropOwnCopies(((data ?? []) as FindLevel[]).filter(isPlayable), me), me);
+  return ownerFirst(dropOwnCopies(((data ?? []) as (FindLevel & { owner_id?: string | null })[]).filter(isPlayable), me), me).map(({ owner_id, ...l }) => ({ ...l, mine: !!me && owner_id === me }));
 }
 
 /**

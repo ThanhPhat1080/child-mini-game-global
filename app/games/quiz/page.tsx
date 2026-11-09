@@ -20,7 +20,7 @@ const PITCH = SET_CARD_WIDTH + 64; // card width + gap 64
 const STAGE_CENTER = 960; // the 1920 px stage's middle
 const cards = () => Array.from(document.querySelectorAll<HTMLElement>('a[data-set-card]'));
 
-type Row = Omit<SetCardData, 'count'> & { questions: { prompt_text: string | null; prompt_audio_path: string | null; answers: { image_path: string | null; text: string | null; is_correct: boolean }[] }[] };
+type Row = Omit<SetCardData, 'count' | 'mine'> & { owner_id?: string | null; source_id?: string | null; questions: { prompt_text: string | null; prompt_audio_path: string | null; answers: { image_path: string | null; text: string | null; is_correct: boolean }[] }[] };
 
 function isComplete(q: Row['questions'][number]): boolean {
   const a = q.answers;
@@ -59,7 +59,7 @@ export default function QuizSets() {
           me,
         ).order('position');
         if (error) throw new Error(error.message);
-        const rows = ownerFirst(dropOwnCopies((data as unknown as Row[]) ?? [], me), me).map((r) => ({ ...r, count: r.questions.filter(isComplete).length })).filter((r) => r.count > 0);
+        const rows = ownerFirst(dropOwnCopies((data as unknown as Row[]) ?? [], me), me).map((r) => ({ ...r, count: r.questions.filter(isComplete).length, mine: !!me && r.owner_id === me })).filter((r) => r.count > 0);
         if (!live) return;
         setSets(rows);
         setIdx(recallIndex(INDEX_KEY, rows.length));

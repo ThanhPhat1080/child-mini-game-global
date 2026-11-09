@@ -1,8 +1,9 @@
 import { mediaUrl } from '@/lib/media';
 import { tintFor } from '@/lib/sets';
 import { Pic } from '@/components/Pic';
+import { FamilyBadge } from '@/components/FamilyBadge';
 
-export type SetCardData = { id: string; title: string; subtitle: string | null; heading_color: string; cover_path: string | null; count: number };
+export type SetCardData = { id: string; title: string; subtitle: string | null; heading_color: string; cover_path: string | null; count: number; mine?: boolean };
 
 /** Card width in px. Wide enough that a long title or subtitle still sits centred. Height stays 700. */
 export const SET_CARD_WIDTH = 560;
@@ -14,6 +15,7 @@ export function SetCard({ set, done, hintEmptyCover }: { set: SetCardData; index
     <span
       style={{ position: 'relative', width: SET_CARD_WIDTH, height: 700, borderRadius: 56, background: '#fff', boxShadow: '0 16px 0 #E3CFC0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, color: '#5A4038', boxSizing: 'border-box' }}
     >
+      {set.mine && <FamilyBadge style={{ top: -26, left: -26 }} />}
       {done && (
         <span style={{ position: 'absolute', top: -26, right: -26, width: 88, height: 88, borderRadius: 44, background: '#F6E2A6', border: '8px solid #FBF4E9', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
           <svg aria-hidden="true" width="46" height="46" viewBox="0 0 24 24" fill="#EED79A" stroke="#B8903F" strokeWidth="1.5" strokeLinejoin="round"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z" /></svg>

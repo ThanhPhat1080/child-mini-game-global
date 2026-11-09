@@ -15,7 +15,7 @@ export async function fetchActiveLevels(): Promise<SpotLevel[]> {
     .order('sort_order')
     .order('created_at');
   if (error) throw new Error(error.message);
-  return ownerFirst(dropOwnCopies((data ?? []) as SpotLevel[], me), me);
+  return ownerFirst(dropOwnCopies((data ?? []) as (SpotLevel & { owner_id?: string | null })[], me), me).map(({ owner_id, ...l }) => ({ ...l, mine: !!me && owner_id === me }));
 }
 
 /**

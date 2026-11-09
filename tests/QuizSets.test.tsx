@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({ rows: [] as unknown[], eq: vi.fn(), push: vi.fn() }));
 
-vi.mock('@/lib/review', () => ({ playerId: async () => null, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r, dropOwnCopies: (r: unknown) => r }));
+vi.mock('@/lib/review', () => ({ playerId: async () => 'p1', familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r, dropOwnCopies: (r: unknown) => r }));
 vi.mock('@/lib/supabase/client', () => ({
   createSupabaseBrowserClient: () => ({
     from: () => ({
@@ -61,6 +61,15 @@ describe('Quiz set selection (T9, C3, C11)', () => {
     await screen.findByRole('link', { name: 'Animals, 2 questions' });
     fireEvent.click(screen.getByRole('button', { name: 'Go to set 2' }));
     expect(sessionStorage.getItem('childPlayer:quiz:index')).toBe('1');
+  });
+
+  it('only the signed-in family\'s own sets carry the family badge; the done star is separate', async () => {
+    h.rows = [{ ...set('s1', 'Animals', null, [good(1)]), owner_id: 'p1' }, { ...set('s2', 'Colors', null, [good(1)]), owner_id: null }];
+    const { container } = render(<QuizSets />);
+    await screen.findByText('Animals');
+    const cards = container.querySelectorAll('a[data-set-card]');
+    expect(cards[0].querySelector('[data-family-badge]')).not.toBeNull();
+    expect(cards[1].querySelector('[data-family-badge]')).toBeNull();
   });
 
   it('TC1: each card shows cover, name, optional sub-title and a question-count pill', async () => {

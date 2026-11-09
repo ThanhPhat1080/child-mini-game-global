@@ -23,6 +23,14 @@ beforeEach(() => { h.fetchActiveFindLevels.mockReset(); h.push.mockReset(); });
 afterEach(cleanup);
 
 describe('Find It level select (F1)', () => {
+  it('only the family\'s own levels carry the family badge', async () => {
+    h.fetchActiveFindLevels.mockResolvedValue(levels(2).map((l, i) => ({ ...l, mine: i === 0 })));
+    render(<FindLevels />);
+    await screen.findByRole('link', { name: 'Play level 1' });
+    expect(link(1).querySelector('[data-family-badge]')).not.toBeNull();
+    expect(link(2).querySelector('[data-family-badge]')).toBeNull();
+  });
+
   it('renders one link per level in order, with the picture as thumbnail', async () => {
     h.fetchActiveFindLevels.mockResolvedValue(levels(5));
     render(<FindLevels />);

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({
+const h = vi.hoisted(() => ({ me: null as string | null,
   result: { data: null as unknown, error: null as { message: string } | null },
   order: vi.fn(),
   eq: vi.fn(),
@@ -9,7 +9,7 @@ const h = vi.hoisted(() => ({
   from: vi.fn(),
 }));
 
-vi.mock('@/lib/review', () => ({ playerId: async () => null, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r, dropOwnCopies: (r: unknown) => r }));
+vi.mock('@/lib/review', () => ({ playerId: async () => h.me, familyOrGlobal: (q: unknown) => q, ownerFirst: (r: unknown) => r, dropOwnCopies: (r: unknown) => r }));
 vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ from: h.from }) }));
 
 import { fetchActiveLevels, fetchLevel } from '@/lib/spot/levels';
@@ -29,10 +29,19 @@ beforeEach(() => {
 });
 
 describe('fetchActiveLevels', () => {
+  it('marks the signed-in family\'s own levels (mine) and no others, without leaking owner_id', async () => {
+    h.me = 'p1';
+    h.result = { data: [{ id: 'a', owner_id: 'p1', active: true }, { id: 'b', owner_id: null, active: true }], error: null };
+    const out = await fetchActiveLevels();
+    h.me = null;
+    expect(out.map((l) => [l.id, l.mine])).toEqual([['a', true], ['b', false]]);
+    expect(out[0]).not.toHaveProperty('owner_id');
+  });
+
   it('asks spot_levels for active rows ordered by sort_order then created_at and returns them', async () => {
     const rows = [{ id: 'a', image_a_path: 'x', image_b_path: 'y', differences: [], active: true, sort_order: 1 }];
     h.result = { data: rows, error: null };
-    await expect(fetchActiveLevels()).resolves.toEqual(rows);
+    await expect(fetchActiveLevels()).resolves.toEqual(rows.map((r) => ({ ...r, mine: false })));
     expect(h.from).toHaveBeenCalledWith('spot_levels');
     expect(h.select).toHaveBeenCalledWith(`${COLS}, owner_id, source_id`);
     expect(h.eq).toHaveBeenCalledWith('active', true);
