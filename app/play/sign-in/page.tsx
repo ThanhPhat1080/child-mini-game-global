@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Pic } from '@/components/Pic';
 import { BounceText } from '@/components/BounceText';
 import { PlayBackdrop } from '@/components/play/PlayBackdrop';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { playVoice, stopVoice, VOICE_URL } from '@/lib/voice';
 import { clearVisitor } from '@/lib/visitor';
 import { WindowCorners } from '@/components/ChildScreen';
 import { EntryChooser } from '@/components/play/EntryChooser';
@@ -29,6 +30,12 @@ export default function PlaySignIn() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [help, setHelp] = useState(false);
+
+  // a new arrival at the door is welcomed; a browser that blocks sound waits for the first tap
+  useEffect(() => {
+    playVoice(VOICE_URL.welcomeDoor, { retryOnTap: true });
+    return stopVoice;
+  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

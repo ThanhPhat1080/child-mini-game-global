@@ -24,3 +24,14 @@ describe('play door voices', () => {
     expect(() => playVoice(VOICE_URL.hiPrincess)).not.toThrow();
   });
 });
+
+describe('retry on tap', () => {
+  it('plays on the first tap when the browser blocked it', async () => {
+    const play = vi.fn().mockRejectedValueOnce(new Error('blocked')).mockResolvedValue(undefined);
+    vi.stubGlobal('Audio', function () { return { play, pause: vi.fn() }; });
+    playVoice(VOICE_URL.welcomeDoor, { retryOnTap: true });
+    await Promise.resolve(); await Promise.resolve();
+    window.dispatchEvent(new Event('pointerdown'));
+    expect(play).toHaveBeenCalledTimes(2);
+  });
+});
