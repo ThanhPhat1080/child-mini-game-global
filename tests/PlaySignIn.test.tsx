@@ -1,13 +1,14 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const h = vi.hoisted(() => ({ signIn: vi.fn(), push: vi.fn(), refresh: vi.fn() }));
+const h = vi.hoisted(() => ({ voice: vi.fn(), signIn: vi.fn(), push: vi.fn(), refresh: vi.fn() }));
 vi.mock('@/lib/supabase/client', () => ({ createSupabaseBrowserClient: () => ({ auth: { signInWithPassword: h.signIn } }) }));
 vi.mock('next/link', () => ({
   default: ({ href, children, ...rest }: { href: string; children: React.ReactNode }) => <a href={href} {...rest}>{children}</a>,
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: h.push, refresh: h.refresh }) }));
 
+vi.mock('@/lib/voice', () => ({ playVoice: h.voice, stopVoice: vi.fn(), VOICE_URL: { welcomeDoor: '/w0' } }));
 vi.mock('@/components/MusicButton', () => ({ MusicButton: () => null }));
 import PlaySignIn from '@/app/play/sign-in/page';
 
@@ -102,5 +103,15 @@ describe('play area sign-in (FS1-FS4)', () => {
     await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play'));
     expect(localStorage.getItem('cp_visitor')).toBeNull();
     expect(document.cookie).not.toContain('cp_visitor=1');
+  });
+});
+
+describe('door welcome', () => {
+  it('plays once, and not again when the page is opened again in the app', () => {
+    h.voice.mockClear();
+    const first = render(<PlaySignIn />);
+    first.unmount();
+    render(<PlaySignIn />);
+    expect(h.voice.mock.calls.filter((c) => c[0] === '/w0').length).toBeLessThanOrEqual(1);
   });
 });

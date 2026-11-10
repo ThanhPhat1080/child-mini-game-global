@@ -18,6 +18,9 @@ const FRIENDLY = 'That email or password does not look right. Please try again.'
 const GENERIC = 'Something went wrong. Please try again.';
 const BRAND = 'ABC Play';
 
+/** True once the welcome has played in this page load (a module value, so it survives leaving and returning in the app). */
+let welcomed = false;
+
 /**
  * The play device's door (U9, FS1-FS4, GU1): the chooser (Log in | Guest) first; Log in shows the grown-up sign-in form
  * in place. The @supabase/ssr browser client persists the session cookie.
@@ -33,7 +36,11 @@ export default function PlaySignIn() {
 
   // a new arrival at the door is welcomed; a browser that blocks sound waits for the first tap
   useEffect(() => {
-    playVoice(VOICE_URL.welcomeDoor, { retryOnTap: true });
+    // once per page load: coming back from Guest (Back) does not welcome them again
+    if (!welcomed) {
+      welcomed = true;
+      playVoice(VOICE_URL.welcomeDoor, { retryOnTap: true });
+    }
     return stopVoice;
   }, []);
 
