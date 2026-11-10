@@ -81,8 +81,8 @@ export default function Welcome() {
         ) : (
           <div className={`${styles.center} ${styles.enteredWrap}`}>
             <div className={`${styles.crownCircle} ${styles.float}`}>
-              {mediaUrl(settings?.avatar_path) ? (
-                <Pic src={mediaUrl(settings?.avatar_path) ?? ''} alt="" className={styles.avatarImg} />
+              {child.avatarUrl ? (
+                <Pic src={child.avatarUrl} alt="" className={styles.avatarImg} />
               ) : (
                 <svg aria-hidden="true" width="120" height="84" viewBox="0 0 60 42" fill="#F6E2A6" stroke="#C9A05A" strokeWidth="2" strokeLinejoin="round">
                   <path d={CROWN} />

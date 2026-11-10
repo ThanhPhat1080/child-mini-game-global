@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const h = vi.hoisted(() => ({ get: vi.fn() }));
-vi.mock('@/lib/settings', () => ({ getMyChildSettings: h.get }));
+vi.mock('@/lib/settings', async (orig) => ({ ...(await orig<typeof import('@/lib/settings')>()), getMyChildSettings: h.get }));
 vi.mock('@/lib/media', () => ({ mediaUrl: (p: string | null) => (p ? `/media/${p}` : null) }));
 vi.mock('@/lib/audio', () => ({ playOnce: vi.fn(), startMusic: vi.fn(), stopMusic: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
@@ -13,6 +13,7 @@ vi.mock('next/link', () => ({
 
 import Welcome from '@/app/page';
 import { startMusic } from '@/lib/audio';
+import { clearVisitor, saveVisitor, VISITOR_HEAD } from '@/lib/visitor';
 
 const base = { child_name: 'Bi', greeting_path: null, music_path: null, music_volume: 30, avatar_path: null };
 const enter = () => screen.queryByRole('button', { name: 'Tap to enter' });
@@ -20,6 +21,18 @@ const enter = () => screen.queryByRole('button', { name: 'Tap to enter' });
 afterEach(cleanup);
 
 describe('Welcome by gender (FP9, FP1)', () => {
+  it.each([['male'], ['female']] as const)('a guest %s sees the same head as on the gender screen, not the crown', async (gender) => {
+    saveVisitor({ name: 'Mai', gender, ageBand: '2-5' });
+    h.get.mockResolvedValue(null);
+    try {
+      const { container } = render(<Welcome />);
+      fireEvent.click(await screen.findByRole('button', { name: 'Tap to enter' }));
+      await screen.findByLabelText('Start game');
+      expect(container.querySelector(`img[src*="${VISITOR_HEAD[gender]}"]`)).toBeTruthy();
+    } finally {
+      clearVisitor();
+    }
+  });
   it('shows no hero and no enter button until the child is known', () => {
     h.get.mockReturnValue(new Promise(() => undefined));
     render(<Welcome />);
