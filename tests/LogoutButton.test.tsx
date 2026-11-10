@@ -45,7 +45,7 @@ describe('LogoutButton (U10)', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0);
     render(<LogoutButton />);
     open();
-    answer('12');
+    answer('20');
     await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play/sign-in'), { timeout: 3000 });
     expect(h.signOut).toHaveBeenCalledTimes(1);
     expect(h.clear).toHaveBeenCalledTimes(1);
@@ -58,7 +58,7 @@ describe('LogoutButton (U10)', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0);
     render(<LogoutButton />);
     open();
-    answer('12');
+    answer('20');
     expect(screen.getByRole('status').textContent).toContain('See you later!');
     expect(h.signOut).not.toHaveBeenCalled();
     await act(async () => { vi.advanceTimersByTime(1999); });
@@ -74,7 +74,7 @@ describe('LogoutButton (U10)', () => {
     h.signOut.mockResolvedValue({ error: { message: 'x' } });
     render(<LogoutButton />);
     open();
-    answer('12');
+    answer('20');
     await waitFor(() => expect(h.signOut).toHaveBeenCalled(), { timeout: 3000 });
     await Promise.resolve();
     expect(h.push).not.toHaveBeenCalled();

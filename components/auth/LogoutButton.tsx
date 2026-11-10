@@ -55,7 +55,7 @@ export default function LogoutButton() {
           </g>
         </svg>
       </button>
-      <AdultCheck open={open} onPass={onPass} onCancel={() => setOpen(false)} title="Sign out now?" hint="Finish the sum below to sign out." icon={<ExitDoorIcon />} centered submitLabel="Signout now!" />
+      <AdultCheck open={open} onPass={onPass} onCancel={() => setOpen(false)} title="Sign out now?" hint="Finish the sum below to sign out." icon={<ExitDoorIcon />} centered twoDigit submitLabel="Signout now!" />
       {farewell && <FarewellPopup />}
     </>
   );
