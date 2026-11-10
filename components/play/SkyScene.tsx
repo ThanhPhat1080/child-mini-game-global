@@ -107,7 +107,7 @@ export function SkyScene({ festive = false, lively = false, sparse = false, hill
       )}
       {bleed && (
         <>
-          {/* the hills roll on past both sides of the stage (the same curves, side by side), and the ground fills below it */}
+          {/* the hills roll on past both sides of the stage (the same curves, side by side), and the ground fills below it; without `hills` the single hill also runs under the stage (k = 0), so a page that draws none of its own still has ground */}
           {hills
             ? [-2, -1, 1, 2].map((k) => (
                 <g key={k}>
@@ -115,7 +115,7 @@ export function SkyScene({ festive = false, lively = false, sparse = false, hill
                   <path transform={`translate(${k * 1920} 0)`} d="M0 950 C 400 880 800 930 1180 970 C 1500 1000 1720 940 1920 950 L1920 1080 L0 1080 Z" fill="#C7D6BA" stroke="#C7D6BA" strokeWidth="2" />
                 </g>
               ))
-            : [-2, -1, 1, 2].map((k) => (
+            : [-2, -1, 0, 1, 2].map((k) => (
                 <path key={k} transform={`translate(${k * 1920} 0)`} d="M0 960 C 400 900 800 940 1180 980 C 1500 1010 1720 950 1920 960 L1920 1080 L0 1080 Z" fill="#D9E3CC" stroke="#D9E3CC" strokeWidth="2" />
               ))}
           <rect x="-5000" y="1079" width="11920" height="3000" fill={hills ? '#C7D6BA' : '#D9E3CC'} />
