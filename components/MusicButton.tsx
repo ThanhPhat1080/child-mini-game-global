@@ -2,6 +2,7 @@
 
 import { useEffect, useReducer } from 'react';
 import { usePathname } from 'next/navigation';
+import { softDing } from '@/lib/sfx';
 import { getMyChildSettings } from '@/lib/settings';
 import { DEFAULT_MUSIC_URL, MUSIC_VOLUME } from '@/lib/defaultMusic';
 import {
@@ -33,6 +34,17 @@ export function MusicButton() {
       }, () => undefined);
   }, [pathname]);
 
+  // One soft ding for a tap on any button, link or card of a child screen (this button is on every one of them, never in admin).
+  useEffect(() => {
+    const onTap = (e: MouseEvent) => {
+      const el = e.target instanceof Element ? e.target.closest('button, a[href], [role="button"], [data-pick-card]') : null;
+      if (!el || el.closest('[data-no-ding]') || el.matches('[aria-disabled="true"], :disabled')) return;
+      softDing();
+    };
+    document.addEventListener('click', onTap, true);
+    return () => document.removeEventListener('click', onTap, true);
+  }, []);
+
   const playing = isMusicPlaying();
   const available = hasMusic();
   const label = playing ? 'Pause background music' : 'Play background music';
@@ -41,6 +53,7 @@ export function MusicButton() {
   return (
     <button
       type="button"
+      data-no-ding
       className={`${styles.btn} ${playing ? styles.on : styles.off}`}
       aria-label={label}
       aria-pressed={playing}

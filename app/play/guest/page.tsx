@@ -9,6 +9,7 @@ import { GenderCards, type GenderRefs } from '@/components/play/GenderCards';
 import { GuestDetails } from '@/components/play/GuestDetails';
 import type { AgeBand, Gender } from '@/lib/childTheme';
 import { isGuestPlay } from '@/lib/childSession';
+import { playVoice, stopVoice, VOICE_URL } from '@/lib/voice';
 import { saveVisitor, validateVisitor } from '@/lib/visitor';
 import play from '../sign-in/playSignIn.module.css';
 import styles from './guest.module.css';
@@ -41,6 +42,8 @@ export default function GuestSetup() {
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  // "Who are you?" is spoken on arrival; the greeting is cut when the page closes
+  useEffect(() => { playVoice(VOICE_URL.whoAreYou); return stopVoice; }, []);
   useEffect(() => { if (isGuestPlay()) setBackHref('/play'); }, []);
 
   const valid = validateVisitor({ name, gender, ageBand }).ok;
@@ -48,6 +51,7 @@ export default function GuestSetup() {
   function pick(g: Gender) {
     if (phase !== 'gender') return;
     setGender(g);
+    playVoice(g === 'male' ? VOICE_URL.hiPrince : VOICE_URL.hiPrincess);
     setLeaving(g === 'male' ? 'female' : 'male');
     if (reduceMotion()) {
       // reduced motion: a cross-fade only, no glide

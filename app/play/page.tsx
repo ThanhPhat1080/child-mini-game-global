@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { listMyChildren, type Child } from '@/lib/children';
 import { getMyUserId } from '@/lib/review';
 import { setActiveChild, setGuestPlay } from '@/lib/childSession';
+import { playVoice, stopVoice, VOICE_URL } from '@/lib/voice';
 import { clearVisitor } from '@/lib/visitor';
 import { handleChoiceKey, isPressKey } from '@/lib/keynav';
 import { ChildScreen } from '@/components/ChildScreen';
@@ -48,6 +49,14 @@ export default function Play() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  // the Who-are-you screen speaks once the cards are there
+  const ready = kids !== null;
+  useEffect(() => {
+    if (!ready) return;
+    playVoice(VOICE_URL.whoAreYou);
+    return stopVoice;
+  }, [ready]);
 
   // focus the first card once the cards are there, and give focus back to the card after leaving the PIN step
   useEffect(() => {

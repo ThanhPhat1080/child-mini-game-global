@@ -187,3 +187,11 @@ export function chime(): void {
   tone(c, bus, t, 1318, 1318, 0.25, 'sine', 0.3);
   tone(c, bus, t + 0.14, 1760, 1760, 0.3, 'sine', 0.3);
 }
+
+/** A very soft "ding" for every tap on a child screen, so the child knows the app heard them. Silent without an AudioContext. */
+export function softDing(): void {
+  const c = ac();
+  if (!c) return;
+  const { bus } = makeBus(c, 400);
+  tone(c, bus, c.currentTime, 1175, 1175, 0.28, 'sine', 0.09);
+}

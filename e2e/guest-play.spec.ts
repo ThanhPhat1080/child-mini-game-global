@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { reset, SIGNED_OUT } from './support/fixtures';
 
-// GT5 (Guest Play): a visitor with no account picks Boy or Girl, types a name and age, plays, and leaves with the sum.
+// GT5 (Guest Play): a visitor with no account picks Boy or Girl, types a name and age, plays, and leaves with See you later.
 test.use({ storageState: SIGNED_OUT });
 test.beforeEach(async () => { await reset(); });
 
@@ -36,14 +36,12 @@ test('a visitor at /admin lands on the admin sign-in, and /play goes to Welcome'
   await expect(page).toHaveURL(/\/$/);
 });
 
-test('Leave asks the sum; a right answer erases the guest and returns to the chooser', async ({ page }) => {
+test('Leave shows See you later with no sum, then erases the guest and returns to the chooser', async ({ page }) => {
   await setupVisitor(page, 'Mai', 'Girl');
   await page.getByRole('button', { name: 'Leave game' }).click();
   await page.getByRole('button', { name: 'Leave', exact: true }).click();
-  const q = await page.getByTestId('adult-question').innerText();
-  const [a, b] = q.split('=')[0].split('+').map((x) => Number(x.trim()));
-  await page.getByLabel('Answer').fill(String(a + b));
-  await page.getByRole('button', { name: 'OK' }).click();
+  await expect(page.getByText('See you later!')).toBeVisible();
+  await expect(page.getByTestId('adult-question')).toHaveCount(0);
   await expect(page).toHaveURL(/\/play\/sign-in$/);
   await expect(page.getByRole('link', { name: 'Play as guest' })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem('cp_visitor'))).toBeNull();
