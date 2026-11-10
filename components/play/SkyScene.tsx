@@ -107,10 +107,18 @@ export function SkyScene({ festive = false, lively = false, sparse = false, hill
       )}
       {bleed && (
         <>
-          {/* the ground carries on past both sides and below the stage, level with the hills' edges */}
-          <rect x="-3000" y={hills ? 860 : 960} width="3000" height="3000" fill="#D9E3CC" />
-          <rect x="1920" y={hills ? 840 : 960} width="3000" height="3000" fill="#D9E3CC" />
-          {hills && <rect x="-3000" y="950" width="7920" height="3000" fill="#C7D6BA" />}
+          {/* the hills roll on past both sides of the stage (the same curves, side by side), and the ground fills below it */}
+          {hills
+            ? [-2, -1, 1, 2].map((k) => (
+                <g key={k}>
+                  <path transform={`translate(${k * 1920} ${-k * 20})`} d="M0 860 C 320 760 620 800 960 860 C 1300 920 1600 820 1920 840 L1920 1080 L0 1080 Z" fill="#D9E3CC" stroke="#D9E3CC" strokeWidth="2" />
+                  <path transform={`translate(${k * 1920} 0)`} d="M0 950 C 400 880 800 930 1180 970 C 1500 1000 1720 940 1920 950 L1920 1080 L0 1080 Z" fill="#C7D6BA" stroke="#C7D6BA" strokeWidth="2" />
+                </g>
+              ))
+            : [-2, -1, 1, 2].map((k) => (
+                <path key={k} transform={`translate(${k * 1920} 0)`} d="M0 960 C 400 900 800 940 1180 980 C 1500 1010 1720 950 1920 960 L1920 1080 L0 1080 Z" fill="#D9E3CC" stroke="#D9E3CC" strokeWidth="2" />
+              ))}
+          <rect x="-5000" y="1079" width="11920" height="3000" fill={hills ? '#C7D6BA' : '#D9E3CC'} />
         </>
       )}
       {hills && (
