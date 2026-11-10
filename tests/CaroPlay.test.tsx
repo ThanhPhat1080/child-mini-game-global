@@ -115,6 +115,10 @@ describe('Caro X O page (X1-X8)', () => {
     fireEvent.click(square(1));
     expect(side('Player 2').querySelector('.caro-bob')).not.toBeNull();
     expect(side('Player 1').querySelector('.caro-bob')).toBeNull();
+    // O is round, so its turn is shown by a gentle zoom in and out, not a rotation; X keeps the wiggle
+    expect(side('Player 2').querySelector('.caro-pulse')).not.toBeNull();
+    expect(side('Player 2').querySelector('.caro-wobble')).toBeNull();
+    expect(side('Player 1').querySelector('.caro-pulse')).toBeNull();
   });
 
   it('nothing bounces once the round is over', async () => {
