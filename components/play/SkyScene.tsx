@@ -74,7 +74,7 @@ const FRAME = { viewBox: '0 0 1920 1080', preserveAspectRatio: 'xMidYMid slice',
  */
 export function SkyFront({ edge = 0 }: { edge?: number }) {
   return (
-    <svg aria-hidden="true" width="100%" height="100%" {...FRAME} style={{ ...FRAME.style, pointerEvents: 'none' }}>
+    <svg aria-hidden="true" width="100%" height="100%" {...FRAME} style={{ ...FRAME.style, pointerEvents: 'none', overflow: edge > 0 ? 'visible' : undefined }}>
       <SkyBees routes={edge > 0 ? BEES.map((b) => reach(b, edge)) : BEES} />
     </svg>
   );
