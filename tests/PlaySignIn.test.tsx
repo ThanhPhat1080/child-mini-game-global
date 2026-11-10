@@ -107,11 +107,17 @@ describe('play area sign-in (FS1-FS4)', () => {
 });
 
 describe('door welcome', () => {
-  it('plays once, and not again when the page is opened again in the app', () => {
+  it('plays once, and not again when the page is opened again after the visitor stayed', () => {
+    vi.resetModules();
     h.voice.mockClear();
+    const now = vi.spyOn(Date, 'now');
+    now.mockReturnValue(1000);
     const first = render(<PlaySignIn />);
+    now.mockReturnValue(5000); // the visitor stayed on the page, then left
     first.unmount();
     render(<PlaySignIn />);
+    now.mockRestore();
+    // the module flag may already be set by an earlier test in this file: never more than one welcome
     expect(h.voice.mock.calls.filter((c) => c[0] === '/w0').length).toBeLessThanOrEqual(1);
   });
 });
