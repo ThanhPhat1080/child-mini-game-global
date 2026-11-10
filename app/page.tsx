@@ -45,28 +45,31 @@ export default function Welcome() {
     startMusic(DEFAULT_MUSIC_URL, MUSIC_VOLUME);
   }
 
+  const welcomeBackdrop = (edge: number) => (
+    <LivelyScene edge={edge}>
+        {known && (
+        <div className={`${styles.princess} ${styles.float}`}>
+          <Pic src={theme.hero} alt={theme.heroAlt} width={520} height={655} />
+          <svg aria-hidden="true" width="520" height="655" viewBox="0 0 520 655">
+            <g className={styles.twinkle} style={{ transformOrigin: '40px 190px' }}>
+              <path d="M40 168 L45 185 L62 190 L45 195 L40 212 L35 195 L18 190 L35 185 Z" fill="#F6E2A6" />
+            </g>
+            <g className={styles.twinkle} style={{ transformOrigin: '490px 120px', animationDelay: '1.2s' }}>
+              <path d="M490 98 L494 114 L510 120 L494 126 L490 142 L486 126 L470 120 L486 114 Z" fill="#F6E2A6" />
+            </g>
+            <g className={styles.twinkle} style={{ transformOrigin: '500px 470px', animationDelay: '2.2s' }}>
+              <path d="M500 456 L503 467 L514 470 L503 473 L500 484 L497 473 L486 470 L497 467 Z" fill="#EBB7BC" />
+            </g>
+          </svg>
+        </div>
+        )}
+    </LivelyScene>
+  );
+
   return (
-    <ChildScreen music leave sky={false}>
+    <ChildScreen music leave backdrop={welcomeBackdrop}>
       <div className={styles.scene} data-welcome-scene style={vars}>
 
-        <LivelyScene>
-          {known && (
-          <div className={`${styles.princess} ${styles.float}`}>
-            <Pic src={theme.hero} alt={theme.heroAlt} width={520} height={655} />
-            <svg aria-hidden="true" width="520" height="655" viewBox="0 0 520 655">
-              <g className={styles.twinkle} style={{ transformOrigin: '40px 190px' }}>
-                <path d="M40 168 L45 185 L62 190 L45 195 L40 212 L35 195 L18 190 L35 185 Z" fill="#F6E2A6" />
-              </g>
-              <g className={styles.twinkle} style={{ transformOrigin: '490px 120px', animationDelay: '1.2s' }}>
-                <path d="M490 98 L494 114 L510 120 L494 126 L490 142 L486 126 L470 120 L486 114 Z" fill="#F6E2A6" />
-              </g>
-              <g className={styles.twinkle} style={{ transformOrigin: '500px 470px', animationDelay: '2.2s' }}>
-                <path d="M500 456 L503 467 L514 470 L503 473 L500 484 L497 473 L486 470 L497 467 Z" fill="#EBB7BC" />
-              </g>
-            </svg>
-          </div>
-          )}
-        </LivelyScene>
 
         {!known ? null : !entered ? (
           <div className={`${styles.center} ${styles.enterWrap}`}>

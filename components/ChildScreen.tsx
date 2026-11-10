@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { BackButton } from '@/components/BackButton';
 import { MusicButton } from '@/components/MusicButton';
-import { Stage, useStageScale } from '@/components/Stage';
+import { Stage, useStageScale, type StageBackdrop } from '@/components/Stage';
 import LeaveGameButton from '@/components/auth/LeaveGameButton';
 import LogoutButton from '@/components/auth/LogoutButton';
 import { SkyScene } from '@/components/play/SkyScene';
@@ -41,14 +41,16 @@ export function ChildCorners({ back, music, leave, logout }: ChildCornerProps) {
   );
 }
 
+const calmBackdrop: StageBackdrop = (edge) => <SkyScene festive sparse hills={false} bleed edge={edge} />;
+
 /**
  * A child screen on the 1920x1080 stage plus its corner controls. Children draw the page; the corners stay uniform.
- * Behind it sits the calm sky (sun, clouds, two balloons); a page with a scene of its own (Welcome, /play) passes `sky={false}`.
+ * Behind it sits the calm sky (sun, clouds, two balloons) that fills the whole window, not just the stage; a page with a scene of
+ * its own (Welcome, /play) passes its own `backdrop`.
  */
-export function ChildScreen({ children, sky = true, ...corners }: ChildCornerProps & { children?: ReactNode; sky?: boolean }) {
+export function ChildScreen({ children, backdrop = calmBackdrop, ...corners }: ChildCornerProps & { children?: ReactNode; backdrop?: StageBackdrop | null }) {
   return (
-    <Stage>
-      {sky && <SkyScene festive sparse hills={false} />}
+    <Stage backdrop={backdrop ?? undefined}>
       {children}
       <ChildCorners {...corners} />
     </Stage>

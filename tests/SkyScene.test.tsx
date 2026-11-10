@@ -16,6 +16,6 @@ describe('SkyScene balloons', () => {
   it('a child screen shows the sparse sky unless the page has its own scene', () => {
     expect(balloons(render(<ChildScreen />).container)).toBe(2);
     cleanup();
-    expect(balloons(render(<ChildScreen sky={false} />).container)).toBe(0);
+    expect(balloons(render(<ChildScreen backdrop={null} />).container)).toBe(0);
   });
 });

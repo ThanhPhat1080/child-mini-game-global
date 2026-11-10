@@ -2,6 +2,8 @@ import styles from './SkyScene.module.css';
 import { SkyBees, type BeeRoute, type Point } from './SkyBees';
 
 const BLADES = [60, 130, 210, 340, 470, 760, 880, 1040, 1260, 1380, 1560, 1700, 1820];
+/** More grass past both sides of the stage, for the part of a wide window the stage does not cover. */
+const EXTRA_BLADES = Array.from({ length: 12 }, (_, k) => [-80 - 140 * k, 2000 + 140 * k]).flat();
 const FLOWERS: [number, number, string][] = [[150, 985, '#EBB7BC'], [420, 1010, '#F6E2A6'], [690, 990, '#FFFFFF'], [1010, 1015, '#EBB7BC'], [1300, 992, '#F6E2A6'], [1640, 1005, '#FFFFFF'], [1780, 985, '#EBB7BC']];
 /** Where a bee sits on flower i: on top of its head (the head is 58px above the stem foot). */
 export const flowerSeat = (i: number): Point => [FLOWERS[i][0], FLOWERS[i][1] - 66];
@@ -57,6 +59,12 @@ export const BIRDS: Bird[] = [
   { ...PINK_LEAD, y: 286, w: 66, dx: 215 },
 ];
 
+/** A bee route whose start and exit lie past the stage edge, moved out to the window's edge. */
+function reach(bee: BeeRoute, edge: number): BeeRoute {
+  const out = ([x, y]: Point): Point => [x < 0 ? x - edge : x > 1920 ? x + edge : x, y];
+  return { ...bee, from: out(bee.from), legs: bee.legs.map((l) => ({ ...l, to: out(l.to) })) };
+}
+
 /** Both sky layers share one frame, so a bee on the front layer sits exactly on a flower of the back layer. */
 const FRAME = { viewBox: '0 0 1920 1080', preserveAspectRatio: 'xMidYMid slice', style: { position: 'absolute', inset: 0, width: '100%', height: '100%' } } as const;
 
@@ -64,10 +72,10 @@ const FRAME = { viewBox: '0 0 1920 1080', preserveAspectRatio: 'xMidYMid slice',
  * The front layer of the lively sky: the bees, drawn above the princess and prince (the page puts it after them).
  * It lets clicks through to everything under it.
  */
-export function SkyFront() {
+export function SkyFront({ edge = 0 }: { edge?: number }) {
   return (
     <svg aria-hidden="true" width="100%" height="100%" {...FRAME} style={{ ...FRAME.style, pointerEvents: 'none' }}>
-      <SkyBees routes={BEES} />
+      <SkyBees routes={edge > 0 ? BEES.map((b) => reach(b, edge)) : BEES} />
     </svg>
   );
 }
@@ -79,9 +87,11 @@ export function SkyFront() {
  * `sparse` keeps only two balloons and two stars (the calm sky behind the games); `hills={false}` leaves the ground to the page.
  * Decorative only; every motion stops under prefers-reduced-motion.
  */
-export function SkyScene({ festive = false, lively = false, sparse = false, hills = true }: { festive?: boolean; lively?: boolean; sparse?: boolean; hills?: boolean }) {
+export function SkyScene({ festive = false, lively = false, sparse = false, hills = true, bleed = false, edge = 0 }: { festive?: boolean; lively?: boolean; sparse?: boolean; hills?: boolean; bleed?: boolean; edge?: number }) {
+  // bleed: drawn behind the stage and not clipped to it; edge = stage px the window reaches past each side (birds and clouds start there)
+  const sc = { ['--edge' as string]: `${edge}px` };
   return (
-    <svg aria-hidden="true" width="100%" height="100%" {...FRAME}>
+    <svg aria-hidden="true" width="100%" height="100%" {...FRAME} style={{ ...FRAME.style, ...(bleed ? { overflow: 'visible' } : {}), ...sc }}>
       <circle cx="1620" cy="190" r="96" fill="#F6E2A6" />
       <circle cx="1620" cy="190" r="140" fill="#F6E2A6" opacity="0.35" />
       {!lively && (
@@ -93,6 +103,14 @@ export function SkyScene({ festive = false, lively = false, sparse = false, hill
           <g className={styles.drift}>
             <ellipse cx="1100" cy="120" rx="110" ry="36" fill="#FFFFFF" opacity="0.8" />
           </g>
+        </>
+      )}
+      {bleed && (
+        <>
+          {/* the ground carries on past both sides and below the stage, level with the hills' edges */}
+          <rect x="-3000" y={hills ? 860 : 960} width="3000" height="3000" fill="#D9E3CC" />
+          <rect x="1920" y={hills ? 840 : 960} width="3000" height="3000" fill="#D9E3CC" />
+          {hills && <rect x="-3000" y="950" width="7920" height="3000" fill="#C7D6BA" />}
         </>
       )}
       {hills && (
@@ -109,8 +127,8 @@ export function SkyScene({ festive = false, lively = false, sparse = false, hill
         <>
           {CLOUDS.map(([x, y, sc, dur, op], i) => {
             // the travel is relative to the start x, so the cloud wraps just outside the sky; the negative delay parks it at x when the page opens
-            const from = -x - 380 * sc;
-            const to = 1920 - x + 380 * sc;
+            const from = -x - 380 * sc - edge;
+            const to = 1920 - x + 380 * sc + edge;
             const delay = -((x + 380 * sc) / (to - from)) * dur;
             return (
               <g key={i} transform={`translate(${x} ${y}) scale(${sc})`}>
@@ -134,7 +152,7 @@ export function SkyScene({ festive = false, lively = false, sparse = false, hill
               </g>
             </g>
           ))}
-          {BLADES.map((x, i) => (
+          {(bleed ? EXTRA_BLADES : []).concat(BLADES).map((x, i) => (
             <g key={x} transform={`translate(${x} 1060)`}>
               <g className={styles.sway} style={{ animationDelay: `${-(i % 5) * 0.7}s` }}>
                 <path d="M-12 0 Q-10 -34 -20 -58 M0 0 Q2 -44 0 -74 M12 0 Q10 -34 20 -54" fill="none" stroke={i % 2 ? '#7FA889' : '#6F9A7A'} strokeWidth="6" strokeLinecap="round" />

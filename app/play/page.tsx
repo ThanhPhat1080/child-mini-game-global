@@ -89,8 +89,7 @@ export default function Play() {
   }
 
   return (
-    <ChildScreen logout music sky={false}>
-      <PlayBackdrop stage />
+    <ChildScreen logout music backdrop={(edge) => <PlayBackdrop stage edge={edge} />}>
       {failed ? (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <button type="button" className={`hm-tap ${styles.retry}`} aria-label="Try again" onClick={() => void load()} autoFocus>
