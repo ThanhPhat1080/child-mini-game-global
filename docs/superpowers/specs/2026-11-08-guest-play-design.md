@@ -26,7 +26,7 @@ Existing rules still hold: RLS decides access and the UI mirrors it; calm and sl
 | Q2 | Entry | `/play/sign-in` becomes a two-card chooser (Log in, Guest). Log in reveals today's form in place. `/admin/sign-in` is unchanged. |
 | Q3 | Guest data | Name, gender, age band live only in this browser (localStorage + a marker cookie) until the guest leaves; reopening the site goes straight to Welcome. Leave erases everything ("leaving = deleting the session"). |
 | Q4 | Age | Segmented switch 2-5 / 5-10 like the admin child dialog, but bigger. Stored only, it filters nothing in this change. |
-| Q5 | Leave | Leave (top left) opens the existing Leave dialog; Leave then asks the two-digit sum (`AdultCheck`), because leaving erases the name. Inside games the back button keeps going to `/` or `/games` as today. |
+| Q5 | Leave | Leave (top left) opens the existing Leave dialog; Leave then shows "See you later!" with its sound for 2 s (no sum), then erases the guest. Inside games the back button keeps going to `/` or `/games` as today. |
 | Q6 | Parent-side guest | The existing signed-in-parent guest (`GuestPickCard`, cookie `cp_guest`) stays as it is. The new guest is a separate mode called **visitor** in code. |
 | Q7 | Sounds | The repo has no default greeting or music (`public/seed/sounds` holds only `complete`, `hooray`, `ohoh`). A visitor has no greeting; the built-in background track (`background-track.mp3`) plays for everyone, and the games use their built-in effects. |
 | Q8 | Text | The gender cards are for the child: head picture, color, ♂/♀ and the existing `GENDER_THEME` label (Boy, Girl). The name + age step is a grown-up screen (English labels allowed, as on sign-in). Name required, 1-20 characters after trim. |

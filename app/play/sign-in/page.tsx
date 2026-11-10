@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Pic } from '@/components/Pic';
 import { BounceText } from '@/components/BounceText';
 import { PlayBackdrop } from '@/components/play/PlayBackdrop';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { playVoice, stopVoice, VOICE_URL } from '@/lib/voice';
 import { clearVisitor } from '@/lib/visitor';
 import { WindowCorners } from '@/components/ChildScreen';
 import { EntryChooser } from '@/components/play/EntryChooser';
@@ -16,6 +17,9 @@ import play from './playSignIn.module.css';
 const FRIENDLY = 'That email or password does not look right. Please try again.';
 const GENERIC = 'Something went wrong. Please try again.';
 const BRAND = 'ABC Play';
+
+/** True once the welcome has played in this page load (a module value, so it survives leaving and returning in the app). */
+let welcomed = false;
 
 /**
  * The play device's door (U9, FS1-FS4, GU1): the chooser (Log in | Guest) first; Log in shows the grown-up sign-in form
@@ -29,6 +33,19 @@ export default function PlaySignIn() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [help, setHelp] = useState(false);
+
+  // a new arrival at the door is welcomed; a browser that blocks sound waits for the first tap
+  useEffect(() => {
+    // once per page load: coming back from Guest (Back) does not welcome them again
+    if (welcomed) return;
+    const startedAt = Date.now();
+    playVoice(VOICE_URL.welcomeDoor, { retryOnTap: true });
+    return () => {
+      stopVoice();
+      // React's dev double-mount closes the page at once: that is not leaving, so it must not count as welcomed
+      if (Date.now() - startedAt > 400) welcomed = true;
+    };
+  }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

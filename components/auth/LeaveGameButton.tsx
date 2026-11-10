@@ -8,7 +8,7 @@ import { Pic } from '@/components/Pic';
 import { stopMusic } from '@/lib/audio';
 import { clearActiveChild } from '@/lib/childSession';
 import { clearVisitor, isVisitor } from '@/lib/visitor';
-import AdultCheck from './AdultCheck';
+import FarewellPopup from './FarewellPopup';
 import { GENDER_THEME } from '@/lib/childTheme';
 import { stepFocus } from '@/lib/keynav';
 import { trapTab } from '@/lib/trapTab';
@@ -16,23 +16,29 @@ import { useActiveChild } from '@/lib/useActiveChild';
 import play from '../play/play.module.css';
 import auth from './auth.module.css';
 
+/** The farewell stays this long before a visitor is sent to the chooser. */
+const FAREWELL_MS = 2000;
+
 /**
  * Leave game (FP11-FP13). The corner button opens "Leave game?". Stay, X, Esc or a click outside keeps the child
  * in the game. Leave stops the music, forgets the child and goes to the picker. No sum: a child can see this screen.
- * A visitor (Guest Play, GU7) must answer the two-digit sum first, because leaving erases the guest's name: a right
- * answer stops the music, clears the visitor and goes to the sign-in chooser; Cancel or a wrong answer keeps playing.
+ * A visitor (Guest Play, GU7) leaves without a sum: "See you later!" shows and speaks for 2 s, then the music stops,
+ * the visitor is erased and the sign-in chooser opens.
  */
 export default function LeaveGameButton() {
   const router = useRouter();
   const child = useActiveChild();
   const [open, setOpen] = useState(false);
-  const [sum, setSum] = useState(false);
+  const [farewell, setFarewell] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const btn = useRef<HTMLButtonElement>(null);
   const stay = useRef<HTMLButtonElement>(null);
   const leaveChoice = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const theme = GENDER_THEME[child.gender ?? 'female'];
+
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   useEffect(() => {
     if (open) stay.current?.focus();
@@ -49,18 +55,19 @@ export default function LeaveGameButton() {
     router.push('/play');
   }
 
-  /** The Leave choice: a visitor is asked the sum first (GU7); anyone else leaves at once. */
+  /** The Leave choice: a visitor gets the farewell first (GU7); anyone else leaves at once. */
   function askLeave() {
     if (isVisitor()) {
       flushSync(() => setOpen(false));
-      setSum(true);
+      setFarewell(true);
+      timer.current = setTimeout(visitorLeft, FAREWELL_MS);
       return;
     }
     leave();
   }
 
   function visitorLeft() {
-    setSum(false);
+    setFarewell(false);
     stopMusic();
     clearVisitor();
     clearActiveChild(); // a signed-in parent's guest cookie too; the middleware then sends them to the picker
@@ -92,15 +99,7 @@ export default function LeaveGameButton() {
           </g>
         </svg>
       </button>
-      <AdultCheck
-        open={sum}
-        onPass={visitorLeft}
-        onCancel={() => setSum(false)}
-        title="Leave game?"
-        hint="Finish the sum below to leave."
-        centered
-        twoDigit
-      />
+      {farewell && <FarewellPopup />}
       {open && (
         <div className={play.overlay} data-leave-overlay onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
           <div

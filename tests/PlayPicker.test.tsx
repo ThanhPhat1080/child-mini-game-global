@@ -199,7 +199,7 @@ describe('Play picker (K7-K12, KU9-KU12)', () => {
       vi.spyOn(Math, 'random').mockReturnValue(0);
       await ready();
       open();
-      answerSignOut('12');
+      answerSignOut('20');
       await waitFor(() => expect(h.push).toHaveBeenCalledWith('/play/sign-in'), { timeout: 3000 });
       expect(h.signOut).toHaveBeenCalledTimes(1);
       expect(h.clear).toHaveBeenCalledTimes(1);
