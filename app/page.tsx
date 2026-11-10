@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { isGuestPlay } from '@/lib/childSession';
 import { clearVisitor, getVisitor, hasVisitorMarker } from '@/lib/visitor';
 import { mediaUrl } from '@/lib/media';
+import { playVoice, VOICE_URL } from '@/lib/voice';
 import { playOnce, startMusic } from '@/lib/audio';
 import { DEFAULT_MUSIC_URL, MUSIC_VOLUME } from '@/lib/defaultMusic';
 import { BOY_WELCOME_VARS, GENDER_THEME } from '@/lib/childTheme';
@@ -37,7 +38,10 @@ export default function Welcome() {
 
   function onEnter() {
     setEntered(true);
-    playOnce(mediaUrl(settings?.greeting_path));
+    // a guest or visitor has no recorded greeting of their own: the built-in welcome plays
+    const own = mediaUrl(settings?.greeting_path);
+    if (own) playOnce(own);
+    else if (getVisitor() || isGuestPlay()) playVoice(VOICE_URL.welcomeGuest);
     startMusic(DEFAULT_MUSIC_URL, MUSIC_VOLUME);
   }
 

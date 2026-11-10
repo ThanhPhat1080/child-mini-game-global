@@ -6,6 +6,7 @@ export const VOICE_URL = {
   whoAreYou: '/seed/sounds/who-are-you.mp3',
   hiPrince: '/seed/sounds/hi-prince.mp3',
   hiPrincess: '/seed/sounds/hi-princess.mp3',
+  welcomeGuest: '/seed/sounds/welcome-1.mp3',
   seeYouLater: '/seed/sounds/see-you-later.mp3',
 } as const;
 
