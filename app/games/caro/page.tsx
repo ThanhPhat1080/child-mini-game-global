@@ -43,7 +43,8 @@ const MOTION = `
   .caro-win { animation: caroWin 1.2s ease-in-out infinite; }
   @keyframes caroWin { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
   @media (prefers-reduced-motion: reduce) { .caro-win { animation: none; } }
-  .caro-cell:focus-visible { outline: 4px solid #E59AA1; outline-offset: 1px; }
+  /* the focused square's pink ring sits above its neighbours (the next squares would paint over it) */
+  .caro-cell:focus-visible { position: relative; z-index: 3; outline: 4px solid #E59AA1; outline-offset: 1px; }
   .caro-mode:focus-visible { outline: 8px solid #E59AA1; outline-offset: 8px; }
 `;
 
