@@ -36,11 +36,15 @@ const MOTION = `
   @keyframes caroWobble { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
   .caro-bob { animation: caroBob 1.1s ease-in-out infinite; }
   .caro-wobble { animation: caroWobble 1s ease-in-out infinite; }
-  @media (prefers-reduced-motion: reduce) { .caro-bob, .caro-wobble { animation: none; } }
+  /* O is round, so turning it shows nothing: it breathes in and out instead */
+  @keyframes caroPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.14); } }
+  .caro-pulse { animation: caroPulse 1.1s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) { .caro-bob, .caro-wobble, .caro-pulse { animation: none; } }
   .caro-win { animation: caroWin 1.2s ease-in-out infinite; }
   @keyframes caroWin { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.12); } }
   @media (prefers-reduced-motion: reduce) { .caro-win { animation: none; } }
-  .caro-cell:focus-visible { outline: 4px solid #E59AA1; outline-offset: 1px; }
+  /* the focused square's pink ring sits above its neighbours (the next squares would paint over it) */
+  .caro-cell:focus-visible { position: relative; z-index: 3; outline: 4px solid #E59AA1; outline-offset: 1px; }
   .caro-mode:focus-visible { outline: 8px solid #E59AA1; outline-offset: 8px; }
 `;
 
@@ -76,7 +80,7 @@ const Cell = memo(function Cell({ index, mark, winning, clickable, onPress }: {
 
 /**
  * One player: a big picture, and under it the player's mark. When it is this player's turn the picture bounces
- * and the mark wiggles (both stop under reduced motion). `picture` is the child's photo, the prince or princess,
+ * and the mark moves: X wiggles, O (round, so a turn would not show) zooms in and out gently (all stop under reduced motion). `picture` is the child's photo, the prince or princess,
  * or the parent's initials (against a human).
  */
 function Side({ label, mark, active, picture }: { label: string; mark: Player; active: boolean; picture: ReactNode }) {
@@ -85,7 +89,7 @@ function Side({ label, mark, active, picture }: { label: string; mark: Player; a
       <div className={active ? 'caro-bob' : undefined} style={{ width: 240, height: 240, borderRadius: 120, overflow: 'hidden', border: '8px solid #fff', boxSizing: 'border-box', boxShadow: '0 8px 0 #EADCC8', background: '#F5D9C4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {picture}
       </div>
-      <div className={active ? 'caro-wobble' : undefined} style={{ width: 120, height: 120, borderRadius: 60, background: '#fff', boxShadow: active ? `0 0 0 8px ${markColor(mark)}55, 0 6px 0 #EADCC8` : '0 6px 0 #EADCC8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className={active ? (mark === 'O' ? 'caro-pulse' : 'caro-wobble') : undefined} style={{ width: 120, height: 120, borderRadius: 60, background: '#fff', boxShadow: active ? `0 0 0 8px ${markColor(mark)}55, 0 6px 0 #EADCC8` : '0 6px 0 #EADCC8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <CaroMark player={mark} size={84} />
       </div>
     </div>
