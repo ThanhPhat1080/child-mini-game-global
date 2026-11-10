@@ -37,11 +37,14 @@ export default function PlaySignIn() {
   // a new arrival at the door is welcomed; a browser that blocks sound waits for the first tap
   useEffect(() => {
     // once per page load: coming back from Guest (Back) does not welcome them again
-    if (!welcomed) {
-      welcomed = true;
-      playVoice(VOICE_URL.welcomeDoor, { retryOnTap: true });
-    }
-    return stopVoice;
+    if (welcomed) return;
+    const startedAt = Date.now();
+    playVoice(VOICE_URL.welcomeDoor, { retryOnTap: true });
+    return () => {
+      stopVoice();
+      // React's dev double-mount closes the page at once: that is not leaving, so it must not count as welcomed
+      if (Date.now() - startedAt > 400) welcomed = true;
+    };
   }, []);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
