@@ -3,7 +3,6 @@
 import { useRef, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 import { Pic } from '@/components/Pic';
-import { flipTick } from '@/lib/sfx';
 import { VISITOR_HEAD } from '@/lib/visitor';
 import styles from './EntryChooser.module.css';
 
@@ -28,12 +27,11 @@ export function EntryChooser({ onLogin }: { onLogin(): void }) {
         role="button"
         tabIndex={0}
         className={styles.card}
-        onClick={() => { flipTick(); onLogin(); }}
+        onClick={onLogin}
         onKeyDown={(e) => {
           moveFocus(e, 'login');
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            flipTick();
             onLogin();
           }
         }}
@@ -46,7 +44,6 @@ export function EntryChooser({ onLogin }: { onLogin(): void }) {
         href="/play/guest"
         aria-label="Play as guest"
         className={styles.card}
-        onClick={() => flipTick()}
         onKeyDown={(e) => moveFocus(e, 'guest')}
       >
         <span className={styles.duo} aria-hidden="true">
