@@ -46,7 +46,7 @@ export default function Welcome() {
   }
 
   return (
-    <ChildScreen music leave>
+    <ChildScreen music leave sky={false}>
       <div className={styles.scene} data-welcome-scene style={vars}>
 
         <LivelyScene>

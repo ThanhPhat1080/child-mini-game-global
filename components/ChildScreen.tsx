@@ -6,6 +6,7 @@ import { MusicButton } from '@/components/MusicButton';
 import { Stage, useStageScale } from '@/components/Stage';
 import LeaveGameButton from '@/components/auth/LeaveGameButton';
 import LogoutButton from '@/components/auth/LogoutButton';
+import { SkyScene } from '@/components/play/SkyScene';
 import type { Game } from '@/lib/games/registry';
 
 /** Where the round Back button sits on every child screen (1920x1080 stage pixels). */
@@ -40,10 +41,14 @@ export function ChildCorners({ back, music, leave, logout }: ChildCornerProps) {
   );
 }
 
-/** A child screen on the 1920x1080 stage plus its corner controls. Children draw the page; the corners stay uniform. */
-export function ChildScreen({ children, ...corners }: ChildCornerProps & { children?: ReactNode }) {
+/**
+ * A child screen on the 1920x1080 stage plus its corner controls. Children draw the page; the corners stay uniform.
+ * Behind it sits the calm sky (sun, clouds, two balloons); a page with a scene of its own (Welcome, /play) passes `sky={false}`.
+ */
+export function ChildScreen({ children, sky = true, ...corners }: ChildCornerProps & { children?: ReactNode; sky?: boolean }) {
   return (
     <Stage>
+      {sky && <SkyScene festive sparse hills={false} />}
       {children}
       <ChildCorners {...corners} />
     </Stage>
