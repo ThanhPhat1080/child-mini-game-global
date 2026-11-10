@@ -2,6 +2,8 @@ import styles from './SkyScene.module.css';
 import { SkyBees, type BeeRoute, type Point } from './SkyBees';
 
 const BLADES = [60, 130, 210, 340, 470, 760, 880, 1040, 1260, 1380, 1560, 1700, 1820];
+/** More grass past both sides of the stage, for the part of a wide window the stage does not cover. */
+const EXTRA_BLADES = Array.from({ length: 12 }, (_, k) => [-80 - 140 * k, 2000 + 140 * k]).flat();
 const FLOWERS: [number, number, string][] = [[150, 985, '#EBB7BC'], [420, 1010, '#F6E2A6'], [690, 990, '#FFFFFF'], [1010, 1015, '#EBB7BC'], [1300, 992, '#F6E2A6'], [1640, 1005, '#FFFFFF'], [1780, 985, '#EBB7BC']];
 /** Where a bee sits on flower i: on top of its head (the head is 58px above the stem foot). */
 export const flowerSeat = (i: number): Point => [FLOWERS[i][0], FLOWERS[i][1] - 66];
@@ -57,6 +59,12 @@ export const BIRDS: Bird[] = [
   { ...PINK_LEAD, y: 286, w: 66, dx: 215 },
 ];
 
+/** A bee route whose start and exit lie past the stage edge, moved out to the window's edge. */
+function reach(bee: BeeRoute, edge: number): BeeRoute {
+  const out = ([x, y]: Point): Point => [x < 0 ? x - edge : x > 1920 ? x + edge : x, y];
+  return { ...bee, from: out(bee.from), legs: bee.legs.map((l) => ({ ...l, to: out(l.to) })) };
+}
+
 /** Both sky layers share one frame, so a bee on the front layer sits exactly on a flower of the back layer. */
 const FRAME = { viewBox: '0 0 1920 1080', preserveAspectRatio: 'xMidYMid slice', style: { position: 'absolute', inset: 0, width: '100%', height: '100%' } } as const;
 
@@ -64,10 +72,10 @@ const FRAME = { viewBox: '0 0 1920 1080', preserveAspectRatio: 'xMidYMid slice',
  * The front layer of the lively sky: the bees, drawn above the princess and prince (the page puts it after them).
  * It lets clicks through to everything under it.
  */
-export function SkyFront() {
+export function SkyFront({ edge = 0 }: { edge?: number }) {
   return (
-    <svg aria-hidden="true" width="100%" height="100%" {...FRAME} style={{ ...FRAME.style, pointerEvents: 'none' }}>
-      <SkyBees routes={BEES} />
+    <svg aria-hidden="true" width="100%" height="100%" {...FRAME} style={{ ...FRAME.style, pointerEvents: 'none', overflow: edge > 0 ? 'visible' : undefined }}>
+      <SkyBees routes={edge > 0 ? BEES.map((b) => reach(b, edge)) : BEES} />
     </svg>
   );
 }
@@ -76,11 +84,14 @@ export function SkyFront() {
  * The sky, sun, clouds and hills behind the play area (FS1). `festive` adds balloons and stars (FS1, Task 8).
  * `lively` (grown-up sign-in page) adds drifting clouds, birds crossing the sky (drawn after the clouds, so in front of them)
  * and swaying grass and flowers; its bees are on the front layer (SkyFront).
+ * `sparse` keeps only two balloons and two stars (the calm sky behind the games); `hills={false}` leaves the ground to the page.
  * Decorative only; every motion stops under prefers-reduced-motion.
  */
-export function SkyScene({ festive = false, lively = false }: { festive?: boolean; lively?: boolean }) {
+export function SkyScene({ festive = false, lively = false, sparse = false, hills = true, bleed = false, edge = 0 }: { festive?: boolean; lively?: boolean; sparse?: boolean; hills?: boolean; bleed?: boolean; edge?: number }) {
+  // bleed: drawn behind the stage and not clipped to it; edge = stage px the window reaches past each side (birds and clouds start there)
+  const sc = { ['--edge' as string]: `${edge}px` };
   return (
-    <svg aria-hidden="true" width="100%" height="100%" {...FRAME}>
+    <svg aria-hidden="true" width="100%" height="100%" {...FRAME} style={{ ...FRAME.style, ...(bleed ? { overflow: 'visible' } : {}), ...sc }}>
       <circle cx="1620" cy="190" r="96" fill="#F6E2A6" />
       <circle cx="1620" cy="190" r="140" fill="#F6E2A6" opacity="0.35" />
       {!lively && (
@@ -94,18 +105,38 @@ export function SkyScene({ festive = false, lively = false }: { festive?: boolea
           </g>
         </>
       )}
-      <path d="M0 860 C 320 760 620 800 960 860 C 1300 920 1600 820 1920 840 L1920 1080 L0 1080 Z" fill="#D9E3CC" />
-      <path d="M0 950 C 400 880 800 930 1180 970 C 1500 1000 1720 940 1920 950 L1920 1080 L0 1080 Z" fill="#C7D6BA" />
-      <circle cx="260" cy="930" r="10" fill="#EBB7BC" />
-      <circle cx="300" cy="950" r="8" fill="#F6E2A6" />
-      <circle cx="1500" cy="960" r="10" fill="#EBB7BC" />
-      <circle cx="1540" cy="940" r="8" fill="#FFFFFF" />
+      {bleed && (
+        <>
+          {/* the hills roll on past both sides of the stage (the same curves, side by side), and the ground fills below it */}
+          {hills
+            ? [-2, -1, 1, 2].map((k) => (
+                <g key={k}>
+                  <path transform={`translate(${k * 1920} ${-k * 20})`} d="M0 860 C 320 760 620 800 960 860 C 1300 920 1600 820 1920 840 L1920 1080 L0 1080 Z" fill="#D9E3CC" stroke="#D9E3CC" strokeWidth="2" />
+                  <path transform={`translate(${k * 1920} 0)`} d="M0 950 C 400 880 800 930 1180 970 C 1500 1000 1720 940 1920 950 L1920 1080 L0 1080 Z" fill="#C7D6BA" stroke="#C7D6BA" strokeWidth="2" />
+                </g>
+              ))
+            : [-2, -1, 1, 2].map((k) => (
+                <path key={k} transform={`translate(${k * 1920} 0)`} d="M0 960 C 400 900 800 940 1180 980 C 1500 1010 1720 950 1920 960 L1920 1080 L0 1080 Z" fill="#D9E3CC" stroke="#D9E3CC" strokeWidth="2" />
+              ))}
+          <rect x="-5000" y="1079" width="11920" height="3000" fill={hills ? '#C7D6BA' : '#D9E3CC'} />
+        </>
+      )}
+      {hills && (
+        <>
+          <path d="M0 860 C 320 760 620 800 960 860 C 1300 920 1600 820 1920 840 L1920 1080 L0 1080 Z" fill="#D9E3CC" />
+          <path d="M0 950 C 400 880 800 930 1180 970 C 1500 1000 1720 940 1920 950 L1920 1080 L0 1080 Z" fill="#C7D6BA" />
+          <circle cx="260" cy="930" r="10" fill="#EBB7BC" />
+          <circle cx="300" cy="950" r="8" fill="#F6E2A6" />
+          <circle cx="1500" cy="960" r="10" fill="#EBB7BC" />
+          <circle cx="1540" cy="940" r="8" fill="#FFFFFF" />
+        </>
+      )}
       {lively && (
         <>
           {CLOUDS.map(([x, y, sc, dur, op], i) => {
             // the travel is relative to the start x, so the cloud wraps just outside the sky; the negative delay parks it at x when the page opens
-            const from = -x - 380 * sc;
-            const to = 1920 - x + 380 * sc;
+            const from = -x - 380 * sc - edge;
+            const to = 1920 - x + 380 * sc + edge;
             const delay = -((x + 380 * sc) / (to - from)) * dur;
             return (
               <g key={i} transform={`translate(${x} ${y}) scale(${sc})`}>
@@ -129,7 +160,7 @@ export function SkyScene({ festive = false, lively = false }: { festive?: boolea
               </g>
             </g>
           ))}
-          {BLADES.map((x, i) => (
+          {(bleed ? EXTRA_BLADES : []).concat(BLADES).map((x, i) => (
             <g key={x} transform={`translate(${x} 1060)`}>
               <g className={styles.sway} style={{ animationDelay: `${-(i % 5) * 0.7}s` }}>
                 <path d="M-12 0 Q-10 -34 -20 -58 M0 0 Q2 -44 0 -74 M12 0 Q10 -34 20 -54" fill="none" stroke={i % 2 ? '#7FA889' : '#6F9A7A'} strokeWidth="6" strokeLinecap="round" />
@@ -156,12 +187,15 @@ export function SkyScene({ festive = false, lively = false }: { festive?: boolea
           <g className={styles.bob}>
             <path d="M170 370 C 160 400 180 420 170 440" fill="none" stroke="#B9A89A" strokeWidth="2" />
             <ellipse cx="170" cy="300" rx="56" ry="70" fill="#E59AA1" />
+            {/* in the sparse sky the blue balloon moves down, clear of the sun and the top-right controls */}
+            <g transform={sparse ? 'translate(90 300)' : undefined}>
             <path d="M1750 330 C 1740 360 1760 380 1750 400" fill="none" stroke="#B9A89A" strokeWidth="2" />
             <ellipse cx="1750" cy="260" rx="56" ry="70" fill="#8FB3D1" />
-            <path d="M1610 490 C 1600 520 1620 540 1610 560" fill="none" stroke="#B9A89A" strokeWidth="2" />
-            <ellipse cx="1610" cy="420" rx="56" ry="70" fill="#F6E2A6" />
+            </g>
+            {!sparse && <path d="M1610 490 C 1600 520 1620 540 1610 560" fill="none" stroke="#B9A89A" strokeWidth="2" />}
+            {!sparse && <ellipse cx="1610" cy="420" rx="56" ry="70" fill="#F6E2A6" />}
           </g>
-          {[[420, 120], [760, 90], [1180, 130], [1420, 80], [300, 520]].map(([x, y]) => (
+          {(sparse ? [[760, 90], [1180, 130]] : [[420, 120], [760, 90], [1180, 130], [1420, 80], [300, 520]]).map(([x, y]) => (
             <g key={`${x}-${y}`} className={styles.twinkle} transform={`translate(${x},${y})`}>
               <path d="M0 -22 L5 -5 L22 0 L5 5 L0 22 L-5 5 L-22 0 L-5 -5 Z" fill="#F6E2A6" />
             </g>

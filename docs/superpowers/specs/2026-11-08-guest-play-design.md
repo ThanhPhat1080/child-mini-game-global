@@ -12,7 +12,7 @@ Second, smaller goal (NS): a child who moves the mouse with the button down pain
 
 Success:
 - A visitor opens the site, sees two cards (Log in, Guest), picks Guest, picks Girl, the Girl card glides into place and the name + age form slides in, types "Mai", leaves age 2-5, presses OK and lands on the Welcome page with the princess. They play any global quiz, memory, spot, sort, find, listen, pairs or caro game. "You did it" shows the princess (Boy: the prince).
-- The top-left Leave button asks the two-digit sum; a right answer erases the guest data and returns to the Log in | Guest screen.
+- The top-left Leave button shows "See you later!" with its sound for 2 s (no sum), then erases the guest data and returns to the Log in | Guest screen.
 - The guest never sees a private or pending row of any family, never reaches `/admin/*` or the `/play` child picker, and the database receives no write from a guest.
 - Pressing and dragging over any child screen paints no selection and drags no picture ghost. Inputs (name, PIN) still select normally. Admin pages are unchanged.
 
@@ -73,7 +73,7 @@ Existing rules still hold: RLS decides access and the UI mirrors it; calm and sl
 ### 5.2 Visitor session
 
 - **GU6** `lib/visitor.ts`: `Visitor = { name: string; gender: Gender; ageBand: AgeBand }`. `saveVisitor(v)` writes localStorage `cp_visitor` (JSON) and cookie `cp_visitor=1` (Path=/, SameSite=Lax, one year, plain like `cp_child`). `getVisitor()` returns the parsed, validated value or null (bad JSON or cookie without data = null). `isVisitor()` = cookie and valid data. `clearVisitor()` removes both. Pure validation `validateVisitor(input)` (name 1-20 after trim, gender male/female, age 2-5/5-10).
-- **GU7 Leave** `LeaveGameButton` in visitor mode: Stay/Leave as today; Leave opens `AdultCheck` (two-digit sum, as parent sign-out); a right answer stops music, calls `clearVisitor()` and goes to `/play/sign-in` (chooser). Cancel or a wrong answer keeps playing.
+- **GU7 Leave** `LeaveGameButton` in visitor mode: Stay/Leave as today; Leave shows the farewell popup (no sum) for 2 s, stops music, calls `clearVisitor()` and goes to `/play/sign-in` (chooser).
 - **GU8 Parent wins** a successful parent sign-in (play or admin sign-in) calls `clearVisitor()`. Middleware: when a profile exists, the visitor cookie is ignored.
 
 ### 5.3 Routing (middleware)
@@ -116,7 +116,7 @@ Existing rules still hold: RLS decides access and the UI mirrors it; calm and sl
 - **GT1** Unit: `lib/visitor.ts` (save, read, validate, clear, bad JSON, cookie without data).
 - **GT2** Unit: middleware (`tests/middleware.test.ts`): visitor allowed on `/` and `/games/quiz`, `/play` to `/`, `/admin` to sign-in, profile beats visitor, `/play/sign-in` signed-in to `/play`, `/play/guest` open.
 - **GT3** RLS (`tests/db/guest-anon.test.ts`): anon reads global published/active rows of every table in GU13, never private, pending or draft ones, and every anon write is refused.
-- **GT4** Unit: `useActiveChild`, `fetchCelebrationPictures`, `playerId` in visitor mode; `LeaveGameButton` visitor path asks the sum and clears the visitor.
+- **GT4** Unit: `useActiveChild`, `fetchCelebrationPictures`, `playerId` in visitor mode; `LeaveGameButton` visitor path shows the farewell, then clears the visitor.
 - **GT5** E2E `e2e/guest-play.spec.ts`: chooser → Guest → Girl → name + age → OK → Welcome with princess → a quiz → celebration with princess → Leave → sum → chooser, visitor data gone; Boy shows the prince; a visitor at `/admin` lands on sign-in; reload keeps the visitor.
 - **GT6** E2E/unit for NS: a mouse drag across Welcome and a game leaves `window.getSelection()` empty; a picture has `draggable="false"`; the name input still selects its text.
 - **GT7** `npm run typecheck`, `npm run lint`, `npm test`, `npm run test:rls` green; e2e only for the changed screens (CLAUDE.md).

@@ -296,9 +296,15 @@ Full spec: `docs/superpowers/specs/2026-11-08-guest-play-design.md` (approved mo
 - **GU6** `lib/visitor.ts`: localStorage `cp_visitor` plus cookie `cp_visitor=1`; a bare cookie is not a visitor.
 - **GU7** Leave asks no sum: "See you later!" shows and speaks (`see-you-later.mp3`) for 2 s, then the music stops, the visitor is cleared and the chooser opens.
 - **GU8** A parent sign-in (play or admin) clears the visitor; a signed-in parent never sees the chooser.
-- **GU9** Middleware: `/play/guest` open; `/play/sign-in` with a profile goes to `/play`. A signed-in parent with no child reaches `/play/guest` from the picker's Guest card and gets the same setup (Boy or Girl, name, age); the data stays in the browser and leaving asks the sum.
+- **GU9** Middleware: `/play/guest` open; `/play/sign-in` with a profile goes to `/play`. A signed-in parent with no child reaches `/play/guest` from the picker's Guest card and gets the same setup (Boy or Girl, name, age); the data stays in the browser; leaving is the same See you later farewell as a visitor's (GU7).
 - **GU10** No profile and a visitor cookie: `/` and `/games/*` open, `/play` goes to `/`, `/admin` goes to sign-in.
 - **GU11** The cookie only opens pages; RLS decides data.
 - **GU12** A visitor writes nothing: no insert, update, upsert, rpc or upload; synthetic child settings; `playerId()` null.
 - **GU13** `20261108300000_guest_anon_read.sql`: anon reads global published/active rows of `quiz_sets`, `memory_cards`, `spot_levels`, `find_levels`, `card_groups`, and their questions and answers; no function grant.
 - **GU14** `public/images/prince-head.webp` and `princess-head.webp`, 320 px, round.
+- **GU15** Voices (`lib/voice.ts`, files in `public/seed/sounds/`, one line at a time, a blocked or missing file is silent): `welcome-0.mp3` once per page load on `/play/sign-in` (a blocked browser plays it on the first tap); `who-are-you.mp3` on `/play/guest` and on the picker `/play`; `hi-prince.mp3` / `hi-princess.mp3` when Boy / Girl is picked; `welcome-1.mp3` on Welcome's "tap to enter" for a guest or visitor (a child's own greeting wins); `see-you-later.mp3` with the farewell popup (FP14, GU7).
+- **GU16** Welcome shows the visitor's boy or girl head (the picture of the gender screen), not the crown.
+- **CS1** Every tap on a button, link or card of a child screen makes one very soft ding (`softDing` in `lib/sfx.ts`, listener in `MusicButton`, so never in admin); the music button and disabled controls are silent; `data-no-ding` opts an element out.
+- **CS2** Every child screen paints a calm sky (sun, clouds, two balloons, two stars) behind the stage through `ChildScreen`; Welcome and `/play` pass the lively scene of the sign-in page instead (clouds, birds, bees, hills, the princess and prince).
+- **CS3** The backdrop (`Stage backdrop`) is drawn behind the 1920x1080 stage on its scale but not clipped to it, so sky, rolling hills and grass reach every edge of a wider or taller window; birds, clouds and bees start past the window's edge (`edge`). It takes no clicks and the page layout never moves.
+- **CS4** The sign-out sum (`Sign out now?`) uses two-digit numbers like Parent configuration.

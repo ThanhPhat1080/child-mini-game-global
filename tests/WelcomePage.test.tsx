@@ -62,13 +62,14 @@ describe('Welcome by gender (FP9, FP1)', () => {
     fireEvent.click(btn);
     await screen.findByLabelText('Start game');
     expect(lively()).toEqual([true, 3]);
-    // the bees sit above the princess and under the buttons, and let clicks through
+    // the bees sit above the princess, in the backdrop behind the page (so under the buttons), and let clicks through
     const bees = container.querySelector('[data-bee]')!.closest('svg')!;
     expect(bees.style.pointerEvents).toBe('none');
-    const kids = [...container.querySelector('[data-welcome-scene]')!.children];
+    const backdrop = container.querySelector('[data-backdrop]')!;
+    const kids = [...backdrop.children];
     const at = (el: Element | null) => kids.indexOf(el as Element);
     expect(at(bees.parentElement)).toBeGreaterThan(at(screen.getByAltText('Chibi princess with a magic wand').closest('div')));
-    expect(at(bees.parentElement)).toBeLessThan(at(screen.getByLabelText('Start game').closest('[class*="center"]')));
+    expect(backdrop.compareDocumentPosition(screen.getByLabelText('Start game')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
   it('tap to enter starts the built-in track, even if an old own track is saved (C1)', async () => {
     h.get.mockResolvedValue({ ...base, gender: 'female', music_path: 'snd/m.mp3' });
