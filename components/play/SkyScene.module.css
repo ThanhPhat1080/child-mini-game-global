@@ -5,8 +5,8 @@
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
 @keyframes twinkle { 0%, 100% { opacity: 0.35; } 50% { opacity: 1; } }
 @keyframes cloudRun { from { transform: translateX(var(--from)); } to { transform: translateX(var(--to)); } }
-@keyframes flyRight { from { transform: translateX(-260px); } to { transform: translateX(2180px); } }
-@keyframes flyLeft { from { transform: translateX(2180px); } to { transform: translateX(-260px); } }
+@keyframes flyRight { from { transform: translateX(calc(-260px - var(--edge, 0px))); } to { transform: translateX(calc(2180px + var(--edge, 0px))); } }
+@keyframes flyLeft { from { transform: translateX(calc(2180px + var(--edge, 0px))); } to { transform: translateX(calc(-260px - var(--edge, 0px))); } }
 @keyframes birdWave { 0%, 100% { transform: translateY(-10px); } 50% { transform: translateY(10px); } }
 @keyframes buzz { from { transform: scaleY(1); } to { transform: scaleY(0.55); } }
 @keyframes beeHover { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(2px); } }
