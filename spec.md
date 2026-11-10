@@ -294,7 +294,7 @@ Full spec: `docs/superpowers/specs/2026-11-08-guest-play-design.md` (approved mo
 - **GU4** Details: name (1-20 characters after trim), age 2-5 or 5-10 (stored only), OK goes to Welcome; the X returns to Boy/Girl and keeps the name.
 - **GU5** A visitor plays Welcome, `/games` and every game as the child, with the gender's colours and head.
 - **GU6** `lib/visitor.ts`: localStorage `cp_visitor` plus cookie `cp_visitor=1`; a bare cookie is not a visitor.
-- **GU7** Leave asks the two-digit sum (`AdultCheck`); a right answer stops the music, clears the visitor and goes to the chooser.
+- **GU7** Leave asks no sum: "See you later!" shows and speaks (`see-you-later.mp3`) for 2 s, then the music stops, the visitor is cleared and the chooser opens.
 - **GU8** A parent sign-in (play or admin) clears the visitor; a signed-in parent never sees the chooser.
 - **GU9** Middleware: `/play/guest` open; `/play/sign-in` with a profile goes to `/play`. A signed-in parent with no child reaches `/play/guest` from the picker's Guest card and gets the same setup (Boy or Girl, name, age); the data stays in the browser and leaving asks the sum.
 - **GU10** No profile and a visitor cookie: `/` and `/games/*` open, `/play` goes to `/`, `/admin` goes to sign-in.
