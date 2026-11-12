@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
 import { mediaUrl } from '@/lib/media';
-import { deleteSet, isQuestionComplete, tintFor } from '@/lib/sets';
+import { deleteSet, isQuestionComplete, textFor, tintFor } from '@/lib/sets';
 import { ConfirmDialog } from '@/components/admin/ConfirmDialog';
 import s from '@/components/admin/admin-ui.module.css';
 import styles from '@/app/admin/admin.module.css';
@@ -150,7 +150,7 @@ export default function SetsPage() {
                   <Link href={`/admin/sets/${r.id}`} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', color: 'inherit' }}>
                     <Thumb path={r.cover_path} color={r.heading_color} />
                     <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <span style={{ fontFamily: "'Baloo 2', sans-serif", fontSize: 20, fontWeight: 600, lineHeight: 1.1, color: r.heading_color }}>{r.title}</span>
+                      <span style={{ fontFamily: "'Baloo 2', sans-serif", fontSize: 20, fontWeight: 600, lineHeight: 1.1, color: textFor(r.heading_color) }}>{r.title}</span>
                       <span style={{ fontSize: 13, ...(r.subtitle ? { color: '#7A6458' } : { color: '#A8968A', fontStyle: 'italic' }) }}>{r.subtitle || 'No sub-title'}</span>
                     </span>
                   </Link>

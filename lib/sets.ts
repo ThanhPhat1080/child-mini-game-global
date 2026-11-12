@@ -29,6 +29,13 @@ export function tintFor(hex: string): string {
   const p = Object.values(PRESETS).find((x) => x.text.toLowerCase() === hex.toLowerCase());
   return p ? p.tint : hex;
 }
+/** Name color for a heading color: a preset's own text color, or a custom color darkened a little so the name reads a shade deeper than its cover circle. */
+export function textFor(hex: string): string {
+  if (presetKeyFor(hex) !== 'custom') return hex;
+  const n = parseInt(hex.slice(1), 16);
+  const c = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => Math.round(v * 0.7));
+  return '#' + c.map((v) => v.toString(16).padStart(2, '0')).join('');
+}
 export function presetKeyFor(hex: string): PresetKey | 'custom' {
   const k = (Object.keys(PRESETS) as PresetKey[]).find((x) => PRESETS[x].text.toLowerCase() === hex.toLowerCase());
   return k ?? 'custom';
