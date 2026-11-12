@@ -27,7 +27,7 @@ function PicturePicker({ n, path, open, onSvg, onLibrary }: { n: number; path: s
   const [svg, setSvg] = useState('');
   const url = mediaUrl(path);
   return (
-    <div style={{ flex: open ? '1 1 240px' : '0 1 200px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <div style={{ flex: 'none', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
       <span style={{ fontSize: 13, fontWeight: 700 }}>Picture</span>
       <div style={{ height: open ? 130 : 72, borderRadius: 14, background: '#FBF4E9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#A8968A', overflow: 'hidden' }}>
         {url ? <Pic src={url} alt={`Level ${n} picture`} draggable={false} style={{ width: 'auto', height: 'auto', maxWidth: '100%', maxHeight: open ? 130 : 72, objectFit: 'contain' }} /> : <PicIcon size={30} />}
