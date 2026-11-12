@@ -13,7 +13,7 @@ import './globals.css';
 import RightClickAsLeft from '@/components/RightClickAsLeft';
 
 export const metadata = {
-  title: 'Mini Games',
+  title: 'ABC play - Kid zone!',
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
