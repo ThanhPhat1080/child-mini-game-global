@@ -292,21 +292,23 @@ describe('ChildModal (KU3-KU8)', () => {
   });
 });
 
-// A32: the celebration pictures are cropped to the 3:5 frame, and the form has a transparency tip.
+// A32: the celebration pictures are free style (no crop), and the form advises a transparent, tall picture.
 describe('ChildModal celebration pictures (A32)', () => {
-  it('each celebration picture uses the 3:5 frame shape for its crop', () => {
+  it('each celebration picture skips the crop (free style)', () => {
     render(<ChildModal mode="create" onClose={() => {}} onSaved={() => {}} />);
     for (const k of ['A', 'B']) {
-      expect(screen.getByRole('button', { name: `Choose celebration picture ${k}` }).getAttribute('data-aspect')).toBe(String(340 / 600));
+      expect(screen.getByRole('button', { name: `Choose celebration picture ${k}` }).getAttribute('data-aspect')).toBe('free');
     }
     // The avatar keeps the square crop (A24): no aspect is passed.
     expect(screen.getByRole('button', { name: 'Choose avatar' }).getAttribute('data-aspect')).toBe('');
   });
 
-  it('the form tells the parent to use a transparent background', () => {
+  it('the form advises a transparent background and a tall rectangle, and says the parent chooses the picture', () => {
     render(<ChildModal mode="create" onClose={() => {}} onSaved={() => {}} />);
     expect(screen.getByText(/transparent background/)).toBeTruthy();
-    expect(screen.getByText(/cropped to a tall frame \(3:5\)/)).toBeTruthy();
+    expect(screen.getByText(/tall rectangle, about 3:5/)).toBeTruthy();
+    expect(screen.getByText(/no crop/)).toBeTruthy();
+    expect(screen.queryByText(/cropped to a tall frame/)).toBeNull();
   });
 });
 

@@ -5,7 +5,6 @@ import { createChild, updateChild, validateChild, type Child, type NewChild } fr
 import { getChildSettings, updateChildSettings } from '@/lib/settings';
 import { GENDER_THEME, type AgeBand, type Gender } from '@/lib/childTheme';
 import { mediaUrl, removeMedia } from '@/lib/media';
-import { CELEBRATION_ASPECT } from '@/lib/celebration';
 import { useMediaRenamed } from '@/lib/media/renames';
 import { replacePath } from '@/lib/mediaPaths';
 import { LibraryButton } from '@/components/admin/LibraryButton';
@@ -299,9 +298,9 @@ export function ChildModal({ mode, child, parentId, compact, onClose, onSaved, o
 
         <div className={s.modalField}>
           <span className={s.modalLabel}>Celebration pictures</span>
-          <span style={{ fontSize: 13, overflowWrap: 'anywhere' }}>Two pictures of {displayName.trim() || 'your child'}. They sway on the screen after a game is finished. Each one is cropped to a tall frame (3:5).</span>
+          <span style={{ fontSize: 13, overflowWrap: 'anywhere' }}>Two pictures of {displayName.trim() || 'your child'}. They sway on the screen after a game is finished. Pictures are shown as you upload them, with no crop. Make sure they look good: you choose the picture.</span>
           <span style={{ fontSize: 13, overflowWrap: 'anywhere', color: '#7A6458' }}>
-            Tip: use a picture with a <strong>transparent background</strong> (PNG or WebP) so it looks nicer on the screen. A JPG has no transparency, so its background stays.
+            Tip: use a <strong>transparent background</strong> (PNG or WebP) and a <strong>tall rectangle, about 3:5</strong> (for example 600 × 1000 px), with the child filling most of it. A JPG has no transparency, so its background stays. A wide or square picture is shown smaller.
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
             {([
@@ -314,7 +313,7 @@ export function ChildModal({ mode, child, parentId, compact, onClose, onSaved, o
                 </span>
                 {/* The note sits under the button, so it does not push the button sideways. */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
-                  <LibraryButton kind="image" label={`celebration picture ${k}`} onChoose={setDraft} aspect={CELEBRATION_ASPECT} />
+                  <LibraryButton kind="image" label={`celebration picture ${k}`} onChoose={setDraft} aspect="free" />
                   {draft && <span style={{ fontSize: 13 }}>Applied when you press Save.</span>}
                 </div>
               </div>

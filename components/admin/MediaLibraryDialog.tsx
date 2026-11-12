@@ -128,7 +128,7 @@ const TitleIcon = ({ kind }: { kind: 'image' | 'audio' }) => (kind === 'image' ?
  * "Choose from library" modal (A23, A24). Clicking an item only highlights it; OK applies it (a preview until the page saves).
  * Cancel, Escape or a click outside leave everything as it was. "Upload new" uploads the file at once and lists it.
  */
-export function MediaLibraryDialog(props: { kind: 'image' | 'audio'; onChoose: (path: string) => void; onClose: () => void; startCrop?: Crop; aspect?: number; onCropped?: (crop: Crop) => void }) {
+export function MediaLibraryDialog(props: { kind: 'image' | 'audio'; onChoose: (path: string) => void; onClose: () => void; startCrop?: Crop; aspect?: number | 'free'; onCropped?: (crop: Crop) => void }) {
   return <MediaLibrary mode="dialog" {...props} />;
 }
 
@@ -143,8 +143,8 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
   kind: 'image' | 'audio'; onChoose?: (path: string) => void; onClose?: () => void;
   /** The crop to start from when a picture is cropped (Spot's picture B starts from picture A's crop). */
   startCrop?: Crop;
-  /** The shape of the cropped picture, width / height. 1 is a square (A24); the celebration frame is another (A32). */
-  aspect?: number;
+  /** The shape of the cropped picture, width / height. 1 is a square (A24). `'free'`: no crop, the picture is uploaded as it is (celebration pictures, A32). */
+  aspect?: number | 'free';
   /** Called after a cropped picture is uploaded, with the crop that was used. */
   onCropped?: (crop: Crop) => void;
 }) {
@@ -302,7 +302,7 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
     setUploadError(null);
     setUploading(true);
     try {
-      const cropped = await cropToAspect(picked, crop, aspect);
+      const cropped = await cropToAspect(picked, crop, aspect === 'free' ? 1 : aspect);
       if (cropped.size > MAX_IMAGE_BYTES) throw new Error('Image must be 2 MB or smaller.');
       const path = await uploadToLibrary(cropped);
       addUploaded(path);
@@ -320,7 +320,7 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
     let file = picked;
     if (kind === 'image') {
       if (!IMAGE_TYPES.includes(file.type)) return setUploadError('Use a PNG, JPG, WebP or SVG picture.');
-      if (CROP_TYPES.includes(file.type)) {
+      if (aspect !== 'free' && CROP_TYPES.includes(file.type)) {
         if (file.size > MAX_CROP_INPUT_BYTES) return setUploadError('Picture must be 20 MB or smaller.');
         return setCropping(file);
       }
@@ -453,7 +453,7 @@ export function MediaLibrary({ mode = 'dialog', kind, scope = 'own', onChoose, o
       {deleting && <ConfirmDialog title="Delete this file?" body={`${fileName(deleting)} will be removed for good. No page uses it.`} button="Delete" onCancel={() => setDeleting(null)} onConfirm={() => void confirmDelete(deleting)} />}
       {viewing && <PictureViewer url={mediaUrl(viewing) ?? ''} name={fileName(viewing)} onClose={() => setViewing(null)} />}
       <Toast toast={toast} onClose={closeToast} />
-      {cropping && <CropDialog file={cropping} start={startCrop} aspect={aspect} onCancel={() => setCropping(null)} onSave={saveCrop} />}
+      {cropping && <CropDialog file={cropping} start={startCrop} aspect={aspect === 'free' ? 1 : aspect} onCancel={() => setCropping(null)} onSave={saveCrop} />}
     </>
   );
 
