@@ -24,10 +24,10 @@ export function luminance(hex: string): number {
   const f = (v: number) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
   return 0.2126 * f((n >> 16) & 255) + 0.7152 * f((n >> 8) & 255) + 0.0722 * f(n & 255);
 }
-/** Cover circle tint for a heading color: preset tint or the color mixed with white. */
+/** Cover circle color for a heading color: a preset's own tint, or a custom color exactly as the parent picked it (the parent keeps the tone). */
 export function tintFor(hex: string): string {
   const p = Object.values(PRESETS).find((x) => x.text.toLowerCase() === hex.toLowerCase());
-  return p ? p.tint : mixWhite(hex, 0.8);
+  return p ? p.tint : hex;
 }
 export function presetKeyFor(hex: string): PresetKey | 'custom' {
   const k = (Object.keys(PRESETS) as PresetKey[]).find((x) => PRESETS[x].text.toLowerCase() === hex.toLowerCase());
