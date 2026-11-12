@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { CHILD, reset, signInAsAdmin } from './support/fixtures';
 
-// A32: a celebration picture is cropped to the 3:5 frame the scene shows, and the form tells the parent about transparency.
+// A32: a celebration picture is free style (no crop window), and the form advises a transparent, tall picture.
 
 /** A solid 1200x800 PNG, made in the browser so no image file is needed on disk. */
 async function widePng(page: Page): Promise<Buffer> {
@@ -26,7 +26,7 @@ test.beforeEach(async ({ page }) => {
   await signInAsAdmin(page);
 });
 
-test('a celebration picture is cropped to a tall 3:5 frame, and the form says to use a transparent background (A32)', async ({ page }) => {
+test('a celebration picture is not cropped, and the form advises a transparent, tall picture (A32)', async ({ page }) => {
   await page.getByRole('button', { name: `Edit ${CHILD.name}` }).click();
   await expect(page.getByText(/transparent background/)).toBeVisible();
   // The button label stays on one line: the button is its normal height, not two lines clipped.
@@ -38,23 +38,9 @@ test('a celebration picture is cropped to a tall 3:5 frame, and the form says to
   await page.locator('input[type=file][aria-label="Upload new picture"]').setInputFiles({
     name: 'kid.png', mimeType: 'image/png', buffer: await widePng(page),
   });
-
-  const crop = page.getByRole('dialog', { name: 'Crop picture' });
-  await expect(crop).toBeVisible();
-  const area = await crop.getByRole('group', { name: 'Crop area' }).boundingBox();
-  expect(area).not.toBeNull();
-  // Width : height of the frame: about 340 : 600 (3:5), not a square.
-  expect(area!.width / area!.height).toBeCloseTo(340 / 600, 1);
-  await expect(crop.getByText('Preview. The picture is saved as this frame.')).toBeVisible();
-
-  // Cancel looks like the other dialogs' Cancel: white, rounded, light border (same as Confirm, Import, Ban).
-  const cancel = crop.getByRole('button', { name: 'Cancel' });
-  await expect(cancel).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-  await expect(cancel).toHaveCSS('border-radius', '10px');
-  await expect(cancel).toHaveCSS('border-top-color', 'rgb(227, 213, 196)');
-  await page.screenshot({ path: 'test-results/crop-cancel.png' });
-  await cancel.click();
-  await expect(crop).toHaveCount(0);
+  // No crop window: the wide picture goes straight to the library as it is.
+  await expect(page.getByRole('dialog', { name: 'Crop picture' })).toHaveCount(0);
+  await expect(page.getByText('Upload new').first()).toBeVisible();
 });
 
 test('after a celebration picture is chosen, the "Applied" note sits under its button, not beside it', async ({ page }) => {
@@ -63,7 +49,6 @@ test('after a celebration picture is chosen, the "Applied" note sits under its b
   await page.locator('input[type=file][aria-label="Upload new picture"]').setInputFiles({
     name: 'kid.png', mimeType: 'image/png', buffer: await widePng(page),
   });
-  await page.getByRole('dialog', { name: 'Crop picture' }).getByRole('button', { name: 'Save' }).click();
   await page.getByRole('dialog').filter({ hasText: 'Upload new' }).getByRole('button', { name: 'OK' }).click();
 
   const choose = page.getByRole('button', { name: 'Choose from library for celebration picture A' });

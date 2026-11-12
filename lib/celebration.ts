@@ -9,11 +9,10 @@ import { GENDER_THEME, type Gender } from '@/lib/childTheme';
 
 /**
  * The frame a celebration picture is shown in (CelebrationScene): 340 px wide, 600 px tall, a portrait frame.
- * The admin crops an uploaded picture to this shape (A32), so nothing is cut or left empty on the screen.
+ * The picture is not cropped (A32): it fits inside the frame, whole, with no cut. The admin is advised to upload
+ * a transparent, tall (about 3:5) picture; any other shape just looks smaller.
  */
 export const CELEBRATION_FRAME = { width: 340, height: 600 } as const;
-/** Width divided by height of the celebration frame (about 3:5). */
-export const CELEBRATION_ASPECT = CELEBRATION_FRAME.width / CELEBRATION_FRAME.height;
 
 /**
  * The child's celebration pictures a (left) and b (right), as public URLs (null when not uploaded), and the

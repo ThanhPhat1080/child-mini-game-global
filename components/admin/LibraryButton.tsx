@@ -15,7 +15,7 @@ const small = { ...ghostBtn, whiteSpace: 'nowrap' } as const;
  */
 export function LibraryButton({ kind, label, onChoose, startCrop, aspect, onCropped }: {
   kind: 'image' | 'audio'; label: string; onChoose: (path: string) => void;
-  startCrop?: Crop; /** The shape of a picture uploaded from the dialog (width / height); 1 is a square (A24). */ aspect?: number;
+  startCrop?: Crop; /** The shape of a picture uploaded from the dialog (width / height); 1 is a square (A24); 'free' skips the crop. */ aspect?: number | 'free';
   onCropped?: (crop: Crop) => void;
 }) {
   const [open, setOpen] = useState(false);
